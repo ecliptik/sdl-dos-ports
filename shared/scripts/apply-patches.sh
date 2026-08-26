@@ -115,7 +115,7 @@ apply_one() {
     local patches=()
     while IFS= read -r -d '' p; do
         patches+=("$p")
-    done < <(find "$patches_path" -maxdepth 1 -name '*.patch' -type f -print0 | LC_ALL=C sort -z)
+    done < <(find -L "$patches_path" -maxdepth 1 -name '*.patch' -type f -print0 | LC_ALL=C sort -z)
 
     if [[ "${#patches[@]}" -eq 0 ]]; then
         log "$name: no *.patch files in $patches_path -- nothing to apply"
