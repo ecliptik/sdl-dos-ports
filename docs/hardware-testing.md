@@ -59,6 +59,10 @@ anticipates this — it's explicitly written target-agnostic and states it
 "will move to a repository of its own when a second project adopts it."
 That move is the natural trigger once a second port reaches real-hardware
 QA; it is out of scope for this repo's current milestone.
+`shared/skills/dos-hardware-validation/` (below) documents the discipline
+a campaign should follow regardless of whether the harness scripts
+themselves are generalized yet — it doesn't resolve this gap, it's a
+layer on top of the manual interim workflow.
 
 ## Interim workflow (manual, works today for any port)
 
@@ -90,6 +94,21 @@ detected hardware, a captured (not inferred) completion witness, and a
 statistical-repeatability approach for FPS claims rather than a single raw
 number — across-session FPS noise on real hardware has been measured at
 several times the within-session band, so a single run is not a result.
+
+## Validation discipline: `shared/skills/dos-hardware-validation/`
+
+Beyond the manual command sequence above, `shared/skills/dos-hardware-validation/`
+is a genericized Claude Code skill capturing the discipline a real
+validation campaign needs to produce a trustworthy result: design a
+comparison and verify it against source before running anything, populate
+with an explicit destination + sha256 verify (never trust a transfer
+capability's default inbox), per-cell `set`/`forbid`/`expect_log`
+three-witness discipline, RUNMANIFEST-driven metric extraction, ABBA
+methodology with pre-registered thresholds, treating a harness bug as a
+bug to fix (not a workaround), and handing off raw data instead of a
+narrated summary. Distilled from a real doskutsu campaign on the vcctrl
+rig — see that skill's `README.md` for provenance and adoption (symlink
+into a port's own `.claude/skills/`, same model as `shared/agents/`).
 
 ## Future work (explicitly not this milestone)
 

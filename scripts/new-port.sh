@@ -50,7 +50,7 @@ git submodule add -q "$HUB_REMOTE" .sdl-dos-ports || {
 }
 
 echo "==> Creating directory skeleton"
-mkdir -p vendor patches scripts tests qa-results setup .claude/agents
+mkdir -p vendor patches scripts tests qa-results setup .claude/agents .claude/skills
 
 echo "==> Wiring shared SDL3-DOS patch series into patches/ (symlinks)"
 ln -s ../.sdl-dos-ports/shared/patches/sdl3-dos patches/SDL

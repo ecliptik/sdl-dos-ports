@@ -14,7 +14,8 @@ gitignored — it holds planning inputs, not published documentation.
 ## What lives here vs. what doesn't
 
 - Here: `shared/` (SDL3-DOS platform patches, MIDI/audio backends, build
-  fragments, DOSBox-X/probe/smoke-test tooling, AI agent charter templates),
+  fragments, DOSBox-X/probe/smoke-test tooling, AI agent charter templates,
+  Claude Code skill templates),
   `docs/` (architecture and process documentation), `templates/` (scaffolds
   for a new port repo), `gallery/` (screenshots/perf/features showcase per
   port), `ports.yaml` (the candidate backlog + status tracker).
