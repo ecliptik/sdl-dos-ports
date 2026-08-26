@@ -13,7 +13,11 @@ Build chain summary and DOSBox-X interaction recipes are in `CLAUDE.md`
 detail behind this charter's sha/strings/smoke checklist -- stale-cache
 build shapes, why a clean DOSBox-X smoke doesn't prove hardware I/O
 correctness, and DOSBox-X/86Box tiering -- see
-`.sdl-dos-ports/shared/skills/dos-realhw-verification/`.
+`.sdl-dos-ports/shared/skills/dos-realhw-verification/`. For the mechanics
+of the DOSBox-X tools themselves (which script for which job, the
+emulator-only escape hatches already baked into the shipped confs, the
+global-`pkill` teardown hazard) see
+`.sdl-dos-ports/shared/skills/dos-emulator-workflow/`.
 
 ## Charter
 

@@ -33,7 +33,9 @@ gitignored — it holds planning inputs, not published documentation.
    `port_repo_url` once the new repo exists, in a commit here.
 4. Follow the standard slice order for a new port: compile → video → input
    → filesystem → audio → gameplay → optimization. Do not attempt a giant
-   first patch.
+   first patch. Nearly all of this happens locally against DOSBox-X, no
+   rig or real hardware required yet — see
+   `shared/skills/dos-emulator-workflow/`.
 
 ## Rules for changes to `shared/`
 

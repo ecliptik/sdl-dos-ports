@@ -26,6 +26,15 @@ device initializes, an asset loads, the game reaches its title/first room,
 a save file writes and reloads, clean exit. If the game has deterministic
 input, a replay-based smoke test is worth the investment.
 
+For the day-to-day mechanics and judgment calls of working in this tier
+-- which of the three DOSBox-X tools to reach for, the emulator-only
+escape hatches already baked into the shipped confs and why they must
+never leak to a real-hardware run, what a clean DOSBox-X pass does and
+doesn't prove, and what local timing observation can (and can't) be used
+for -- see `shared/skills/dos-emulator-workflow/`. This is the default
+mode for most of a port's life, not just a fallback when a rig isn't
+available.
+
 ## 86Box: a second correctness opinion
 
 doskutsu also validates against 86Box as an independently-implemented
