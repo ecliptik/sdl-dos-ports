@@ -21,10 +21,19 @@ prefix of the string actually reached the guest. A harness that assumes
 "no error from the inject call" means "the whole string arrived" will
 then send the *next* command, which types over whatever unconsumed
 remainder was still sitting in the buffer -- producing a garbled command
-that looks like operator error rather than a truncation bug. Break long
-commands into chunks short enough to fit, or confirm the buffer drained
-before sending the next chunk, rather than trusting the inject call's
-own success signal.
+that looks like operator error rather than a truncation bug.
+
+Don't try to detect or wait out the truncation -- there is no reliable
+signal for "DOS finished consuming the last command" to engineer a
+chunking or buffer-drain scheme around; neither primitive exists to build
+one on. Instead, treat an ambiguous result from any per-item operation as
+reason to stop the whole sequence rather than sending the next item, and
+let the caller retry the operation as a whole from a known-clean state.
+This is the same rule as the cross-cutting one in this skill's `SKILL.md`
+(ambiguous result -> independent read, don't assume state) -- it's stated
+concretely here because this is the specific hazard it was first learned
+from, and because "just chunk it smaller" is a tempting-but-wrong
+workaround that competes with the actual rule rather than following it.
 
 ## Caps Lock inverts case with no error signal
 
