@@ -84,7 +84,19 @@ sed -n '/\[RUNMANIFEST-BEGIN\]/,/\[RUNMANIFEST-END\]/p' run.log \
   | while IFS='=' read -r k v; do printf '%s\t%s\n' "$k" "$v"; done
 ```
 
-Feed this straight into a cell's `expect_log` check (does `environment=`
-match what this cell's arm expects?) and into campaign aggregation
-(collect `per_loop_fps=` etc. across cells for the ABBA verdict table) --
-see `abba-methodology.md`.
+Feed this into campaign aggregation (collect `per_loop_fps=` etc. across
+cells for the ABBA verdict table -- see `abba-methodology.md`) and into
+post-hoc confirmation of what a cell actually did (does `environment=`
+match what this cell's arm expected?).
+
+**Do not use a RUNMANIFEST field as a cell's `expect_log` gate.** The
+block is emitted late -- typically at or after clean exit -- so anything
+that disrupts normal teardown (a quit-path hang, a crash on the way out,
+any exit-path bug unrelated to the lever under test) can suppress it on a
+run that was otherwise completely correct. Gating live cell validity on
+it turns an unrelated bug into a false "invalid cell." Use RUNMANIFEST for
+metrics extraction and post-collect cross-checking; use an early,
+reliably-emitted line (a boot banner, an init-time log line) for
+`expect_log`. See `cell-protocol.md`'s `expect_log` section for the
+concrete failure this caused and what to do instead when a manifest is
+missing.

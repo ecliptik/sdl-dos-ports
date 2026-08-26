@@ -53,12 +53,33 @@ and forgot about is exactly the kind of thing this check exists to catch.
 ## `expect_log`
 
 Define, before running, what the engine's own output must show for this
-arm to count as "the lever took effect" -- a boot-banner field, a
-RUNMANIFEST field (see `runmanifest-log.md`), a specific log line. Check
-this *after* every cell, not just spot-checked occasionally. A cell whose
-`expect_log` check fails is invalid regardless of what the rest of the run
-looked like -- don't fold its numbers into the comparison "just this
-once."
+arm to count as "the lever took effect" -- a boot-banner field or a
+specific init-time log line. Check this *after* every cell, not just
+spot-checked occasionally. A cell whose `expect_log` check fails is
+invalid regardless of what the rest of the run looked like -- don't fold
+its numbers into the comparison "just this once."
+
+**Never gate `expect_log` on a RUNMANIFEST field (or any other
+exit-path-only summary block).** RUNMANIFEST is for post-collect metrics
+extraction (see `runmanifest-log.md`), not live cell validity. The
+concrete failure mode: an engine that emits its manifest late (e.g. after
+`SDL_Quit()`) can suppress the block on a run that behaved completely
+correctly, if the engine has any known or unknown quit-path timing issue
+-- that's exactly what happened validating doskutsu (a documented
+intermittent quit-hang suppressed the manifest on an otherwise-good run).
+Gating `expect_log` on the manifest would have discarded a good cell as
+invalid for a reason unrelated to the lever under test. The general rule:
+anything used for live pass/fail gating must be provably unaffected by
+exit-path timing, which a summary block written at the very end usually
+is not.
+
+If a manifest is missing (or a field in it doesn't match) after collect,
+treat that as **inconclusive, not automatically invalid** -- re-run the
+cell once before deciding whether it's a real problem or a benign
+suppression. This is a judgment call informed by whether the engine has a
+known emit-suppression bug, which is exactly the kind of thing to ask the
+port's own maintainer/agent about before designing the campaign (see the
+main skill's "design first, verify against source" step).
 
 ## Populate mechanics (staging a binary before a cell)
 

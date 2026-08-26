@@ -85,14 +85,21 @@ Every cell run needs all three, never just one:
    about what a prior cell left behind). Leftover env vars from an earlier
    round have caused real contamination in this workflow before.
 3. **`expect_log`** -- the engine's *own* log output attesting the lever
-   took effect, never the requested env var alone. A boot-banner line or a
-   manifest field that only appears when the lever genuinely applied is
+   took effect, never the requested env var alone. A boot-banner line or an
+   init-time log line that only appears when the lever genuinely applied is
    what proves the arm; the command you sent only proves what you asked
-   for, not what happened.
+   for, not what happened. Gate this on something emitted *early and
+   reliably* -- never on a late/exit-path-only field (a RUNMANIFEST block
+   is the example that bit this workflow: it fires after `SDL_Quit()`, so
+   an engine bug that hangs or skips teardown can suppress it on an
+   otherwise-correct run, which would fail the cell for a reason that has
+   nothing to do with the lever under test). RUNMANIFEST fields are for
+   post-collect metrics extraction, not live pass/fail gating -- see
+   `references/runmanifest-log.md`.
 
 Full mechanics (what "verified absent" means in practice, how to structure
-`set`/`forbid`/`expect_log` for a comparison) are in
-`references/cell-protocol.md`.
+`set`/`forbid`/`expect_log` for a comparison, and what to do when a
+manifest is missing post-collect) are in `references/cell-protocol.md`.
 
 ## Collect: fetch, size-verify, and record identity every cell
 
