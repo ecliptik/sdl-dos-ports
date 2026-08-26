@@ -50,26 +50,34 @@ ports:
       Reference port. Cave Story via NXEngine-evo (GPLv3) on
       SDL3/DJGPP/CWSDPMI. Source of the shared/ platform layer.
       shared/ submodule adoption (plans/DOSKUTSU-MIGRATION-PLAN.md)
-      LANDED on doskutsu main at f00dd84 (pushed to Forgejo origin,
-      fast-forwarded from 903b88d). Submodule (.sdl-dos-ports) pinned
-      at sdl-dos-ports 717ebc91bc5a1eafd2269fdd6006ed2229a5c6ec. Steps
-      1-4 landed: patches/SDL + patches/SDL_mixer symlinked into
+      LANDED on doskutsu main, currently at 332d379 (pin bump from
+      f00dd84 to pick up the hub's shared/skills/; pushed to Forgejo
+      origin). Submodule (.sdl-dos-ports) pinned at sdl-dos-ports
+      006a02c75a3cd8279a735b34084fbd94cff99596. Steps 1-4 landed:
+      patches/SDL + patches/SDL_mixer symlinked into
       shared/patches/sdl3-dos + sdl3-mixer, the 4 vendor scripts
       symlinked into shared/scripts/, and the SDL3/mixer/image build
-      stages consumed via shared/build/sdl3-dos.mk. Verified:
-      verify-patches-applied 114+2 patches exit 0 through the
-      symlinks, make all exit 0 (identical binary size), make smoke
-      gate PASS, and a real-hardware RUNMANIFEST run (g2k rig)
-      confirmed environment=realhw + build_sha12=04388290f735. Steps
-      5-7 (tools/ DOSBox-X confs, tests/probes, .claude/agents/
-      charters) deliberately left doskutsu-local for now, per the
-      plan's own recommendation -- keeping tools/ local sidesteps the
-      DOSKUTSU_ENVIRONMENT vs. DOS_PORT_ENVIRONMENT env-var mismatch
-      rather than resolving it. upstream_revision per
-      vendor/sources.manifest in the doskutsu repo as of this writing;
-      re-check there for the current pin. upstream_license verified
-      directly against doskutsu's own LICENSE file ("NOTE ON COMBINED
-      BINARY" section) as of this writing.
+      stages consumed via shared/build/sdl3-dos.mk. Build-correctness
+      verified: verify-patches-applied 114+2 patches exit 0 through
+      the symlinks, make all exit 0 (rebuilt binary byte-identical to
+      a from-scratch build on the same host), make smoke gate PASS,
+      and a real-hardware RUNMANIFEST run (g2k rig) confirmed
+      environment=realhw + build_sha12=04388290f735. Performance
+      confirmed separately post-migration: a real-hardware ABBA
+      reproduction of patch 0328's (BG blank-tile-skip) measured KPI
+      on the POD-83/Mach64/PicoGUS rig came back PASS, delta +3.15fps
+      vs. the pre-migration baseline of +3.0fps (threshold >=+2.0,
+      A-to-A spread 0.0) -- the submodule migration changed neither
+      build output nor measured performance. Steps 5-7 (tools/ DOSBox-X
+      confs, tests/probes, .claude/agents/ charters) deliberately left
+      doskutsu-local for now, per the plan's own recommendation --
+      keeping tools/ local sidesteps the DOSKUTSU_ENVIRONMENT vs.
+      DOS_PORT_ENVIRONMENT env-var mismatch rather than resolving it.
+      upstream_revision per vendor/sources.manifest in the doskutsu
+      repo as of this writing; re-check there for the current pin.
+      upstream_license verified directly against doskutsu's own
+      LICENSE file ("NOTE ON COMBINED BINARY" section) as of this
+      writing.
 
   - name: adventure-game-studio
     upstream_url: https://github.com/adventuregamestudio/ags
