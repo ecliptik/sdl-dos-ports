@@ -10,15 +10,19 @@ moment of the wedge/bug* confirms the mechanism. This sounds obvious
 stated plainly; in practice it's easy to skip because a good source trace
 plus a clean emulator run genuinely feels like enough evidence to act on.
 
-The concrete cost of skipping this: a fix was shipped **twice** on static
-(source-trace-only) hypotheses that real-hardware markers later refuted
-outright. One of the two had a clean DOSBox-X smoke *and* a strong source
-trace behind it, and turned out to be a complete no-op on real hardware --
-the diagnostic marker instrumented to prove the suspected path was
-entered read the same value (indicating "path not entered") on every
-single sample collected, across the full run. The suspected mechanism was
-never even reached; the fix addressed a plausible-sounding but wrong
-theory.
+The concrete cost of skipping this: a fix was shipped on a static
+(source-trace-only) hypothesis -- a clean DOSBox-X smoke *and* a strong
+source trace both behind it -- and turned out to be a complete no-op on
+real hardware once real-hardware markers were actually collected: the
+diagnostic marker instrumented to prove the suspected path was entered
+read the same value (indicating "path not entered") on every single
+sample collected, across the full run. The suspected mechanism was never
+even reached; the fix addressed a plausible-sounding but wrong theory. A
+second static hypothesis in the same campaign was caught and corrected
+before it ever shipped, precisely because it got checked against this
+same discipline first -- worth noting as the positive case: the discipline
+isn't just damage control after the fact, it also works as a pre-ship
+catch when applied before committing to a fix.
 
 ## The generalized check: what would this check's failure look like?
 
@@ -41,12 +45,12 @@ dumps proved the actual cause was in the port's own code: a "route
 directly to the window surface" fast path was skipping a centering-offset
 step that a sibling (slower) code path applied. The fast path's own code
 comment justified skipping that step -- "the tile loop covers the full
-screen, so the result is identical either way" -- and that comment was
-**true when it was written**. It became false three patches later, when
-an unrelated change elsewhere altered a precondition the comment's
-reasoning depended on, and nothing flagged the fast path's now-stale
-justification because the comment itself wasn't re-checked against the
-new precondition.
+screen, so the per-pixel result is identical" -- and that comment was
+**true when it was written**. It became false much later, when an
+unrelated change elsewhere gave a nonzero value to something the
+comment's reasoning had implicitly assumed would always be zero, and
+nothing flagged the fast path's now-stale justification because the
+comment itself wasn't re-checked against the changed precondition.
 
 The transferable lesson: any hardware-conditional (or otherwise
 special-cased) fast path whose correctness argument depends on a
