@@ -31,7 +31,7 @@ discipline, not a frozen API reference.
 Distilled from the same real doskutsu/vcctrl campaign session as
 `dos-hardware-validation` -- see `shared/skills/README.md` for provenance.
 
-## The five areas
+## The six areas
 
 1. **Input injection** — typing/keystrokes landing correctly, or not.
    `references/input-injection.md`
@@ -43,6 +43,12 @@ Distilled from the same real doskutsu/vcctrl campaign session as
    from "written but incomplete." `references/log-collection.md`
 5. **Power management** — safe power-cycle discipline for a rig where the
    physical wiring isn't software-verifiable. `references/power-management.md`
+6. **Multi-agent coordination** — a spawned subagent does not inherit the
+   rig connection, and more than one caller reaching the rig-driving
+   session at once is a real double-dispatch hazard against physical
+   hardware, not a hypothetical. Read this one *before* a team-lead spawns
+   a specialist whose charter assumes direct rig access.
+   `references/agent-coordination.md`
 
 ## The one rule that spans all five
 

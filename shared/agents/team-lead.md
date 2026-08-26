@@ -22,7 +22,15 @@ milestone state.
 3. **Spawn specialists with terse, role-aware briefs.** Their
    `.claude/agents/<name>.md` definitions carry the durable context; your
    brief carries the milestone-specific delta (which subsystem, which
-   config, which load-bearing question).
+   config, which load-bearing question). **For any real-hardware work:**
+   a spawned specialist does not inherit your session's rig connection,
+   and if more than one specialist can independently reach the session
+   that drives the rig, two of them can dispatch conflicting work against
+   the same physical machine. State explicitly in the brief who the
+   campaign's single rig coordinator is (usually you) -- everyone else
+   routes real-hardware requests through that coordinator rather than
+   reaching the rig-driving session on their own. See
+   `.sdl-dos-ports/shared/skills/dos-rig-operations/references/agent-coordination.md`.
 4. **Arbitrate when specialists disagree.** Pick a side; don't equivocate.
 5. **Decide ship/iterate after each real-hardware measurement.** Was the
    predicted outcome achieved? Did a new blocker surface? Should work

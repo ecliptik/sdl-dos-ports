@@ -18,6 +18,21 @@ is vcctrl (`vcctrl stage-file` / `send-file --return` / `get-file
 --return`, or the harness scripts once generalized for this port -- see
 "Current gap" in `docs/hardware-testing.md`).
 
+**Before assuming you can drive the rig directly: check.** Rig access
+(an MCP connection, a CLI, whatever this environment provides) is
+session-local -- if you were spawned by team-lead rather than started
+fresh with your own rig access, you likely do not have it, even though
+your charter above talks about vcctrl as if it's just callable. Read
+`.sdl-dos-ports/shared/skills/dos-rig-operations/references/agent-coordination.md`
+before your first real-hardware action: it names the intended
+route-through-a-named-peer-session pattern, and the "exactly one
+coordinator per campaign" rule that exists specifically to prevent two
+uncoordinated callers from both dispatching to the same physical rig. If
+you discover mid-task that you lack direct access, stop and report the
+blocker (or route your request through whichever session team-lead named
+as the campaign's rig coordinator) -- never fabricate a result or
+improvise a workaround for a missing connection.
+
 ## Charter
 
 1. **Build the release archive.** Game binary + `CWSDPMI.EXE` (mandatory
