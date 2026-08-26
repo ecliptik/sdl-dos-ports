@@ -248,26 +248,58 @@ ports:
       modernized branches. Locate canonical upstream repo before starting.
 
   - name: passage
-    upstream_url: null
-    upstream_revision: null
-    upstream_license: null
-    upstream_license_verified: false
-    port_repo_url: null
+    upstream_url: https://github.com/jasonrohrer/Passage
+    upstream_revision: 2f713f261dc907f6feda106ebbee0464eeab791d
+    upstream_license: public domain
+    upstream_license_verified: true
+    port_repo_url: https://forgejo.ecliptik.com/ecliptik/dossage
     language: C
     original_sdl_version: "1.2"
     target_sdl_version: "3"
     graphics_api: software
-    dos_status: BACKLOG
+    dos_status: BOOTSTRAP
     priority: 8
     difficulty: 1
     dos_minimum_target: 486DX2-50
     dos_recommended_target: 486DX2-50
-    maintainer: null
+    maintainer: ecliptik
     notes: >
-      Tiny reference/skeleton port covering init/video/keyboard/timer/
-      audio/filesystem/shutdown end-to-end. Intended to become the
-      copy-paste starting skeleton in templates/ once ported. Locate
-      canonical upstream repo before starting.
+      Port repo is "dossage" (portmanteau, matches doskutsu's DOS+game
+      naming convention; binary DOSSAGE.EXE). Tiny reference/skeleton port
+      covering init/video/keyboard/timer/audio/filesystem/shutdown
+      end-to-end -- intended to become the copy-paste starting skeleton in
+      templates/ once ported. upstream_url/upstream_revision verified by
+      cloning jasonrohrer/Passage directly (author's own GitHub account;
+      only 2 commits, "Exported latest revision from sourceforge cvs" --
+      this is the actual upstream, not a fork or mirror).
+      upstream_license verified against the author's own project page
+      (https://hcsoftware.sourceforge.net/passage/), which states
+      "Placed in the public domain" -- no LICENSE file ships in the source
+      tree itself, so the project homepage is the recorded verification
+      source (quoted, with URL, in dossage's own LICENSE-REVIEW.md).
+      Build dependency: Jason Rohrer's own minorGems utility library
+      (https://github.com/jasonrohrer/minorGems), also public domain
+      (verified via its own in-repo no_copyright.txt, dated 2018 -- an
+      actual file in the pinned tree, stronger verification than
+      Passage's own). Only a small subset of minorGems is used (file/path,
+      string, settings, time, thread, sha1, TGA image decode, simple
+      vector) -- the rest of that large multi-project library (portaudio,
+      miniupnpc, network/p2p code, etc.) is irrelevant here and should not
+      be vendored/built. Engine surface is unusually small even for
+      difficulty:1: raw SDL 1.2 only, no SDL_mixer (custom sample-level
+      software synth audio), no SDL_image (custom uncompressed .tga
+      decoder in minorGems), no font library (bitmap numerals). Only
+      Thread use is Thread::staticSleep() -- trivially compatible with the
+      SDL3-DOS cooperative-scheduler / threading-zero invariant doskutsu
+      established. Source-verified KPI: gameSource/game.cpp defines
+      `int lockedFrameRate = 15;` -- the original design targets 15 fps,
+      not Cave Story's 50 fps, so this port's KPI is ~15 fps sustained on
+      the 486DX2-50/486DX2-66 tier rather than doskutsu's 25-30 fps bar.
+      Unlike doskutsu, engine AND game assets are both public domain from
+      the same author, so (unlike Cave Story's freeware-not-redistributed
+      data) there is no legal blocker to shipping the assets in this repo
+      -- LICENSE-REVIEW.md still documents this properly rather than
+      skipping the paperwork because the answer is permissive.
 
   - name: supertux-0.1.x
     upstream_url: null
