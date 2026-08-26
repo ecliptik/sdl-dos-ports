@@ -48,9 +48,25 @@ ports:
     maintainer: ecliptik
     notes: >
       Reference port. Cave Story via NXEngine-evo (GPLv3) on
-      SDL3/DJGPP/CWSDPMI. Source of the shared/ platform layer. Not
-      currently pointed at shared/ via submodule -- migration tracked in
-      plans/META-REPO-PLAN.md step 5. upstream_revision per
+      SDL3/DJGPP/CWSDPMI. Source of the shared/ platform layer.
+      shared/ submodule adoption (plans/DOSKUTSU-MIGRATION-PLAN.md)
+      proven on a LOCAL, UNMERGED doskutsu branch
+      chore/adopt-sdl-dos-ports-shared (HEAD f00dd84) -- not on
+      doskutsu main, not pushed anywhere. Submodule (.sdl-dos-ports)
+      pinned at sdl-dos-ports 717ebc91bc5a1eafd2269fdd6006ed2229a5c6ec.
+      Steps 1-4 landed on that branch: patches/SDL + patches/SDL_mixer
+      symlinked into shared/patches/sdl3-dos + sdl3-mixer, the 4
+      vendor scripts symlinked into shared/scripts/, and the
+      SDL3/mixer/image build stages consumed via shared/build/sdl3-dos.mk.
+      Verified there: verify-patches-applied 114+2 patches exit 0
+      through the symlinks, make all exit 0 (identical binary size),
+      make smoke gate PASS. Steps 5-7 (tools/ DOSBox-X confs,
+      tests/probes, .claude/agents/ charters) deliberately left
+      doskutsu-local for now, per the plan's own recommendation --
+      keeping tools/ local sidesteps the DOSKUTSU_ENVIRONMENT vs.
+      DOS_PORT_ENVIRONMENT env-var mismatch rather than resolving it.
+      Re-verify this note before relying on it; the branch may have
+      moved, merged, or been rebased since. upstream_revision per
       vendor/sources.manifest in the doskutsu repo as of this writing;
       re-check there for the current pin. upstream_license verified
       directly against doskutsu's own LICENSE file ("NOTE ON COMBINED
