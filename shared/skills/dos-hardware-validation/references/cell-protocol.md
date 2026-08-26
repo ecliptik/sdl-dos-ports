@@ -59,6 +59,20 @@ spot-checked occasionally. A cell whose `expect_log` check fails is
 invalid regardless of what the rest of the run looked like -- don't fold
 its numbers into the comparison "just this once."
 
+**Verify the literal expected string against a real captured log before
+trusting the check at all, not just the field/timing it targets.** A
+correctly-designed check (right timing, right field, not gated on a
+late-emitting block) can still be wrong for a much simpler reason: the
+exact string hand-written into the check spec doesn't match what the
+engine actually emits. This has caused a real false refusal in practice
+-- a cell that ran completely correctly was rejected because the
+`expect_log` string in the design doc didn't match the real log line,
+and the mismatch wasn't caught until someone diffed the check against an
+actual captured log. Before a campaign's first cell, confirm every
+`expect_log`/`set_vars` string against a real log from a real run of the
+engine -- don't trust that a string looks plausible just because it was
+written thoughtfully.
+
 **Never gate `expect_log` on a RUNMANIFEST field (or any other
 exit-path-only summary block).** RUNMANIFEST is for post-collect metrics
 extraction (see `runmanifest-log.md`), not live cell validity. The

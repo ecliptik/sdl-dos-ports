@@ -35,3 +35,39 @@ just a reboot) should require an explicit confirm step, not fire on the
 first request -- the cost of an accidental power-off on a real machine
 (interrupted writes, a card that needs a clean reboot to re-enumerate
 correctly) is higher than the cost of one extra confirmation prompt.
+
+## A working reset chord can take far longer to register than expected
+
+A soft-reboot chord (Ctrl-Alt-Del or equivalent) that's genuinely going
+to work can still take a long time to actually register on real hardware
+-- measured as long as ~85 seconds on one real rig. A short timeout that
+gives up before that window has elapsed and reports "the machine never
+reset" is not evidence the chord was swallowed or the hardware is at
+fault -- it's evidence the timeout was too impatient. Before concluding a
+reset chord failed, confirm the wait window was actually long enough for
+a real (not emulated) reboot cycle; don't let a short-timeout false
+negative get diagnosed as a hardware or input-injection problem (see
+`input-injection.md`'s landed-vs-dropped material for the general
+version of this mistake).
+
+## A PS/2 hang looks like a lock problem until you check
+
+If a keyboard/mouse action against the rig appears to hang, the actual
+cause can be either a genuine PS/2-level hardware hang *or* the session's
+own input lock being held by something else entirely (see
+`agent-coordination.md`) -- and from the caller's side, both look
+identical: the action just doesn't complete. **Check whether the lock is
+actually free before concluding it's a hardware fault.** Diagnosing a
+lock conflict as a hardware hang leads to power-cycling a machine that
+was never actually broken; diagnosing a real hardware hang as "just a
+lock issue" leads to waiting indefinitely on something that will never
+resolve itself.
+
+**Recovery policy once the cause is genuinely ambiguous**: one power
+cycle, then stop. Attempt a single power-cycle recovery; if that doesn't
+resolve it, stop and escalate to a human rather than repeatedly retrying
+power actions against a real machine on the assumption that the next
+attempt will be the one that works. Repeated blind power-cycling against
+unresolved ambiguity risks compounding whatever's actually wrong (a card
+that needs a clean shutdown to re-enumerate, interrupted writes) rather
+than fixing it.
