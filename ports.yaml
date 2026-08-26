@@ -1,0 +1,270 @@
+# sdl-dos-ports candidate backlog and status tracker.
+#
+# Each port lives in its own git repository. This file is the queue: a
+# candidate starts at dos_status BACKLOG with no port_repo_url. Claiming a
+# candidate means running scripts/new-port.sh, which scaffolds the new
+# port's repo (wired to this repo's shared/ via git submodule), and then
+# updating that candidate's entry here (dos_status -> RESEARCH,
+# port_repo_url set) in a commit to this repo.
+#
+# dos_status ladder:
+#   BACKLOG -> RESEARCH -> BLOCKED -> BOOTSTRAP -> COMPILES -> STARTS ->
+#   TITLE_SCREEN -> PLAYABLE -> FULL_GAME -> OPTIMIZING -> RELEASE_READY
+#
+# difficulty: 1 = trivial, 2 = easy, 3 = moderate, 4 = difficult,
+#             5 = major engine-port effort
+#
+# Never guess an upstream_url. If a candidate's upstream is not yet located,
+# leave upstream_url null and say so in notes -- locating and pinning the
+# canonical upstream revision is that candidate's literal first task.
+#
+# upstream_license / upstream_license_verified: same rule applies to
+# licensing as to upstream_url -- NEVER GUESS. upstream_license_verified is
+# only true once someone has actually read the upstream project's own
+# LICENSE/COPYING file (or equivalent) in the pinned revision and recorded
+# what it says. A "commonly believed to be X" recollection is not
+# verification -- leave upstream_license null and put the lead in notes
+# instead. We need this to be right because it governs what we are legally
+# allowed to distribute, modify, and how (see docs/licensing.md and
+# CLAUDE.md's "Never contribute upstream" section for the related policy on
+# not sending anything back to these upstreams).
+
+ports:
+  - name: doskutsu
+    upstream_url: https://github.com/nxengine/nxengine-evo
+    upstream_revision: 1f093d1423cc395eb199230cd609b806ef1daa36
+    upstream_license: GPL-3.0
+    upstream_license_verified: true
+    port_repo_url: https://github.com/ecliptik/doskutsu
+    language: C++
+    original_sdl_version: "2 (via nxengine-evo)"
+    target_sdl_version: "3"
+    graphics_api: software / VESA
+    dos_status: RELEASE_READY
+    priority: 0
+    difficulty: null
+    dos_minimum_target: 486DX2-66
+    dos_recommended_target: Pentium 75
+    maintainer: ecliptik
+    notes: >
+      Reference port. Cave Story via NXEngine-evo (GPLv3) on
+      SDL3/DJGPP/CWSDPMI. Source of the shared/ platform layer. Not
+      currently pointed at shared/ via submodule -- migration tracked in
+      plans/META-REPO-PLAN.md step 5. upstream_revision per
+      vendor/sources.manifest in the doskutsu repo as of this writing;
+      re-check there for the current pin. upstream_license verified
+      directly against doskutsu's own LICENSE file ("NOTE ON COMBINED
+      BINARY" section) as of this writing.
+
+  - name: adventure-game-studio
+    upstream_url: https://github.com/adventuregamestudio/ags
+    upstream_revision: null
+    upstream_license: null
+    upstream_license_verified: false
+    port_repo_url: null
+    language: C++
+    original_sdl_version: "2"
+    target_sdl_version: "3"
+    graphics_api: software
+    dos_status: BACKLOG
+    priority: 1
+    difficulty: 5
+    dos_minimum_target: null
+    dos_recommended_target: null
+    maintainer: null
+    notes: >
+      Highest strategic value: one engine port potentially unlocks a large
+      catalog of games. Needs an explicit SDL2->SDL3 strategy decision
+      (direct port vs. compatibility shim) before kickoff -- see
+      plans/SDL_DOS_PORTING_PROGRAM.md section 18. First deliverables are
+      research-only (RESEARCH.md, SDL-SURFACE.md, DEPENDENCIES.md,
+      PLATFORM-SURFACE.md, LICENSE-REVIEW.md, PLAN.md). License not yet
+      verified -- read the actual LICENSE file in the pinned AGS revision
+      before assuming anything.
+
+  - name: vvvvvv
+    upstream_url: https://github.com/TerryCavanagh/VVVVVV
+    upstream_revision: null
+    upstream_license: null
+    upstream_license_verified: false
+    port_repo_url: null
+    language: C++
+    original_sdl_version: "2"
+    target_sdl_version: "3"
+    graphics_api: software
+    dos_status: BACKLOG
+    priority: 2
+    difficulty: 3
+    dos_minimum_target: 486DX2-66
+    dos_recommended_target: Pentium 75
+    maintainer: null
+    notes: >
+      Flagship recognizable 2010 indie port. Licensing/distribution terms
+      for source and assets must be reviewed (LICENSE-REVIEW.md) before any
+      release packaging automation is built -- per
+      plans/SDL_DOS_PORTING_PROGRAM.md section 7, VVVVVV's source has
+      historically been distributed under source-available terms that are
+      NOT automatically redistribution rights; do not assume "source
+      available" means "freely redistributable" until the actual license
+      terms are read and recorded here. Music decode cost likely exceeds
+      render cost on a 486 -- plan a hardware-MIDI fallback.
+
+  - name: meritous
+    upstream_url: null
+    upstream_revision: null
+    upstream_license: null
+    upstream_license_verified: false
+    port_repo_url: null
+    language: C
+    original_sdl_version: "1.2"
+    target_sdl_version: "3"
+    graphics_api: software
+    dos_status: BACKLOG
+    priority: 3
+    difficulty: 2
+    dos_minimum_target: 486DX2-66
+    dos_recommended_target: Pentium 75
+    maintainer: null
+    notes: >
+      Recommended first "second game" port -- proves the shared/ platform
+      and repeatable pattern with minimal engineering. Procedural
+      dungeon-crawler, small resolution, plain C. Locate canonical upstream
+      repo before starting.
+
+  - name: openjazz
+    upstream_url: https://github.com/OSSGames/GAME-SDL-openjazz
+    upstream_revision: null
+    upstream_license: null
+    upstream_license_verified: false
+    port_repo_url: null
+    language: C
+    original_sdl_version: "2"
+    target_sdl_version: "3"
+    graphics_api: software
+    dos_status: BACKLOG
+    priority: 4
+    difficulty: 3
+    dos_minimum_target: 486DX2-66
+    dos_recommended_target: Pentium 75
+    maintainer: null
+    notes: >
+      Native 320x200. An open SDL recreation of a game that originally ran
+      on DOS, going back to DOS -- exercises 320x200 video behavior
+      separately from doskutsu's 320x240 target. Asset licensing must be
+      documented separately from the open engine.
+
+  - name: powder
+    upstream_url: null
+    upstream_revision: null
+    upstream_license: null
+    upstream_license_verified: false
+    port_repo_url: null
+    language: C
+    original_sdl_version: "1.2"
+    target_sdl_version: "3"
+    graphics_api: software
+    dos_status: BACKLOG
+    priority: 5
+    difficulty: 2
+    dos_minimum_target: 486DX2-66
+    dos_recommended_target: 486DX2-66
+    maintainer: null
+    notes: >
+      Low-risk confidence builder. Graphical roguelike, turn-based/low-
+      frequency simulation, small sprite workload. Good test of keyboard
+      input, save handling, and non-platformer graphics. Locate canonical
+      upstream repo before starting -- confirm source availability and
+      license terms as part of that search; unverified recollection is
+      that POWDER's source has not always been openly licensed, which
+      would block this candidate entirely if source access/modification
+      rights don't actually exist. Do not proceed past research until this
+      is confirmed one way or the other.
+
+  - name: kobo-deluxe
+    upstream_url: null
+    upstream_revision: null
+    upstream_license: null
+    upstream_license_verified: false
+    port_repo_url: null
+    language: C++
+    original_sdl_version: "1.2"
+    target_sdl_version: "3"
+    graphics_api: software
+    dos_status: BACKLOG
+    priority: 6
+    difficulty: 3.5
+    dos_minimum_target: Pentium 75
+    dos_recommended_target: Pentium 75
+    maintainer: null
+    notes: >
+      Renderer stress test, not a first port. Fast multidirectional
+      shooter with heavy sprite/particle/scrolling load. Use an older
+      pre-OpenGL-era revision. Locate canonical upstream repo before
+      starting.
+
+  - name: blob-wars
+    upstream_url: null
+    upstream_revision: null
+    upstream_license: null
+    upstream_license_verified: false
+    port_repo_url: null
+    language: C
+    original_sdl_version: "1.2"
+    target_sdl_version: "3"
+    graphics_api: software
+    dos_status: BACKLOG
+    priority: 7
+    difficulty: 3.5
+    dos_minimum_target: Pentium 75
+    dos_recommended_target: Pentium 75
+    maintainer: null
+    notes: >
+      Closest workload to doskutsu/Cave Story of the candidates: full
+      action/platformer, scrolling, multiple levels. Watch SDL_ttf and
+      archive-format overhead. Target older SDL 1.x-era revisions before
+      modernized branches. Locate canonical upstream repo before starting.
+
+  - name: passage
+    upstream_url: null
+    upstream_revision: null
+    upstream_license: null
+    upstream_license_verified: false
+    port_repo_url: null
+    language: C
+    original_sdl_version: "1.2"
+    target_sdl_version: "3"
+    graphics_api: software
+    dos_status: BACKLOG
+    priority: 8
+    difficulty: 1
+    dos_minimum_target: 486DX2-50
+    dos_recommended_target: 486DX2-50
+    maintainer: null
+    notes: >
+      Tiny reference/skeleton port covering init/video/keyboard/timer/
+      audio/filesystem/shutdown end-to-end. Intended to become the
+      copy-paste starting skeleton in templates/ once ported. Locate
+      canonical upstream repo before starting.
+
+  - name: supertux-0.1.x
+    upstream_url: null
+    upstream_revision: null
+    upstream_license: null
+    upstream_license_verified: false
+    port_repo_url: null
+    language: C++
+    original_sdl_version: "1.2"
+    target_sdl_version: "3"
+    graphics_api: software
+    dos_status: BACKLOG
+    priority: 9
+    difficulty: 4
+    dos_minimum_target: Pentium 75
+    dos_recommended_target: Pentium 90
+    maintainer: null
+    notes: >
+      Pentium-class stretch target; a 486 port is a stretch goal, not the
+      first objective. Only investigate early Milestone-era 0.1.x releases
+      -- modern SuperTux carries a much heavier stack. 640x480 rendering
+      raises framebuffer bandwidth concerns. Locate canonical upstream repo
+      (and confirm which 0.1.x revision) before starting.
