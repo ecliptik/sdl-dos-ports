@@ -60,6 +60,31 @@ hardcoded project name) for any new diagnostic logging. Existing patches
 carried over from doskutsu that still use `SDL_HINT_DOSKUTSU_*` should be
 renamed during extraction, not perpetuated.
 
+## Two gotchas beyond the basics above
+
+- **`LC_ALL=C` when enumerating or sorting patch files.** Locale-aware
+  collation (the shell's default) treats `-` as punctuation promoted next
+  to alphabetics, so e.g. `0014a-foo.patch` can sort *before*
+  `0014-foo.patch` even though ASCII byte order says the reverse --
+  `shared/scripts/apply-patches.sh` exports `LC_ALL=C` specifically to
+  avoid this, and any other tooling that walks a `patches/<name>/`
+  directory and cares about apply order needs the same export. This is
+  the same shape of bug as the `find -L` symlink-enumeration fix elsewhere
+  in `shared/scripts/` -- a POSIX tool's default behavior silently isn't
+  what the enumeration code assumed, and it only surfaces once something
+  (a symlinked directory, a locale that isn't `C`) triggers the
+  divergence.
+- **The patch-cascade base trap.** Authoring a new slot-`N` patch on a
+  vendor workspace that already has patches numbered `N+1` and higher
+  applied on top bakes the new patch's hunks in against the *wrong* base
+  -- `git format-patch` captures whatever the workspace's current state
+  is, not the state right after slot `N-1`. Reset the workspace to the
+  state immediately after the last patch before the new slot (or apply
+  patches strictly in order and insert at the tip, not in the middle)
+  before generating the new patch, or the resulting file will fail to
+  apply cleanly (or worse, apply with silently wrong context) for the
+  next person who runs the series from scratch.
+
 ## Negative results are worth keeping
 
 `shared/patches/sdl2-compat-notes/` carries forward doskutsu's write-up of

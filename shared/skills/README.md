@@ -13,12 +13,16 @@ from day to day.
 | Skill | What it covers | Reusable as-is vs. needs a per-port fill-in |
 |---|---|---|
 | `dos-hardware-validation/` | Running a real-hardware validation or A/B benchmark campaign on a vcctrl-controlled rig: design-before-run discipline, populate/verify, per-cell set/forbid/expect_log witnessing, RUNMANIFEST-driven metrics, ABBA methodology, bug-vs-workaround discipline, raw-data handoffs | Reusable close to as-is -- the harness protocol and methodology are port-agnostic. Fill in your own RUNMANIFEST field names/env-var names if you don't reuse `DOS_PORT_*` (see `docs/patch-conventions.md`'s naming-debt note), and your own vcctrl profile per `templates/vcctrl-profile.yaml.template` |
+| `dos-rig-operations/` | Day-to-day rig mechanics independent of a full campaign: input-injection landed-vs-dropped detection, screen-capture evidence discipline, file transfer + packaging/handoff, log collection, power management | Reusable as-is -- mostly points at vcctrl's own `vcctrl-rig-hazards`/`vcctrl-common-workflows` for mechanics and adds the port-session framing/hazard classes on top |
+| `dos-realhw-verification/` | Knowing a build/fix/diagnosis is actually correct on real hardware, not just apparently correct: two-witness build verification, stale-cache failure shapes, DOSBox-X/86Box tiering, build-host tooling traps, real-hardware-vs-emulator divergence debugging | Reusable as-is -- the epistemics (what a check's failure would look like) and failure-shape catalog are port-agnostic; the worked examples are illustrative, not something to copy literally |
 
 ## Adopting a skill into a port repo
 
 ```sh
 mkdir -p .claude/skills
 ln -s ../.sdl-dos-ports/shared/skills/dos-hardware-validation .claude/skills/dos-hardware-validation
+ln -s ../.sdl-dos-ports/shared/skills/dos-rig-operations .claude/skills/dos-rig-operations
+ln -s ../.sdl-dos-ports/shared/skills/dos-realhw-verification .claude/skills/dos-realhw-verification
 ```
 
 Symlinking (rather than copying) keeps the skill in sync with this hub the
@@ -33,12 +37,24 @@ free sync, symlink-and-parameterize keeps it.
 
 ## Provenance
 
-`dos-hardware-validation/` was distilled from a real multi-hour real-hardware
-session validating doskutsu on the vcctrl rig (Gateway 2000 / POD-83,
-ATI Mach64) during doskutsu's `shared/` submodule migration -- an 8-cell
-ABBA fps campaign plus four real harness bugs found and fixed along the way.
+`dos-hardware-validation/` and `dos-rig-operations/` were distilled from
+the vcctrl side of a real multi-hour real-hardware session validating
+doskutsu on the vcctrl rig (Gateway 2000 / POD-83, ATI Mach64) during
+doskutsu's `shared/` submodule migration -- an 8-cell ABBA fps campaign,
+four real harness bugs found and fixed along the way, and vcctrl's own
+prioritized read on what else in its rig-operations surface was worth
+generalizing.
+
+`dos-realhw-verification/` was distilled from doskutsu's side of the same
+migration window -- its own build/QA and hardware-vs-emulator debugging
+campaign history, including a fix that shipped twice on unconfirmed
+static hypotheses before real-hardware markers refuted them, and a
+multi-round investigation that initially misattributed a bug to a video
+chipset before real-hardware surface dumps found the actual cause in the
+port's own fast-path code.
+
 Port-specific details (doskutsu's own env var names, the specific fps
-numbers, the specific bugs) were stripped the same way the agent charter
-templates strip doskutsu's wave-by-wave findings -- see `shared/agents/README.md`'s
-framing. The underlying discipline is what's shared; the campaign history
-belongs to whichever port lived it.
+numbers, specific bug tickets) were stripped the same way the agent
+charter templates strip doskutsu's wave-by-wave findings -- see
+`shared/agents/README.md`'s framing. The underlying discipline is what's
+shared; the campaign history belongs to whichever port lived it.

@@ -9,7 +9,11 @@ before they ship to real hardware. Never claim a build is "ready" without
 sha + strings + banner-emit verification.
 
 Build chain summary and DOSBox-X interaction recipes are in `CLAUDE.md`
-(this repo) and `.sdl-dos-ports/docs/testing.md`.
+(this repo) and `.sdl-dos-ports/docs/testing.md`. For the full failure-mode
+detail behind this charter's sha/strings/smoke checklist -- stale-cache
+build shapes, why a clean DOSBox-X smoke doesn't prove hardware I/O
+correctness, and DOSBox-X/86Box tiering -- see
+`.sdl-dos-ports/shared/skills/dos-realhw-verification/`.
 
 ## Charter
 
@@ -18,8 +22,11 @@ Build chain summary and DOSBox-X interaction recipes are in `CLAUDE.md`
    stage.
 2. **Verify binary integrity post-build.** `sha256sum` must change vs. the
    pre-build baseline; `strings build/<game>.exe | grep <expected new
-   symbol>` if the patch introduced one. A stale cached `.o` from an
-   incremental build is a known failure mode -- when in doubt, clean build.
+   symbol>` if the patch introduced one -- but a symbol embedded in the
+   binary proves it was compiled in, not that it ran; pair this with step
+   4's runtime-emit check. A stale cached `.o` from an incremental build
+   is a known failure mode -- when in doubt, clean build (see the skill
+   above for the specific stale-cache shapes this has taken in practice).
 3. **DOSBox-X smoke at the target config.** `.sdl-dos-ports/shared/tools/dosbox-launch.sh
    --exe build/<game>.exe` with whatever env vars/log tag the real-hardware
    run will use. Confirm boot to title, first-scene render, no crashes,

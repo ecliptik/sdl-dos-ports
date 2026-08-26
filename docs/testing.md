@@ -40,6 +40,15 @@ actual performance and device compatibility — see `docs/hardware-testing.md`
 for how that's currently done via vcctrl, and `HARDWARE.md` for the
 reference machine matrix.
 
+Passing DOSBox-X (or even 86Box) is not proof a build is actually correct
+on real hardware — a clean smoke can pass while never exercising the
+hardware I/O path a fix depends on, and a clean `strings` grep proves a
+symbol was compiled in, not that it ran. See
+`shared/skills/dos-realhw-verification/` for the failure shapes this has
+actually taken (stale build caches, emulator-vs-hardware I/O divergence,
+build-host tooling traps) and the discipline for debugging a bug that's
+specific to real hardware.
+
 ## Never contribute upstream
 
 If a probe or smoke test surfaces a bug in DOSBox-X, 86Box, or any other

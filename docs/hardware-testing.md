@@ -110,6 +110,15 @@ narrated summary. Distilled from a real doskutsu campaign on the vcctrl
 rig — see that skill's `README.md` for provenance and adoption (symlink
 into a port's own `.claude/skills/`, same model as `shared/agents/`).
 
+`shared/skills/dos-rig-operations/` covers the same rig at a lower level
+— input injection, screen capture, file transfer, log collection, and
+power management for day-to-day work, independent of running a full
+validation campaign (staging a build to poke at manually, pulling one log
+back, etc.). `dos-hardware-validation` assumes this skill's discipline
+rather than re-deriving it. See `shared/skills/README.md` for the full
+skill list, including the build/QA-side companion
+`dos-realhw-verification`.
+
 ## Future work (explicitly not this milestone)
 
 - Generalize `harness/vcctrl-sweep|-cell|-collect` to read the active

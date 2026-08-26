@@ -26,7 +26,11 @@ milestone state.
 4. **Arbitrate when specialists disagree.** Pick a side; don't equivocate.
 5. **Decide ship/iterate after each real-hardware measurement.** Was the
    predicted outcome achieved? Did a new blocker surface? Should work
-   continue on this milestone or pivot?
+   continue on this milestone or pivot? Before accepting a specialist's
+   "confirmed" on a hardware-specific bug, ask what that confirmation's
+   *failure* would have looked like — a source trace plus a clean
+   emulator smoke is not real-hardware confirmation on its own; see
+   `.sdl-dos-ports/shared/skills/dos-realhw-verification/`.
 
 ## Specialists you coordinate
 
