@@ -12,7 +12,32 @@ and showcases finished ports.
 
 See [`CLAUDE.md`](CLAUDE.md) for the rules an AI agent (or contributor)
 should follow when working in this repo, and
-[`PORTING.md`](PORTING.md) for how to start a new port.
+[`PORTING.md`](PORTING.md) for the full step-by-step process of starting
+a new port.
+
+## Starting a new port
+
+1. Pick a `BACKLOG` candidate from the table below (or add a new one to
+   [`ports.yaml`](ports.yaml), following its existing schema — never guess
+   an upstream URL or license).
+2. From this hub repo (not from inside the new port's repo), invoke the
+   `new-port` skill (`.claude/skills/new-port/`). It verifies the
+   candidate's upstream/license if that's not already done, runs
+   `scripts/new-port.sh` to scaffold the new repo (wired to `shared/` via
+   submodule, with `shared/skills/*` symlinked in), instantiates
+   `shared/agents/*.md` charters for that port, pins
+   `vendor/sources.manifest`, claims the candidate in `ports.yaml`, and
+   hands off to a porting agent with a concrete starting brief instead of
+   an empty "go start porting."
+3. Run `scripts/new-port.sh <name>` directly instead if you only want the
+   bare mechanical scaffold (no research, charters, or handoff) — see the
+   script's own `Next steps` output for what's left to do by hand in that
+   case.
+
+See [`PORTING.md`](PORTING.md) for the full process this automates,
+including the porting slice order (compile -> video -> input ->
+filesystem -> audio -> gameplay -> optimization) the handed-off agent
+follows next.
 
 ## Ports
 
@@ -26,7 +51,7 @@ should follow when working in this repo, and
 | 5 | POWDER | TBD | unverified — may not be open source, see `ports.yaml` | unclaimed | BACKLOG | 2 |
 | 6 | Kobo Deluxe | TBD | unverified | unclaimed | BACKLOG | 3-4 |
 | 7 | Blob Wars: Metal Blob Solid | TBD | unverified | unclaimed | BACKLOG | 3-4 |
-| 8 | Passage | TBD | unverified | unclaimed | BACKLOG | 1 |
+| 8 | Passage | [jasonrohrer/Passage](https://github.com/jasonrohrer/Passage) | public domain (verified) | [ecliptik/dossage](https://forgejo.ecliptik.com/ecliptik/dossage) | PLAYABLE | 1 |
 | 9 | SuperTux 0.1.x | TBD | unverified | unclaimed | BACKLOG | 4 |
 
 This table is generated from [`ports.yaml`](ports.yaml) — the machine-
