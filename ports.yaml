@@ -311,10 +311,24 @@ ports:
       rename follow-up -- several of Passage's own asset filenames
       exceed 8.3): title screen renders correctly and gameplay (maze
       corridor, player sprite, treasure chests) is visibly correct and
-      responds to keyboard input. No real-hardware run yet -- that
-      still requires vcctrl and is unclaimed as a next step. Full
-      CPU/video/sound matrix sweep (doskutsu's own matrix) planned once
-      optimized, per operator direction.
+      responds to keyboard input. Full CPU/video/sound matrix sweep
+      (doskutsu's own matrix) planned once optimized, per operator
+      direction.
+      2026-08-26 (later same day): found + fixed a real bug (missing
+      SDL_INIT_AUDIO -- SDL3's SDL_OpenAudioDeviceStream doesn't
+      self-init the audio subsystem the way SDL1.2's SDL_OpenAudio did),
+      confirmed via temporary instrumentation that the synthesis math
+      produces sane non-zero PCM (real audibility deferred to real-HW --
+      DOSBox-X in this dev environment pre-buffers audio far ahead of
+      real-time under cycles=max and never conclusively demonstrated
+      playback). Completed the 8.3-rename follow-up
+      (patches/passage/0002): all asset/settings filenames renamed,
+      lfn flipped back to false, reverified. Attempted sdldos's
+      g_pixtone_active_count -> g_dos_sfx_synth_active_count rename +
+      submodule bump to 9e9c5a8, but that hub commit's SDL patch series
+      fails to apply against this port's pinned SDL SHA -- reported,
+      reverted, submodule held at bf10f15 pending a hub-side fix. Handed
+      off to vcctrl for this port's first real-hardware pass.
 
   - name: supertux-0.1.x
     upstream_url: null
