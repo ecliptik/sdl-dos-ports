@@ -38,7 +38,7 @@ Fix:
     1024KB DRAM that way) and immune to the 8237/64KB crash. Done in bounded
     cli/sti bursts so a large per-song .pat upload can't starve the PIT clock /
     cooperative scheduler.
-  - DMA upload is OPT-IN (SDL_HINT_DOSKUTSU_GUS_DMA_UPLOAD=1), 8-bit only, and
+  - DMA upload is OPT-IN (SDL_HINT_DOS_GUS_DMA_UPLOAD=1), 8-bit only, and
     SPLIT into <=32KB 64KB-page-safe chunks through one boundary-safe bounce
     buffer so no single 8237 transfer can cross a page. Promote to default once
     g2k-validated.
@@ -57,7 +57,7 @@ Other Phase-0 scope:
   double-claim a slot.
 - SDL_DOSGusResetDram(keep_bytes) rewinds the DRAM bump cursor preserving a low
   keep region (persistent SFX bank survives per-song .pat swaps).
-- Hints SDL_HINT_DOSKUTSU_GUS_{ULTRASND,ULTRADIR,VOICES,SKIP_DETECTION,DIAG,
+- Hints SDL_HINT_DOS_GUS_{ULTRASND,ULTRADIR,VOICES,SKIP_DETECTION,DIAG,
   DMA_UPLOAD} (DIAG + DMA_UPLOAD default-OFF).
 - REQUIRED detect banner "audio: SDL/0112 GUS GF1 detect: present=...".
 
@@ -75,7 +75,7 @@ gus-5 (#41 the .pat-upload freeze + #40 quiesce, folded in):
   wait states while the driver holds cli -> CPU freeze. (Earlier "a bounded PIO
   loop can't hang" reasoning was wrong: a single outportb is not guaranteed to
   return when the card holds IOCHRDY.)
-- #41 FIX (gated): SDL_HINT_DOSKUTSU_GUS_PIO_AUTOINC=1 programs the DRAM address
+- #41 FIX (gated): SDL_HINT_DOS_GUS_PIO_AUTOINC=1 programs the DRAM address
   ONCE per upload and pokes 3X7 sequentially, letting the GF1 auto-advance its
   own DRAM pointer -- ~1 outportb/byte (~6x fewer). Default OFF (per-byte = the
   observe cell) until g2k confirms autoinc reaches gameplay, then flip to ON.
@@ -112,7 +112,7 @@ gus-6 (#42 the post-upload first-note freeze -- the real music blocker):
   integer address from the actual encoded MSW|LSW, applies the GF1 read xform,
   and prints hw_fetch=0x... (==start? N) -- 1 proves the fetch lands on the
   uploaded address.
-- A/B fallback hint SDL_HINT_DOSKUTSU_GUS_FORCE_8BIT_ADDR=1 (default OFF): forces
+- A/B fallback hint SDL_HINT_DOS_GUS_FORCE_8BIT_ADDR=1 (default OFF): forces
   8-bit voice addressing to isolate the 16-bit path if the encode fix does not
   fully clear the wedge. Diagnostic only.
 
@@ -134,7 +134,7 @@ data:
 - POST-GO voice-status READ-BACK: StartVoice reads voice-control 0x80 (twice, GF1
   latch quirk) right after GO and enqueues RBACK status -- stopped=1 means the GF1
   did NOT run the voice (the decisive silence datum).
-- FORCE_MAXVOL probe (SDL_HINT_DOSKUTSU_GUS_FORCE_MAXVOL=1, default OFF): forces
+- FORCE_MAXVOL probe (SDL_HINT_DOS_GUS_FORCE_MAXVOL=1, default OFF): forces
   0x09=0xFFF0 in SetVoiceVol + StartVoice. A/B: audible -> the bug is the volume
   VALUE (engine low/zero vol or conversion); still silent -> volume path
   exonerated, deeper voice-run/DAC/PicoGUS cause (the ring + RBACK pin it).
@@ -156,7 +156,7 @@ FULLCANON) are REFUTED by this finding; they stay default-ON as background
 correctness but none fixed #39.
 
 The fix: GUS_DEF_VOICES 28 -> 14 (one line). 44100Hz is the highest-quality
-GF1 point and clears the only DAC dead point. The SDL_HINT_DOSKUTSU_GUS_VOICES
+GF1 point and clears the only DAC dead point. The SDL_HINT_DOS_GUS_VOICES
 hint still overrides for A/B, so no new killswitch is needed. Trade-off:
 14-voice polyphony vs 28 -- the operator's 14-voice Organya had no dropped
 notes, so 14 is the chosen default; a future trip could A/B a mid count
@@ -273,7 +273,7 @@ index 000000000..ae67412f5
 +/**
 + * Bring up the native GF1 card.
 + *
-+ * Parses the GUS hints (SDL_HINT_DOSKUTSU_GUS_ULTRASND / _ULTRADIR / _VOICES,
++ * Parses the GUS hints (SDL_HINT_DOS_GUS_ULTRASND / _ULTRADIR / _VOICES,
 + * which the engine bridges from the real ULTRASND/ULTRADIR env vars), resets
 + * the GF1, runs DRAM peek/poke detection + sizing, programs the active-voice
 + * count (rate), enables the DAC, and hooks + locks the GF1 IRQ. Emits the
@@ -281,7 +281,7 @@ index 000000000..ae67412f5
 + *
 + * \returns true if a GF1 was detected and initialized (then
 + *          SDL_DOSGusGetState().valid==true); false if absent (honors
-+ *          SDL_HINT_DOSKUTSU_GUS_SKIP_DETECTION=1 as a bring-up bypass).
++ *          SDL_HINT_DOS_GUS_SKIP_DETECTION=1 as a bring-up bypass).
 + *
 + * \since DOSKUTSU patch SDL/0112.
 + */
@@ -566,13 +566,13 @@ index 000000000..064773e28
 +   28-channel output to 44.1k) that collides with our driver's 22050 assumption
 +   -> rate mismatch -> dead silence (g2k wave-gus16/18, same binary: V27/V29
 +   audible, only V28 silent). There is no pitch bug (g_gus_rate is recomputed
-+   from g_gus_voices below). The SDL_HINT_DOSKUTSU_GUS_VOICES hint still
++   from g_gus_voices below). The SDL_HINT_DOS_GUS_VOICES hint still
 +   overrides [14,32] for A/B. pgusinit /gus44k 1 + 32 voices = full 44.1k
 +   internal mixing at max polyphony (premium option). #39. */
 +#define GUS_DEF_VOICES     20
 +#define GUS_RATE_NUM       617400u /* output_rate ~= 617400 / active_voices */
 +
-+/* DMA-upload tunables. DMA upload is OPT-IN (SDL_HINT_DOSKUTSU_GUS_DMA_UPLOAD=1);
++/* DMA-upload tunables. DMA upload is OPT-IN (SDL_HINT_DOS_GUS_DMA_UPLOAD=1);
 +   the DEFAULT upload path is programmed-I/O poke, which is proven on real HW
 +   (it is the same mechanism as GF1 detection's DRAM peek/poke) and immune to
 +   the ISA 8237 64KB-physical-page crash (#36). When DMA IS enabled, only
@@ -613,7 +613,7 @@ index 000000000..064773e28
 +static volatile bool g_gus_voice_busy[GUS_MAX_VOICES];
 +
 +/* gus-8c #39 start-race mask guard (candidate fix for the reap-driven silence,
-+   GATED behind SDL_HINT_DOSKUTSU_GUS_REAP_GRACE, default OFF). The engine reap
++   GATED behind SDL_HINT_DOS_GUS_REAP_GRACE, default OFF). The engine reap
 +   stops any busy voice GetState's voice_active_mask reports inactive; if the
 +   PicoGUS 0x80 read mis-reports a JUST-STARTED voice as stopped (start-race),
 +   every voice is reaped -> silence. With the guard ON, GetState reports a busy
@@ -1007,7 +1007,7 @@ index 000000000..064773e28
 +/* Parse "port,playDMA,recDMA,GF1irq,MIDIirq" (port hex, rest decimal). */
 +static bool gus_parse_ultrasnd(void)
 +{
-+    const char *hint = SDL_GetHint("SDL_HINT_DOSKUTSU_GUS_ULTRASND");
++    const char *hint = SDL_GetHint("SDL_HINT_DOS_GUS_ULTRASND");
 +    char *copy, *saveptr = NULL, *tok, *str;
 +    int field = 0;
 +
@@ -1038,7 +1038,7 @@ index 000000000..064773e28
 +
 +static void gus_resolve_voices(void)
 +{
-+    const char *h = SDL_GetHint("SDL_HINT_DOSKUTSU_GUS_VOICES");
++    const char *h = SDL_GetHint("SDL_HINT_DOS_GUS_VOICES");
 +    int v = GUS_DEF_VOICES;
 +    if (h && h[0]) {
 +        v = (int)SDL_strtol(h, NULL, 10);
@@ -1129,7 +1129,7 @@ index 000000000..064773e28
 +    }
 +}
 +
-+/* OPT-IN DMA upload (SDL_HINT_DOSKUTSU_GUS_DMA_UPLOAD=1), 8-bit samples only.
++/* OPT-IN DMA upload (SDL_HINT_DOS_GUS_DMA_UPLOAD=1), 8-bit samples only.
 +   64KB-SAFE BY CHUNKING (#36): a single conventional-memory bounce buffer of
 +   GUS_DMA_CHUNK bytes is allocated via DOS_AllocateDMAMemory, which guarantees
 +   that buffer does not straddle a 64KB ISA physical page (because GUS_DMA_CHUNK
@@ -1216,7 +1216,7 @@ index 000000000..064773e28
 +
 +/* #39 diagnostic: a one-voice TEST-TONE played at init via the PUBLIC voice
 +   primitives (UploadSample/AllocVoice/StartVoice/SetVoiceFreq/SetVoiceVol/
-+   SetVoicePan). Gated by SDL_HINT_DOSKUTSU_GUS_TESTTONE=1 (default OFF). It
++   SetVoicePan). Gated by SDL_HINT_DOS_GUS_TESTTONE=1 (default OFF). It
 +   isolates the SDL primitives from the engine's note->voice mapping: if the
 +   tone is AUDIBLE on g2k, StartVoice/SetVoiceFreq/SetVoiceVol + the mix/DAC
 +   output path are all correct and the silent-music bug is in MidiBackendGus's
@@ -1278,7 +1278,7 @@ index 000000000..064773e28
 +   is16bit=1, so the ONLY variable under test is the 16-bit path: UploadSample's
 +   16-bit DRAM placement + StartVoice's gus_encode_addr >>1 encode + the GF1 0x04
 +   DAC-mode bit (none of which the 8-bit tone touches -- so an audible 8-bit tone
-+   does NOT prove 16-bit playback). Gated by SDL_HINT_DOSKUTSU_GUS_TESTTONE16=1
++   does NOT prove 16-bit playback). Gated by SDL_HINT_DOS_GUS_TESTTONE16=1
 +   (default OFF). AUDIBLE on g2k => 16-bit GF1 playback works on this card; SILENT
 +   (while the 8-bit TESTTONE is audible) => the 16-bit playback path is the #39
 +   silence. ONE-SHOT + synchronous explicit stop (mirrors the gus-5 8-bit-tone
@@ -1346,31 +1346,31 @@ index 000000000..064773e28
 +    }
 +
 +    gus_resolve_voices();
-+    g_gus_diag = gus_hint_is_one("SDL_HINT_DOSKUTSU_GUS_DIAG");
-+    g_gus_dma_upload = gus_hint_is_one("SDL_HINT_DOSKUTSU_GUS_DMA_UPLOAD");
-+    g_gus_pio_autoinc = gus_hint_is_one("SDL_HINT_DOSKUTSU_GUS_PIO_AUTOINC");
-+    g_gus_force_8bit_addr = gus_hint_is_one("SDL_HINT_DOSKUTSU_GUS_FORCE_8BIT_ADDR");
-+    g_gus_force_maxvol = gus_hint_is_one("SDL_HINT_DOSKUTSU_GUS_FORCE_MAXVOL");
-+    g_gus_reap_grace = gus_hint_is_one("SDL_HINT_DOSKUTSU_GUS_REAP_GRACE");
++    g_gus_diag = gus_hint_is_one("SDL_HINT_DOS_GUS_DIAG");
++    g_gus_dma_upload = gus_hint_is_one("SDL_HINT_DOS_GUS_DMA_UPLOAD");
++    g_gus_pio_autoinc = gus_hint_is_one("SDL_HINT_DOS_GUS_PIO_AUTOINC");
++    g_gus_force_8bit_addr = gus_hint_is_one("SDL_HINT_DOS_GUS_FORCE_8BIT_ADDR");
++    g_gus_force_maxvol = gus_hint_is_one("SDL_HINT_DOS_GUS_FORCE_MAXVOL");
++    g_gus_reap_grace = gus_hint_is_one("SDL_HINT_DOS_GUS_REAP_GRACE");
 +    /* gus-13 #39 FIX: double-write the GF1 control registers (errata). Default ON;
 +       killswitch GUS_NO_DOUBLE_WRITE=1 disables for the A/B. */
-+    g_gus_double_write = !gus_hint_is_one("SDL_HINT_DOSKUTSU_GUS_NO_DOUBLE_WRITE");
++    g_gus_double_write = !gus_hint_is_one("SDL_HINT_DOS_GUS_NO_DOUBLE_WRITE");
 +    /* gus-14 #39 FIX: drive voice volume through the GF1 ramp engine (errata --
 +       a real GF1 updates the volume DAC only via the ramp accumulator, not a
 +       direct 0x09 write with the ramp stopped). Default ON; GUS_NO_VOL_RAMP=1
 +       reverts to the direct-0x09 path for the A/B. */
-+    g_gus_vol_ramp = !gus_hint_is_one("SDL_HINT_DOSKUTSU_GUS_NO_VOL_RAMP");
++    g_gus_vol_ramp = !gus_hint_is_one("SDL_HINT_DOS_GUS_NO_VOL_RAMP");
 +    /* gus-15 #39 FIX: set the GF1 reset-reg master-IRQ-enable bit2 (0x4C=0x07 not
 +       0x03) -- on a real GF1/PicoGUS the DAC may not clock to output unless bit2
 +       is set. Default ON; GUS_NO_DAC_IRQBIT=1 reverts to 0x03 for the A/B. */
-+    g_gus_dac_irq = !gus_hint_is_one("SDL_HINT_DOSKUTSU_GUS_NO_DAC_IRQBIT");
++    g_gus_dac_irq = !gus_hint_is_one("SDL_HINT_DOS_GUS_NO_DAC_IRQBIT");
 +    /* gus-15 FULLCANON hedge (opt-in, default OFF): the OTHER documented canonical
 +       deltas on top of 0x4C=0x07 -- 160us reset settle (vs our 100us) + mixer
 +       latch-enable bit3 set DURING the IRQ/DMA latch writes. The catch-all g2k
 +       cell if the IRQ-bit alone isn't enough. */
-+    g_gus_fullcanon = gus_hint_is_one("SDL_HINT_DOSKUTSU_GUS_FULLCANON");
++    g_gus_fullcanon = gus_hint_is_one("SDL_HINT_DOS_GUS_FULLCANON");
 +    g_gus_dr_head = g_gus_dr_tail = 0; /* arm the IRQ-safe diag ring */
-+    skip = gus_hint_is_one("SDL_HINT_DOSKUTSU_GUS_SKIP_DETECTION");
++    skip = gus_hint_is_one("SDL_HINT_DOS_GUS_SKIP_DETECTION");
 +
 +    /* detection: reset the GF1, DRAM peek/poke roundtrip + size. */
 +    if (skip) {
@@ -1398,7 +1398,7 @@ index 000000000..064773e28
 +    if (!present) {
 +        SDL_SetError("No Gravis Ultrasound GF1 at port 0x%X (DRAM peek/poke "
 +                     "roundtrip failed). Set "
-+                     "SDL_HINT_DOSKUTSU_GUS_SKIP_DETECTION=1 to bypass.",
++                     "SDL_HINT_DOS_GUS_SKIP_DETECTION=1 to bypass.",
 +                     g_gus_base);
 +        return false;
 +    }
@@ -1447,13 +1447,13 @@ index 000000000..064773e28
 +                     g_gus_force_maxvol ? " maxvol=ON" : "");
 +
 +    /* #39 diagnostic test-tone (gated, default OFF). */
-+    if (gus_hint_is_one("SDL_HINT_DOSKUTSU_GUS_TESTTONE")) {
++    if (gus_hint_is_one("SDL_HINT_DOS_GUS_TESTTONE")) {
 +        gus_emit_test_tone();
 +    }
 +    /* #39 gus-13: clean 16-bit test-tone -- the 16-bit positive/negative control
 +       (the 8-bit TESTTONE above exercises neither the >>1 encode nor the 0x04
 +       DAC-mode bit). Gated, default OFF. */
-+    if (gus_hint_is_one("SDL_HINT_DOSKUTSU_GUS_TESTTONE16")) {
++    if (gus_hint_is_one("SDL_HINT_DOS_GUS_TESTTONE16")) {
 +        gus_emit_test_tone_16();
 +    }
 +    return true;
@@ -1578,7 +1578,7 @@ index 000000000..064773e28
 +       8-bit unsigned / 16-bit signed). DEFAULT path = PIO (#36): proven on real
 +       HW (same mechanism as detection's DRAM poke/peek) and immune to the ISA
 +       8237 64KB-page crash. DMA (64KB-safe chunked) is OPT-IN via
-+       SDL_HINT_DOSKUTSU_GUS_DMA_UPLOAD=1, and only for 8-bit samples >= the
++       SDL_HINT_DOS_GUS_DMA_UPLOAD=1, and only for 8-bit samples >= the
 +       threshold; 16-bit always takes PIO (sidesteps the 16-bit DMA dest quirk).
 +
 +       Both transports read EXACTLY [data, data+len): PIO is strictly byte-wise

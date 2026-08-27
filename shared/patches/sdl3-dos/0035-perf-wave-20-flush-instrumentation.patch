@@ -11,7 +11,7 @@ Add per-flip phase timing brackets and counters covering BOTH the slow
 path (DOSVESA_UpdateWindowFramebuffer) AND the fast path (the
 SDL_DOSVesaDirect* helpers from patch 0034) so wave 20 Lever A can
 identify what dominates the unmeasured ~11.6 ms misc slice on real
-HW. Default-OFF, env-gated by SDL_HINT_DOSKUTSU_FLIP_INSTR=1 (strict
+HW. Default-OFF, env-gated by SDL_HINT_DOS_FLIP_INSTR=1 (strict
 "1" match per CLAUDE.md DOSKUTSU env-var convention).
 
 Background -- wave 18 + 19 closures:
@@ -118,7 +118,7 @@ reports.
 Coordination with engine side:
 
 The companion engine patch (nxengine/0087) reads the same hint
-SDL_HINT_DOSKUTSU_FLIP_INSTR and emits its own [flip-stat ...]
+SDL_HINT_DOS_FLIP_INSTR and emits its own [flip-stat ...]
 block over the same 100-flip window so a single env-var toggle
 enables both layers' instrumentation simultaneously. Engine emits
 its own brackets around the Renderer::flip() phases (drawcall
@@ -140,7 +140,7 @@ index 9b05b3c45..8b3c610d2 100644
 +++ b/include/SDL3/SDL_hints.h
 @@ -1023,6 +1023,81 @@ extern "C" {
   */
- #define SDL_HINT_DOSKUTSU_DIRECT_VESA "SDL_HINT_DOSKUTSU_DIRECT_VESA"
+ #define SDL_HINT_DOS_DIRECT_VESA "SDL_HINT_DOS_DIRECT_VESA"
  
 +/**
 + * A variable that, when set to "1", enables per-flip phase timing brackets
@@ -188,7 +188,7 @@ index 9b05b3c45..8b3c610d2 100644
 + *    reports).
 + *
 + * Fast-path phases (only meaningful when the engine takes the
-+ * direct-VESA route via SDL_HINT_DOSKUTSU_DIRECT_VESA=1):
++ * direct-VESA route via SDL_HINT_DOS_DIRECT_VESA=1):
 + *  - `present_full` -- full body of `SDL_DOSVesaDirectPresentFull`; the
 + *    per-flip anchor on the fast path. In the wave-20 W20A run config
 + *    (DV=1 + FORCE_LFB=1) this is the dominant signal.
@@ -215,7 +215,7 @@ index 9b05b3c45..8b3c610d2 100644
 + * See docs/PHASE9-WAVE-20-COLD-PICKUP.md sec. 3 Lever A for the wave-20
 + * plan.
 + */
-+#define SDL_HINT_DOSKUTSU_FLIP_INSTR "SDL_HINT_DOSKUTSU_FLIP_INSTR"
++#define SDL_HINT_DOS_FLIP_INSTR "SDL_HINT_DOS_FLIP_INSTR"
 +
  /**
   * Set the level of checking for invalid parameters passed to SDL functions.
@@ -245,7 +245,7 @@ index 42e9ed907..1ee59c1e5 100644
 +// UNIVBE). Every 100 flips we emit min / median / mean / p95 / max
 +// per phase to sdldbg.log, then reset the sample arrays and counters.
 +//
-+// Default OFF; enabled by SDL_HINT_DOSKUTSU_FLIP_INSTR=1 (strict "1"
++// Default OFF; enabled by SDL_HINT_DOS_FLIP_INSTR=1 (strict "1"
 +// match per CLAUDE.md DOSKUTSU env-var convention). The hint state is
 +// cached on first call so the hot path doesn't getenv() per flip.
 +//
@@ -590,7 +590,7 @@ index 42e9ed907..1ee59c1e5 100644
 +    // return path below. When disabled this collapses to a single int read
 +    // and a no-op timestamp store.
 +    if (_instr_enabled_cached == -1) {
-+        const char *e = SDL_getenv(SDL_HINT_DOSKUTSU_FLIP_INSTR);
++        const char *e = SDL_getenv(SDL_HINT_DOS_FLIP_INSTR);
 +        _instr_enabled_cached = (e && e[0] == '1' && e[1] == 0) ? 1 : 0;
 +    }
 +    const Uint64 _instr_t_entry =

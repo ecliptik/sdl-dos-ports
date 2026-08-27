@@ -26,7 +26,7 @@ rebased at PumpStart (s_pump_perf_base = uclock() snapshot) so the timeline is
 continuous with uclock before and after. Both sources share the ~1.193 MHz PIT
 frequency, so UCLOCKS_PER_SEC stays the perf frequency.
 
-Killswitch SDL_HINT_DOSKUTSU_PUMP_TIMEBASE=0 (strict-"0", DEFAULT ON) reverts
+Killswitch SDL_HINT_DOS_PUMP_TIMEBASE=0 (strict-"0", DEFAULT ON) reverts
 ch0 to MODE 3 + uclock -- byte-identical to pre-0122 -- the escape hatch if
 MODE-2 latch reads misbehave on some real board (the design's RTC/IRQ-8 fallback
 is the next step; see SDL_dosopltimer.h). One-shot boot banner + a PumpStop
@@ -62,7 +62,7 @@ index 3f516035e..d52731ec6 100644
 + * monotonic perf reader that SDL_systimer.c derives SDL_GetPerformanceCounter
 + * from while the pump owns ch0 -- rebased at Start so the timeline is
 + * continuous with uclock before and after. Killswitch
-+ * SDL_HINT_DOSKUTSU_PUMP_TIMEBASE=0 (strict-"0", DEFAULT ON) reverts to MODE 3
++ * SDL_HINT_DOS_PUMP_TIMEBASE=0 (strict-"0", DEFAULT ON) reverts to MODE 3
 + * + uclock, byte-identical to the pre-0122 path.
 + */
 +
@@ -126,7 +126,7 @@ index 29751d626..650fe671b 100644
 + * SDL_systimer.c derives SDL_GetPerformanceCounter from it, rebased at Start so
 + * the timeline is continuous with uclock before and after the pump.
 + *
-+ * Killswitch SDL_HINT_DOSKUTSU_PUMP_TIMEBASE=0 (strict-"0", DEFAULT ON) reverts
++ * Killswitch SDL_HINT_DOS_PUMP_TIMEBASE=0 (strict-"0", DEFAULT ON) reverts
 + * ch0 to MODE 3 + uclock -- byte-identical to the pre-0122 (v1.6.x) behavior,
 + * the escape hatch if MODE-2 latch reads misbehave on some real board (the
 + * design's RTC/IRQ-8 fallback is the next step if that happens; see
@@ -191,7 +191,7 @@ index 29751d626..650fe671b 100644
 +       ch0 is still in the pre-pump BIOS state and uclock is valid -- so the
 +       derived clock is continuous with uclock across the Start boundary. */
 +    {
-+        const char *tb = SDL_GetHint("SDL_HINT_DOSKUTSU_PUMP_TIMEBASE");
++        const char *tb = SDL_GetHint("SDL_HINT_DOS_PUMP_TIMEBASE");
 +        s_pump_timebase = !(tb && tb[0] == '0' && tb[1] == '\0');
 +    }
 +    s_isr_count      = 0;
@@ -230,14 +230,14 @@ index 29751d626..650fe671b 100644
      outportb(0x40, (Uint8)((div >> 8) & 0xFF));
      s_opl_pump_active = true;
 @@ -1546,6 +1614,15 @@ bool SDL_DOSOplTimerPumpStart(int hz)
-                      "SDL_HINT_DOSKUTSU_PCSPK_SFX=0 -> v1.5.0 music-only byte-identical)",
+                      "SDL_HINT_DOS_PCSPK_SFX=0 -> v1.5.0 music-only byte-identical)",
                       s_pcspk_sfx_enabled ? "ENABLED" : "disabled (killswitch=0)",
                       (unsigned)s_pcspk_fire_hz, PCSPK_NOTE_RING);
 +    /* SDL/0122: one-shot boot banner (smoke BANNERS gate anchors on this line). */
 +    doskutsu_dbg_log("audio: SDL/0122 pump-aware timebase %s (PIT ch0 MODE %d; "
 +                     "SDL_GetPerformanceCounter derived from the IRQ-0 period "
 +                     "counter, rebased at PumpStart perf_base=%lu; killswitch "
-+                     "SDL_HINT_DOSKUTSU_PUMP_TIMEBASE=0 -> MODE 3 + uclock "
++                     "SDL_HINT_DOS_PUMP_TIMEBASE=0 -> MODE 3 + uclock "
 +                     "staircase)",
 +                     s_pump_timebase ? "ENABLED" : "DISABLED(killswitch=0)",
 +                     s_pump_timebase ? 2 : 3,

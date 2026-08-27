@@ -30,7 +30,7 @@ counts audio-callback invocations, which approximate (not exactly
 equal) the engine's 100-flip phase blocks.
 
 Instrumentation only. All hooks ride the existing FINE_INSTR env var
-(SDL_HINT_DOSKUTSU_FINE_INSTR, strict-"1") -- the same var the
+(SDL_HINT_DOS_FINE_INSTR, strict-"1") -- the same var the
 engine-side A/B hooks use; no new env var, no docs/BOOT.md edit, no
 boot banner (matches parts A/B). The gate is resolved once at
 OpenDevice and cached; with FINE_INSTR=0 the GetDeviceBuf / PlayDevice
@@ -73,7 +73,7 @@ index 33a7e7bd7..3d74628cc 100644
 +   max_ms=X] line emits on the SDL debug-log channel (<TAG>SDL.LOG).
 +
 +   All four counters + the gate ride the existing FINE_INSTR env var
-+   (SDL_HINT_DOSKUTSU_FINE_INSTR=1, strict-"1" -- the same var the
++   (SDL_HINT_DOS_FINE_INSTR=1, strict-"1" -- the same var the
 +   engine-side A/B hooks use; no new env var). When the gate is off
 +   the GetDeviceBuf / PlayDevice hooks are one cached-bool test and
 +   nothing else; FINE_INSTR=0 is byte-identical to pre-0064. Resolved
@@ -94,14 +94,14 @@ index 33a7e7bd7..3d74628cc 100644
  
 +    /* DOSKUTSU patch (Phase 11 patch 0064): resolve the SFX-stall
 +       instrumentation part-C gate once at OpenDevice time. Reuses the
-+       existing FINE_INSTR env var (SDL_HINT_DOSKUTSU_FINE_INSTR,
++       existing FINE_INSTR env var (SDL_HINT_DOS_FINE_INSTR,
 +       strict-"1") that the engine-side A/B hooks ride -- no new env
 +       var. No boot banner: part C matches parts A/B (patch
 +       nxengine-evo/0160); the [sdl-audiocb] block line is the only
 +       output and it emits only under FINE_INSTR=1, so the FINE_INSTR=0
 +       path stays byte-identical to pre-0064. */
 +    {
-+        const char *fi_hint = SDL_GetHint("SDL_HINT_DOSKUTSU_FINE_INSTR");
++        const char *fi_hint = SDL_GetHint("SDL_HINT_DOS_FINE_INSTR");
 +        g_c_sfx_audiocb_instr_active =
 +            (fi_hint && fi_hint[0] == '1' && fi_hint[1] == 0);
 +    }

@@ -16,7 +16,7 @@ DX2-66 (the synth has ~5.65x headroom; it is delivery-bound, not synth-bound).
 
 SDL explicitly licenses the backend to change spec.freq in OpenDevice and
 re-honors it via a second SDL_UpdatedAudioDeviceFormat. This lever overrides
-device->spec.freq to an operator-requested rate via SDL_HINT_DOSKUTSU_DOS_AUDIO_DEVICE_RATE
+device->spec.freq to an operator-requested rate via SDL_HINT_DOS_DOS_AUDIO_DEVICE_RATE
 (strict integer, clamped to the SB16 [5000,44100] range). DEFAULT UNSET = no
 change = byte-identical to pre-0087 (the 44100 floor stands; zero production
 risk; OPL3/WaveBlaster are out-of-band MIDI and never touch this PCM path).
@@ -83,14 +83,14 @@ index 53a828396..cde248f53 100644
 +       production auto-derives the rate without an env var (default-ON +
 +       killswitch). Hint wins over the setter when both are present. */
 +    {
-+        const char *dr_hint = SDL_GetHint("SDL_HINT_DOSKUTSU_DOS_AUDIO_DEVICE_RATE");
++        const char *dr_hint = SDL_GetHint("SDL_HINT_DOS_DOS_AUDIO_DEVICE_RATE");
 +        if (dr_hint && dr_hint[0] != '\0') {
 +            const int dr = SDL_atoi(dr_hint);
 +            if (dr >= 5000 && dr <= 44100) {
 +                const int dr_prev = device->spec.freq;
 +                device->spec.freq = dr;
 +                doskutsu_dbg_log("audio: SDL/0087 device-rate override: %d -> %d Hz "
-+                                 "(SDL_HINT_DOSKUTSU_DOS_AUDIO_DEVICE_RATE; SB16 DSP "
++                                 "(SDL_HINT_DOS_DOS_AUDIO_DEVICE_RATE; SB16 DSP "
 +                                 "0x41 will program %d; logical->physical resample "
 +                                 "collapses toward content rate; Bug6 RATEDIV "
 +                                 "auto-recomputes from the new dev_freq)",

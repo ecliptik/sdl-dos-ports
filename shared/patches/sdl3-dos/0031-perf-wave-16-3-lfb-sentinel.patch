@@ -45,10 +45,10 @@ If the hypothesis-(a) aperture is broken, it's broken on every flush
 -- single-shot is enough and we don't pay per-frame overhead. Same
 single-shot pattern as patch 0029 (bank-1 offset fix) one-shot logging.
 
-Env-gated by SDL_HINT_DOSKUTSU_LFB_SENTINEL=1 (strict "1" match per
+Env-gated by SDL_HINT_DOS_LFB_SENTINEL=1 (strict "1" match per
 CLAUDE.md DOSKUTSU env-var convention; default OFF so production
 iters aren't impacted). Pairs with patch 0030's
-SDL_HINT_DOSKUTSU_FORCE_LFB=1 to engage LFB on the Cirrus auto-disable
+SDL_HINT_DOS_FORCE_LFB=1 to engage LFB on the Cirrus auto-disable
 fingerprint.
 
 Interpretation playbook (next-iter fix path):
@@ -162,7 +162,7 @@ index 6c34ad55d..3486258c1 100644
 +        //          but display is the bottleneck -- H-b confirmed for
 +        //          ALL of post-bank-0 region.
 +        //
-+        // Env-gated by SDL_HINT_DOSKUTSU_LFB_SENTINEL=1 (strict "1" match,
++        // Env-gated by SDL_HINT_DOS_LFB_SENTINEL=1 (strict "1" match,
 +        // default OFF) per CLAUDE.md DOSKUTSU env-var convention. Default
 +        // OFF so no impact on production fps measurement when the iter
 +        // isn't deliberately running this diagnostic. The sample offsets
@@ -173,7 +173,7 @@ index 6c34ad55d..3486258c1 100644
 +            static int  _lfb_sentinel_enabled_cached = -1;
 +            static bool _lfb_sentinel_fired = false;
 +            if (_lfb_sentinel_enabled_cached == -1) {
-+                const char *e = SDL_getenv("SDL_HINT_DOSKUTSU_LFB_SENTINEL");
++                const char *e = SDL_getenv("SDL_HINT_DOS_LFB_SENTINEL");
 +                _lfb_sentinel_enabled_cached = (e && e[0] == '1' && e[1] == 0) ? 1 : 0;
 +            }
 +            if (_lfb_sentinel_enabled_cached && !_lfb_sentinel_fired) {

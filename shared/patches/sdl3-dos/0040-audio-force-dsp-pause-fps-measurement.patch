@@ -8,7 +8,7 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-Adds SDL_HINT_DOSKUTSU_AUDIO_FORCE_DSP_PAUSE=1 env var. Strict-1 match
+Adds SDL_HINT_DOS_AUDIO_FORCE_DSP_PAUSE=1 env var. Strict-1 match
 per CLAUDE.md convention. When set, SoundBlaster OpenDevice issues a
 DSP pause command at init (immediately after auto-init DMA starts +
 IRQ hook installs) and PlayDevice's auto-resume on subsequent ring
@@ -37,7 +37,7 @@ Implementation reuses existing patch 0037+0038 idle-pause primitives:
 
 Init banner logged at SDL_Log INFO so DEBUG.LOG / SDLDBG.LOG document
 the active mode per run:
-  "audio: DSP forcefully paused via SDL_HINT_DOSKUTSU_AUDIO_FORCE_DSP_PAUSE=1;
+  "audio: DSP forcefully paused via SDL_HINT_DOS_AUDIO_FORCE_DSP_PAUSE=1;
    gameplay will be silent; expect IRQ-5 to stop firing for fps comparison"
 
 g_dos_audio_force_dsp_pause flag locked in OpenDevice's lock-block
@@ -87,7 +87,7 @@ index dabeddb34..3856acc43 100644
  static Uint64 s_dsp_pause_start_ns = 0;      /* set when pause issued; read at resume to compute paused_ns */
  
 +/* DOSKUTSU patch (Phase 10 patch 0040): force-DSP-pause for fps-upper-
-+   bound measurement. When SDL_HINT_DOSKUTSU_AUDIO_FORCE_DSP_PAUSE=1,
++   bound measurement. When SDL_HINT_DOS_AUDIO_FORCE_DSP_PAUSE=1,
 +   the audio backend issues DSP pause at init and PlayDevice's auto-
 +   resume is disabled -- the DSP stays paused regardless of ring fills.
 +   Gameplay becomes silent; IRQ-5 stops firing; the resulting fps is
@@ -121,7 +121,7 @@ index dabeddb34..3856acc43 100644
      SDL_Log("SoundBlaster opened!");
 +
 +    /* DOSKUTSU patch (Phase 10 patch 0040): force-DSP-pause for fps-
-+       upper-bound measurement. When SDL_HINT_DOSKUTSU_AUDIO_FORCE_DSP_PAUSE=1,
++       upper-bound measurement. When SDL_HINT_DOS_AUDIO_FORCE_DSP_PAUSE=1,
 +       request DSP pause immediately + suppress PlayDevice auto-resume.
 +       Resulting fps is the absolute upper bound the future Stage 2/3
 +       hardware-offload backends can approach.
@@ -129,11 +129,11 @@ index dabeddb34..3856acc43 100644
 +       Strict-1 env-var match per CLAUDE.md "Strict env-var matching
 +       convention". Default OFF preserves current behavior bit-identical. */
 +    {
-+        const char *e = SDL_getenv("SDL_HINT_DOSKUTSU_AUDIO_FORCE_DSP_PAUSE");
++        const char *e = SDL_getenv("SDL_HINT_DOS_AUDIO_FORCE_DSP_PAUSE");
 +        if (e && e[0] == '1' && e[1] == 0) {
 +            g_dos_audio_force_dsp_pause = true;
 +            SDL_Log("audio: DSP forcefully paused via "
-+                    "SDL_HINT_DOSKUTSU_AUDIO_FORCE_DSP_PAUSE=1; gameplay "
++                    "SDL_HINT_DOS_AUDIO_FORCE_DSP_PAUSE=1; gameplay "
 +                    "will be silent; expect IRQ-5 to stop firing for fps "
 +                    "comparison");
 +            /* Issue DSP pause via the existing service path. The pause
@@ -171,7 +171,7 @@ index dabeddb34..3856acc43 100644
 +        /* DOSKUTSU patch (Phase 10 patch 0040): release force-DSP-pause
 +           before the standard teardown sequence runs. Background:
 +           OpenDevice issues DSP 0xD5 (16-bit) or 0xD0 (8-bit) when
-+           SDL_HINT_DOSKUTSU_AUDIO_FORCE_DSP_PAUSE=1, leaving the DSP
++           SDL_HINT_DOS_AUDIO_FORCE_DSP_PAUSE=1, leaving the DSP
 +           in paused state for the entire run. The standard teardown
 +           below issues 0xDA (exit auto-init DMA) which expects the
 +           DMA to be active -- when the DSP is paused, 0xDA spins

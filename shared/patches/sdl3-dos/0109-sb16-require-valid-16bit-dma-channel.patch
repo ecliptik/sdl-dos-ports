@@ -118,7 +118,7 @@ index 7b666b21f..52ac07f20 100644
 -                             "fall back to the 8-bit low-DMA D-channel path "
 -                             "(D=%d) instead of erroring; this is the "
 -                             "PicoGUS-in-SB-mode / SB2.0-class unblock. Set "
--                             "SDL_HINT_DOSKUTSU_AUDIO_SB_FORCE_8BIT=1 to force "
+-                             "SDL_HINT_DOS_AUDIO_SB_FORCE_8BIT=1 to force "
 +        /* Loud witness (SDL/0109 widens the SDL/0106 trigger): a DSP-4.x card
 +           that does NOT resolve a VALID 16-bit channel (5/6/7) downshifts to the
 +           8-bit D-channel path the pre-0106 code would have hard-errored on and
@@ -131,7 +131,7 @@ index 7b666b21f..52ac07f20 100644
 +                             "D-channel path (D=%d) instead of programming 16-bit "
 +                             "DMA on an 8-bit channel (the g2k ch-0 init hang). "
 +                             "PicoGUS-in-SB-mode / SB2.0-class / bogus-H unblock. "
-+                             "Set SDL_HINT_DOSKUTSU_AUDIO_SB_FORCE_8BIT=1 to force "
++                             "Set SDL_HINT_DOS_AUDIO_SB_FORCE_8BIT=1 to force "
                               "this path on any card.",
                               soundblaster_version, soundblaster_version_minor,
 +                             soundblaster_highdma_channel,

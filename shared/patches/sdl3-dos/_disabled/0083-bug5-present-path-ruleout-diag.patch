@@ -24,7 +24,7 @@ present rule-out half of the combined diagnostic binary.
 Armed by the engine latch g_title_diag_armed (defined + set true at title_init
 in nxengine 0194 main.cpp; MUST have extern "C" linkage engine-side so this C
 extern resolves -- same cross-link pattern as g_pixtone_active_count) so the
-intro's ~488 presents do not log, AND gated on SDL_HINT_DOSKUTSU_STARVE_DIAG=1
+intro's ~488 presents do not log, AND gated on SDL_HINT_DOS_STARVE_DIAG=1
 (shared with patch 0082, carried for cb_fills corroboration). Markers-only;
 read-only w.r.t. the displayed frame. Default OFF. Workspace-local; never
 upstreamed.
@@ -60,7 +60,7 @@ index dddb5f357..fd6845c44 100644
 +
 +   Armed by the engine latch g_title_diag_armed (set at title_init,
 +   so the intro's ~488 presents do NOT log -- avoids per-present perturbation),
-+   AND gated on SDL_HINT_DOSKUTSU_STARVE_DIAG=1 (shared with SDL/0082's snd:
++   AND gated on SDL_HINT_DOS_STARVE_DIAG=1 (shared with SDL/0082's snd:
 +   markers, which carry along for cb_fills corroboration). doskutsu_dbg_log is
 +   safe here (present path = non-IRQ main thread). Markers-only, read-only
 +   w.r.t. the displayed frame. Default OFF. Workspace-local; never upstreamed. */
@@ -73,7 +73,7 @@ index dddb5f357..fd6845c44 100644
 +static bool _pd_active(void)
 +{
 +    if (s_pd_enabled < 0) {
-+        const char *sd = SDL_GetHint("SDL_HINT_DOSKUTSU_STARVE_DIAG");
++        const char *sd = SDL_GetHint("SDL_HINT_DOS_STARVE_DIAG");
 +        s_pd_enabled = (sd && sd[0] == '1' && sd[1] == '\0') ? 1 : 0;
 +    }
 +    return s_pd_enabled == 1 && g_title_diag_armed;

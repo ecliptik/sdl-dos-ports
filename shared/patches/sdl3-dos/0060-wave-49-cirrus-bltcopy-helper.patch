@@ -29,7 +29,7 @@ per V_PAT_C anchor; SRCCOPY ROP).
 
 Chip-presence detection (one-time, cached, lazy):
 
-  - Killswitch first: SDL_HINT_DOSKUTSU_CIRRUS_BLT=0 (strict-"0") forces
+  - Killswitch first: SDL_HINT_DOS_CIRRUS_BLT=0 (strict-"0") forces
     availability=false regardless of chip detection. Strict-match per
     CLAUDE.md DOSKUTSU env-var convention.
   - Unlock Cirrus extension registers: SR[0x06]=0x12.
@@ -145,7 +145,7 @@ index 034bedf74..528f1e7f0 100644
 + *      busy on the kick poll). On false, engine must fall back to
 + *      software blit for that tile and may retry the next flip.
 + *
-+ * Killswitch: SDL_HINT_DOSKUTSU_CIRRUS_BLT=0 (strict-"0") forces
++ * Killswitch: SDL_HINT_DOS_CIRRUS_BLT=0 (strict-"0") forces
 + * "available=false" regardless of chip detection. Default = ON when
 + * Cirrus 5434 is detected. Any other value (including unset or "1")
 + * uses the default-ON behavior.
@@ -167,7 +167,7 @@ index 034bedf74..528f1e7f0 100644
 + * clears the screen-to-screen BLT constraints in GR[0x0B], and caches
 + * the result. Also emits a one-time `doskutsu_dbg_log` banner narrating
 + * either ENABLED (chip detected) or DISABLED (with reason: chip not
-+ * Cirrus 5434, or killswitch SDL_HINT_DOSKUTSU_CIRRUS_BLT=0). On
++ * Cirrus 5434, or killswitch SDL_HINT_DOS_CIRRUS_BLT=0). On
 + * subsequent calls returns the cached result without re-probing.
 + *
 + * Safe to call before any window is created (the probe only touches
@@ -269,7 +269,7 @@ index 1ee59c1e5..8fdc0fa00 100644
 +// VESA chips also fall through. Engine must check availability and use
 +// its software-blit fallback when this returns false.
 +//
-+// Killswitch: SDL_HINT_DOSKUTSU_CIRRUS_BLT=0 (strict-"0") disables.
++// Killswitch: SDL_HINT_DOS_CIRRUS_BLT=0 (strict-"0") disables.
 +// Default: ON when Cirrus 5434 detected.
 +//
 +// Workspace-local patch; never upstreamed (per sdl_ai_policy memory).
@@ -309,10 +309,10 @@ index 1ee59c1e5..8fdc0fa00 100644
 +    // Strict-match per CLAUDE.md DOSKUTSU env-var convention: only the
 +    // literal string "0" disables. Unset or any other value uses the
 +    // default-ON behavior.
-+    const char *env = SDL_getenv("SDL_HINT_DOSKUTSU_CIRRUS_BLT");
++    const char *env = SDL_getenv("SDL_HINT_DOS_CIRRUS_BLT");
 +    if (env && env[0] == '0' && env[1] == 0) {
 +        doskutsu_dbg_log("sdl: wave-49 Cirrus BLTCopy: DISABLED "
-+                         "(killswitch SDL_HINT_DOSKUTSU_CIRRUS_BLT=0)");
++                         "(killswitch SDL_HINT_DOS_CIRRUS_BLT=0)");
 +        _cirrus_blt_available = 0;
 +        return 0;
 +    }

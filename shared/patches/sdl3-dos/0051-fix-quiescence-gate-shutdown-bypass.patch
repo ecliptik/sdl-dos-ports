@@ -12,7 +12,7 @@ Iter L L1 (SDL/0050 default ON) delivered +8-13 fps in heavy gameplay
 requiring operator reboot. L1.LOG ended after engine-side OPL3 close
 ("opl3 backend shutdown ..."), never reached "Sound system shutdown"
 or "Renderer::Close()" lines that L2 (gate killswitched via
-SDL_HINT_DOSKUTSU_DOS_AUDIO_QUIESCENCE_GATE=0) emitted cleanly.
+SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE=0) emitted cleanly.
 
 Root cause: SDL/0050's GetDeviceBuf quiescence gate calls SDL_Delay(10)
 inside the audio-thread iter while holding device->lock. When SDL audio

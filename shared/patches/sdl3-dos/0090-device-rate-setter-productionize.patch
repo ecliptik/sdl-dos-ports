@@ -17,9 +17,9 @@ and collapses the SDL logical->physical resampler to a cheap channel-dup --
 the root of the organya slow-tempo/underrun behaviour on the 486 (delivery-
 bound, not synth-bound; see docs/internal/V108-MUSIC-RETROSPECTIVE.md).
 
-Precedence in OpenDevice: env hint SDL_HINT_DOSKUTSU_DOS_AUDIO_DEVICE_RATE
+Precedence in OpenDevice: env hint SDL_HINT_DOS_DOS_AUDIO_DEVICE_RATE
 (0087) WINS (per-cell sweep override) > setter default > 44100 floor. A
-killswitch SDL_HINT_DOSKUTSU_DOS_AUDIO_DEVICE_RATE_DEFAULT=0 (strict-"0")
+killswitch SDL_HINT_DOS_DOS_AUDIO_DEVICE_RATE_DEFAULT=0 (strict-"0")
 disables the setter default for a clean A/B baseline cell. Out-of-band music
 backends (OPL3/WaveBlaster) never touch this PCM path, so default-backend
 audio is unchanged. Blast radius is the organya + Pixtone PCM path only.
@@ -89,11 +89,11 @@ index 000000000..7f3b5a74b
 + *
 + * ## Precedence (resolved in DOSSOUNDBLASTER_OpenDevice)
 + *
-+ * 1. Env hint SDL_HINT_DOSKUTSU_DOS_AUDIO_DEVICE_RATE (the SDL/0087 sweep
++ * 1. Env hint SDL_HINT_DOS_DOS_AUDIO_DEVICE_RATE (the SDL/0087 sweep
 + *    override) -- WINS when present, so a per-cell sweep can pin any rate.
 + * 2. This setter's value -- the shipped default path (no env var needed).
 + * 3. The SDL-core 44100 floor -- when neither of the above applies, or when
-+ *    the killswitch SDL_HINT_DOSKUTSU_DOS_AUDIO_DEVICE_RATE_DEFAULT=0 disables
++ *    the killswitch SDL_HINT_DOS_DOS_AUDIO_DEVICE_RATE_DEFAULT=0 disables
 + *    the setter default for a clean A/B baseline cell.
 + *
 + * Out-of-band music backends (OPL3 / WaveBlaster, MPU-401 / OPL-chip) never
@@ -122,8 +122,8 @@ index 000000000..7f3b5a74b
 + *
 + * The value is cached and consumed once at OpenDevice. An hz outside the SB16
 + * DSP range [5000, 44100] (or <= 0) is treated as "unset" (the SDL-core 44100
-+ * floor stands). The env hint SDL_HINT_DOSKUTSU_DOS_AUDIO_DEVICE_RATE overrides
-+ * this setter; the killswitch SDL_HINT_DOSKUTSU_DOS_AUDIO_DEVICE_RATE_DEFAULT=0
++ * floor stands). The env hint SDL_HINT_DOS_DOS_AUDIO_DEVICE_RATE overrides
++ * this setter; the killswitch SDL_HINT_DOS_DOS_AUDIO_DEVICE_RATE_DEFAULT=0
 + * disables it.
 + *
 + * \param hz the requested device frame rate in Hz, or 0 / out-of-range to
@@ -163,7 +163,7 @@ index 9d4092049..ef73f955e 100644
 +   rate (Hz), set via SDL_DOSAudioSetDeviceFrameRate() from SoundManager
 +   BEFORE the device opens (alongside SDL_DOSPixtoneSetMasterRate). 0 = unset
 +   (no setter default; the SDL-core 44100 floor stands). Consumed once at
-+   OpenDevice. The SDL/0087 env hint (SDL_HINT_DOSKUTSU_DOS_AUDIO_DEVICE_RATE)
++   OpenDevice. The SDL/0087 env hint (SDL_HINT_DOS_DOS_AUDIO_DEVICE_RATE)
 +   WINS over this setter when both are present, so flush-instr's sweep cells
 +   can override the default per-cell. Resolved precedence in OpenDevice:
 +   env hint > setter default > 44100 floor. Not ISR-read; no DPMI lock. */
@@ -187,8 +187,8 @@ index 9d4092049..ef73f955e 100644
 + * V108-MUSIC-RETROSPECTIVE.md sec.5.4).
 + *
 + * Precedence resolved at OpenDevice: the env hint
-+ * SDL_HINT_DOSKUTSU_DOS_AUDIO_DEVICE_RATE WINS over this setter (per-cell
-+ * sweep override); the killswitch SDL_HINT_DOSKUTSU_DOS_AUDIO_DEVICE_RATE_DEFAULT=0
++ * SDL_HINT_DOS_DOS_AUDIO_DEVICE_RATE WINS over this setter (per-cell
++ * sweep override); the killswitch SDL_HINT_DOS_DOS_AUDIO_DEVICE_RATE_DEFAULT=0
 + * disables the setter default entirely (reverts to the SDL-core 44100 floor)
 + * for a clean A/B baseline cell.
 + *
@@ -206,12 +206,12 @@ index 9d4092049..ef73f955e 100644
 @@ -2209,7 +2245,14 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
         killswitch). Hint wins over the setter when both are present. */
      {
-         const char *dr_hint = SDL_GetHint("SDL_HINT_DOSKUTSU_DOS_AUDIO_DEVICE_RATE");
+         const char *dr_hint = SDL_GetHint("SDL_HINT_DOS_DOS_AUDIO_DEVICE_RATE");
 +        /* DOSKUTSU patch (SDL/0090): killswitch for the setter-default. Strict-"0"
 +           per CLAUDE.md; only literal "0" disables the setter default (reverts to
 +           the SDL-core 44100 floor) for a clean A/B baseline cell. Does NOT affect
 +           the SDL/0087 env hint above, which still wins when present. */
-+        const char *dr_ks = SDL_GetHint("SDL_HINT_DOSKUTSU_DOS_AUDIO_DEVICE_RATE_DEFAULT");
++        const char *dr_ks = SDL_GetHint("SDL_HINT_DOS_DOS_AUDIO_DEVICE_RATE_DEFAULT");
 +        const bool dr_default_disabled = (dr_ks && dr_ks[0] == '0' && dr_ks[1] == '\0');
          if (dr_hint && dr_hint[0] != '\0') {
 +            /* Highest precedence: the SDL/0087 env hint (per-cell sweep override). */
@@ -234,7 +234,7 @@ index 9d4092049..ef73f955e 100644
 +            doskutsu_dbg_log("audio: SDL/0090 device-rate setter default: %d -> %d Hz "
 +                             "(SDL_DOSAudioSetDeviceFrameRate from SoundManager; SB16 DSP "
 +                             "0x41 will program %d; resampler collapses to channel-dup; "
-+                             "set SDL_HINT_DOSKUTSU_DOS_AUDIO_DEVICE_RATE_DEFAULT=0 to "
++                             "set SDL_HINT_DOS_DOS_AUDIO_DEVICE_RATE_DEFAULT=0 to "
 +                             "revert to the 44100 floor)",
 +                             dr_prev, g_dos_audio_device_rate_setter,
 +                             g_dos_audio_device_rate_setter);

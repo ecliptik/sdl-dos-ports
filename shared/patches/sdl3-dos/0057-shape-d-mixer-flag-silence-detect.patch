@@ -23,7 +23,7 @@ clears.
 Mechanism:
 
   - New static `g_dos_silence_shape_d_active` resolved at OpenDevice
-    from `SDL_HINT_DOSKUTSU_SILENCE_SHAPE=D` (strict-"D" match per
+    from `SDL_HINT_DOS_SILENCE_SHAPE=D` (strict-"D" match per
     CLAUDE.md env-var convention). Default false (Shape A path active;
     identical to wave-35 SDL/0054 ship behavior). Any value other than
     literal single-char "D" (unset, "A", "E", lowercase "d", anything)
@@ -159,7 +159,7 @@ Coexistence with the patch family:
                        patch is its reader)
   - SDL/0058 -- Shape A mechanism histogram (planned ride-along;
                 pure SDL-side; gates separately on
-                SDL_HINT_DOSKUTSU_SILENCE_HISTO=1)
+                SDL_HINT_DOS_SILENCE_HISTO=1)
 
 Cross-reference:
   - docs/PHASE11-WAVE-36-CONTRACT.md section 4 + 5.7 (PLAY6 Shape D
@@ -194,7 +194,7 @@ index 3d9b511fe..6c040d7a1 100644
 +/* DOSKUTSU patch (Phase 11 patch 0057): Shape D mixer-flag silence-
 +   detect engagement state. Default false (Shape A bytewise-scan path
 +   runs; identical to wave-35 SDL/0054 ship behavior). Set
-+   SDL_HINT_DOSKUTSU_SILENCE_SHAPE=D at SDL_Init time to engage Shape
++   SDL_HINT_DOS_SILENCE_SHAPE=D at SDL_Init time to engage Shape
 +   D: PlayDevice reads the `doskutsu_mixer_actual_mixed_bytes`
 +   volatile (defined in SDL3_mixer's MixerCallback per
 +   patches/SDL_mixer/0001) instead of bytewise-scanning the staging
@@ -255,7 +255,7 @@ index 3d9b511fe..6c040d7a1 100644
 +   The `__attribute__((weak))` default-zero definition exists to keep
 +   SDL3's own test/utility binaries (which link libSDL3.a only without
 +   libSDL3_mixer.a) link-clean: those binaries never engage Shape D
-+   (no MixerCallback to set the value; SDL_HINT_DOSKUTSU_SILENCE_SHAPE
++   (no MixerCallback to set the value; SDL_HINT_DOS_SILENCE_SHAPE
 +   is never set in them), but the SDL_dosaudio_sb.c TU still contains
 +   the read instruction in the Shape D code path that's compiled in.
 +   Weak default-zero means: read returns 0 (silent) ALWAYS in those
@@ -315,8 +315,8 @@ index 3d9b511fe..6c040d7a1 100644
 +               DETECT=0 wins -- silence-detect dispatch entirely
 +               skipped, so Shape pick is moot) */
      {
-         const char *sd_hint = SDL_GetHint("SDL_HINT_DOSKUTSU_SILENCE_DETECT");
-+        const char *shape_hint = SDL_GetHint("SDL_HINT_DOSKUTSU_SILENCE_SHAPE");
+         const char *sd_hint = SDL_GetHint("SDL_HINT_DOS_SILENCE_DETECT");
++        const char *shape_hint = SDL_GetHint("SDL_HINT_DOS_SILENCE_SHAPE");
          const bool sd_disabled =
              (sd_hint && sd_hint[0] == '0' && sd_hint[1] == 0);
 +        const bool shape_d =

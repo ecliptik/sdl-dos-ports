@@ -7,7 +7,7 @@ Subject: [PATCH] dos: Phase 11 patch 0068 (v2) -- TryLock+timeout backstop,
 Ripple amendment of SDL/0068 to thread the bool return through the
 SDL/0067 v2 signature change (void -> bool). Same TryLock+timeout
 mechanism v1 introduced; same killswitch
-SDL_HINT_DOSKUTSU_DOS_AUDIO_PUMP_TIMEOUT (integer ms; default 100;
+SDL_HINT_DOS_DOS_AUDIO_PUMP_TIMEOUT (integer ms; default 100;
 "0" disables; sanity-capped 10000 ms); same OpenDevice resolve +
 banner; same 86Box-corroborated need for the backstop (the wedge is
 not DOSBox-X-only).
@@ -60,7 +60,7 @@ backstop active` was already added to tests/run-gameplay-smoke.sh
 BANNER_REGEX (severity "optional", parallel SEVERITY + LABEL) in
 v1; that entry is unchanged.
 
-BOOT.md entry for SDL_HINT_DOSKUTSU_DOS_AUDIO_PUMP_TIMEOUT was added
+BOOT.md entry for SDL_HINT_DOS_DOS_AUDIO_PUMP_TIMEOUT was added
 in v1 and is unchanged (the killswitch semantics and cap value are
 identical between v1 and v2; only the surrounding 0067 body shape
 changed).
@@ -105,7 +105,7 @@ index d94af1c42..d8a4a73dd 100644
 +   caller's next call-sequence starts fresh; the iterate did not run
 +   so this does not count toward the cap).
 +
-+   Wall-clock cap configurable via SDL_HINT_DOSKUTSU_DOS_AUDIO_PUMP_TIMEOUT
++   Wall-clock cap configurable via SDL_HINT_DOS_DOS_AUDIO_PUMP_TIMEOUT
 +   (integer ms; default 100; "0" disables the backstop entirely,
 +   reverting to the pre-0068 blocking SDL_LockMutex that wedges
 +   under the starvation regime -- A/B-only). Resolved at OpenDevice;
@@ -129,13 +129,13 @@ index d94af1c42..d8a4a73dd 100644
  
 +    /* DOSKUTSU patch (Phase 11 patch 0068, v2): resolve the
 +       SDL_DOSAudioPump TryLock+timeout backstop wall-clock cap at
-+       OpenDevice time. Read SDL_HINT_DOSKUTSU_DOS_AUDIO_PUMP_TIMEOUT
++       OpenDevice time. Read SDL_HINT_DOS_DOS_AUDIO_PUMP_TIMEOUT
 +       (integer ms; default 100; "0" disables the backstop entirely,
 +       reverting to the pre-0068 blocking SDL_LockMutex path that wedges
 +       under cooperative-scheduler starvation -- A/B-only). Sanity-
 +       capped at 10000 ms. Per CLAUDE.md hint resolution discipline. */
 +    {
-+        const char *pto_hint = SDL_GetHint("SDL_HINT_DOSKUTSU_DOS_AUDIO_PUMP_TIMEOUT");
++        const char *pto_hint = SDL_GetHint("SDL_HINT_DOS_DOS_AUDIO_PUMP_TIMEOUT");
 +        g_dos_audio_pump_timeout_ms = 100;  /* default */
 +        if (pto_hint && pto_hint[0]) {
 +            if (pto_hint[0] == '0' && pto_hint[1] == '\0') {
@@ -149,7 +149,7 @@ index d94af1c42..d8a4a73dd 100644
 +            }
 +        }
 +        if (g_dos_audio_pump_timeout_ms == 0) {
-+            doskutsu_dbg_log("audio: SDL_HINT_DOSKUTSU_DOS_AUDIO_PUMP_TIMEOUT=0 "
++            doskutsu_dbg_log("audio: SDL_HINT_DOS_DOS_AUDIO_PUMP_TIMEOUT=0 "
 +                             "(SDL/0068 TryLock+timeout backstop DISABLED; "
 +                             "SDL_DOSAudioPump reverts to pre-0068 blocking "
 +                             "SDL_LockMutex behavior; A/B-only -- expect "
@@ -174,12 +174,12 @@ index d94af1c42..d8a4a73dd 100644
 -       wedge-prone via cooperative-scheduler starvation (build-qa #84
 -       bisect). The SDL/0068 hunk above amends this acquisition to a
 -       TryLock+timeout backstop with a strict-"0" killswitch
--       (SDL_HINT_DOSKUTSU_DOS_AUDIO_PUMP_TIMEOUT) that reverts to this
+-       (SDL_HINT_DOS_DOS_AUDIO_PUMP_TIMEOUT) that reverts to this
 -       blocking path for the operator's A/B reproducer cell. */
 -    SDL_LockMutex(device->lock);
 +    /* SDL/0068 v2 backstop: TryLock+timeout retry loop on the outer
 +       device->lock acquisition, with a strict-"0" killswitch
-+       (SDL_HINT_DOSKUTSU_DOS_AUDIO_PUMP_TIMEOUT) reverting to the
++       (SDL_HINT_DOS_DOS_AUDIO_PUMP_TIMEOUT) reverting to the
 +       pre-0068 blocking SDL_LockMutex path. See the
 +       g_dos_audio_pump_timeout_ms static and the OpenDevice resolve
 +       block above for the cap semantics. */

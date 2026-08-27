@@ -123,7 +123,7 @@ index 000000000..b22a0f219
 + * ## How it works
 + *
 + * `SDL_DOSAudioBeginShutdown()` flips the same module-scope state variable
-+ * that the SDL/0050 killswitch (`SDL_HINT_DOSKUTSU_DOS_AUDIO_QUIESCENCE_GATE`
++ * that the SDL/0050 killswitch (`SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE`
 + * = "0") already controls. From the next `DOSSOUNDBLASTER_GetDeviceBuf`
 + * iteration on, the gate is bypassed -- `GetDeviceBuf` returns the staging
 + * buffer normally without entering the 10 ms `SDL_Delay` quiescence-walk
@@ -152,7 +152,7 @@ index 000000000..b22a0f219
 + * - The call is **one-shot per process lifetime**, but **idempotent**:
 + *   calling it twice has no additional effect (the underlying flag is
 + *   already set).
-+ * - Safe to call even when `SDL_HINT_DOSKUTSU_DOS_AUDIO_QUIESCENCE_GATE=0`
++ * - Safe to call even when `SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE=0`
 + *   killswitched the gate at OpenDevice time -- the flag is already true;
 + *   this is a no-op redundant set.
 + * - Safe to call even when the audio device was never opened, or when
@@ -268,7 +268,7 @@ index e39bba163..4a5dc2b05 100644
 +   The fix is to flip the gate's killswitch state from the engine BEFORE
 +   main thread enters MIX_DestroyMixer. We reuse the existing
 +   g_dos_audio_quiescence_gate_disabled flag (set/reset normally at
-+   OpenDevice time via SDL_HINT_DOSKUTSU_DOS_AUDIO_QUIESCENCE_GATE) rather
++   OpenDevice time via SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE) rather
 +   than introducing a parallel g_dos_audio_shutting_down state -- this
 +   avoids the gate-fragmentation footgun documented in
 +   memory/sdl_pause_api_must_audit_auto_resume_gates.md (the SDL/0048
@@ -286,7 +286,7 @@ index e39bba163..4a5dc2b05 100644
 +   Lifecycle / idempotence:
 +     - One-shot per process lifetime, but safe to call twice (no-op
 +       redundant set).
-+     - Safe when SDL_HINT_DOSKUTSU_DOS_AUDIO_QUIESCENCE_GATE=0 already
++     - Safe when SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE=0 already
 +       killswitched the gate at OpenDevice (flag already true).
 +     - Safe when audio was never initialized (writes a static; no SDL
 +       state dependency).

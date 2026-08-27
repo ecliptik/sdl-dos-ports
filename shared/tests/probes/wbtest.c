@@ -20,7 +20,7 @@
  * This probe runs the two SDL/0047 byte sequences in isolation, with NO
  * concurrent SDL audio thread, NO engine, just bare metal:
  *
- *   PATH=D (direct-port blind, opt-in via SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT=1):
+ *   PATH=D (direct-port blind, opt-in via SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=1):
  *     init:        nothing (the WBTEST-001 omission -- production SDL/0047
  *                  direct branch writes 0x3F here; WBTEST-002 corrects this).
  *     per byte:    outportb(port_base+0, byte). NO status polling.

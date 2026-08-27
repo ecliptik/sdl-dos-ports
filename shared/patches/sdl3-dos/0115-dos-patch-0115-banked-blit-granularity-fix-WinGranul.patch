@@ -20,7 +20,7 @@ VRAM offset each iteration (advancing the bank by win_size/gran units per
 window) -- already ships in this same tree for the mode-set blank loop
 (SDL_dosmodes.c:1024-1062); this patch brings the flush path in line.
 
-DEFAULT-ON with a strict-"0" killswitch (SDL_HINT_DOSKUTSU_BANK_GRAN_FIX=0)
+DEFAULT-ON with a strict-"0" killswitch (SDL_HINT_DOS_BANK_GRAN_FIX=0)
 reverting to the legacy bank++ walk for field rollback / A-B, plus a
 one-shot boot banner "SDL/0115 BANK-GRAN-FIX" for the smoke banner gate.
 Includes WinGranularity==0 and WinGranularity>WinSize clamps (defensive,
@@ -48,7 +48,7 @@ index dddb5f357..741bd4a4f 100644
  
 +// DOSKUTSU patch 0115 (v1.6.1 public-HW): runtime lever for the banked
 +// multi-bank-blit granularity fix. DEFAULT-ON; strict-"0" killswitch
-+// SDL_HINT_DOSKUTSU_BANK_GRAN_FIX=0 reverts BankedDosmemput to the legacy
++// SDL_HINT_DOS_BANK_GRAN_FIX=0 reverts BankedDosmemput to the legacy
 +// bank++ walk (only correct when WinGranularity==WinSize). Resolved once at
 +// surface creation so the boot banner is emitted before the first flush.
 +static int g_bank_gran_fix = 1;
@@ -63,13 +63,13 @@ index dddb5f357..741bd4a4f 100644
 +        static bool _bg_resolved = false;
 +        if (!_bg_resolved) {
 +            _bg_resolved = true;
-+            const char *h = SDL_GetHint("SDL_HINT_DOSKUTSU_BANK_GRAN_FIX");
++            const char *h = SDL_GetHint("SDL_HINT_DOS_BANK_GRAN_FIX");
 +            g_bank_gran_fix = (h && SDL_strcmp(h, "0") == 0) ? 0 : 1;
 +            doskutsu_dbg_log("sdl: SDL/0115 BANK-GRAN-FIX %s "
 +                             "(banked multi-bank walk recomputes bank=offset/gran "
 +                             "each step; correct for WinGranularity<WinSize cards; "
 +                             "g2k gran==size degenerates to the prior bank++ walk; "
-+                             "killswitch SDL_HINT_DOSKUTSU_BANK_GRAN_FIX=0)",
++                             "killswitch SDL_HINT_DOS_BANK_GRAN_FIX=0)",
 +                             g_bank_gran_fix ? "ENABLED" : "DISABLED");
 +        }
 +    }
@@ -178,7 +178,7 @@ index dddb5f357..741bd4a4f 100644
 +        return;
 +    }
 +
-+    // Legacy bank++ walk (killswitch SDL_HINT_DOSKUTSU_BANK_GRAN_FIX=0). Only
++    // Legacy bank++ walk (killswitch SDL_HINT_DOS_BANK_GRAN_FIX=0). Only
 +    // correct when gran==size; retained verbatim for field rollback / A-B.
 +    {
 +        Uint32 src_off = 0;

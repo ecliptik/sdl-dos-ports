@@ -51,7 +51,7 @@ byte-identical):
     The decisive Bug-6 measurement.
 
   PART B -- candidate fix: operator-tunable consumption rate-divider
-  (killswitch SDL_HINT_DOSKUTSU_PIXTONE_IRQ_RATEDIV, strict "1"/"2"/"4",
+  (killswitch SDL_HINT_DOS_PIXTONE_IRQ_RATEDIV, strict "1"/"2"/"4",
   default "1"; cached as log2 shift_div = 0/1/2 at OpenDevice; DPMI-
   locked alongside the other 0071 ISR state):
 
@@ -88,7 +88,7 @@ periodic "audio: SDL/0073 rate-meas: ..."; when Lever 3 engaged,
 "RATEDIV=1 (default; ...)" variant. New banner regexes added to
 tests/run-gameplay-smoke.sh BANNER_REGEX (rate-diag required-but-optional-
 severity; RATEDIV optional, absent under default-L3-off smoke).
-SDL_HINT_DOSKUTSU_PIXTONE_IRQ_RATEDIV documented in docs/internal/BOOT.md.
+SDL_HINT_DOS_PIXTONE_IRQ_RATEDIV documented in docs/internal/BOOT.md.
 
 DOSBox-X smoke confirms the banner / boot path but NOT the audible pitch
 per [[dosbox_not_proxy]]; the rate-diag/rate-meas numbers + the RATEDIV
@@ -119,7 +119,7 @@ index e16692e58..3cb332d8d 100644
 +
 +/* DOSKUTSU patch (Phase 11 patch 0073): Bug 6 -- Pixtone IRQ-mix
 + * consumption rate-divider. Operator-supplied via
-+ * SDL_HINT_DOSKUTSU_PIXTONE_IRQ_RATEDIV (strict "1"/"2"/"4"); cached here
++ * SDL_HINT_DOS_PIXTONE_IRQ_RATEDIV (strict "1"/"2"/"4"); cached here
 + * as a log2 shift (0/1/2). The bug6-sweep iter (2026-05-21) PROVED the
 + * Tier-2 (11025) L3 SFX play ~an octave too HIGH on real DX2-66 -- a RATE
 + * symptom, not amplitude (headroom 0/2/3 left the pitch high; Tier-1
@@ -148,7 +148,7 @@ index e16692e58..3cb332d8d 100644
 -                     ? remaining_samples : n_stereo_pairs;
 -
          /* v5 mix-headroom: shift count cached at OpenDevice from
-          * SDL_HINT_DOSKUTSU_PIXTONE_IRQ_HEADROOM. Default 9 = 50%
+          * SDL_HINT_DOS_PIXTONE_IRQ_HEADROOM. Default 9 = 50%
           * amplitude per SFX = ~4 concurrent SFX without clip. The
           * Uint8 volatile load is one cached byte per loop iteration. */
          const int shift = (int)g_dos_pixtone_irq_mix_shift;
@@ -204,7 +204,7 @@ index e16692e58..3cb332d8d 100644
              }
  
 +            /* DOSKUTSU patch (Phase 11 patch 0073): Bug 6 rate-divider
-+             * resolution. SDL_HINT_DOSKUTSU_PIXTONE_IRQ_RATEDIV strict
++             * resolution. SDL_HINT_DOS_PIXTONE_IRQ_RATEDIV strict
 +             * "1"/"2"/"4"; cached as a log2 shift (0/1/2). Default "1"
 +             * (shift_div=0) keeps ISR consumption byte-identical to
 +             * pre-0073. RATEDIV=2 corrects the Tier-2 octave-high SFX (the
@@ -215,7 +215,7 @@ index e16692e58..3cb332d8d 100644
 +             * DESIGN.md. */
 +            {
 +                const char *rd_hint =
-+                    SDL_GetHint("SDL_HINT_DOSKUTSU_PIXTONE_IRQ_RATEDIV");
++                    SDL_GetHint("SDL_HINT_DOS_PIXTONE_IRQ_RATEDIV");
 +                Uint8 rd_shift = 0; /* default: RATEDIV=1, byte-identical */
 +                if (rd_hint && rd_hint[0] != '\0' && rd_hint[1] == '\0') {
 +                    if (rd_hint[0] == '1') rd_shift = 0;
@@ -229,7 +229,7 @@ index e16692e58..3cb332d8d 100644
 +                                     "Pixtone source sample held for %d output "
 +                                     "stereo pairs; ISR consumption slowed %dx "
 +                                     "= down %d octave(s); Bug 6 Tier-2 pitch "
-+                                     "fix; tune via SDL_HINT_DOSKUTSU_PIXTONE_"
++                                     "fix; tune via SDL_HINT_DOS_PIXTONE_"
 +                                     "IRQ_RATEDIV=1|2|4)",
 +                                     (1 << rd_shift), (int)rd_shift,
 +                                     (1 << rd_shift), (1 << rd_shift),
@@ -238,7 +238,7 @@ index e16692e58..3cb332d8d 100644
 +                    doskutsu_dbg_log("audio: SDL/0073 pixtone IRQ rate-divider: "
 +                                     "RATEDIV=1 (default; ISR consumption "
 +                                     "byte-identical to pre-0073; set "
-+                                     "SDL_HINT_DOSKUTSU_PIXTONE_IRQ_RATEDIV=2 "
++                                     "SDL_HINT_DOS_PIXTONE_IRQ_RATEDIV=2 "
 +                                     "to correct the Tier-2 octave-high SFX)");
 +                }
 +            }

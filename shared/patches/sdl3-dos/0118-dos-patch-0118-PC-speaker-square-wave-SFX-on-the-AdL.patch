@@ -22,7 +22,7 @@ clock-safe alongside the music pump; it reuses ONLY the ch2/0x61 acquire +
 restore-on-exit discipline of the parked PWM patch, not its sample loop.
 
 Mechanism (extends the SDL/0110 pump; DEFAULT ON on the AdLib path):
-- Killswitch SDL_HINT_DOSKUTSU_PCSPK_SFX resolved at pump Start via a strict-"0"
+- Killswitch SDL_HINT_DOS_PCSPK_SFX resolved at pump Start via a strict-"0"
   test (only the literal env "0" disables; unset / anything else = ON). Since
   pump Start only runs on the no-SB AdLib path, this is inherently AdLib-scoped
   -- the repo's idiomatic "production lever default-ON with a killswitch"
@@ -92,7 +92,7 @@ index fc1d35863..3f516035e 100644
 + * duration down and gates the speaker off when it elapses -- no per-sample
 + * feed, no second timer, and ch2 does not touch BIOS timekeeping (ch0 does).
 + *
-+ * Gated by SDL_HINT_DOSKUTSU_PCSPK_SFX: DEFAULT ON on the AdLib path, resolved
++ * Gated by SDL_HINT_DOS_PCSPK_SFX: DEFAULT ON on the AdLib path, resolved
 + * at pump Start via a strict-"0" killswitch (only the literal env "0" disables;
 + * when off, the pump is music-only and byte-identical to the shipped v1.5.0
 + * AdLib path -- no ch2/0x61 touch). The engine (nx-engine) maps Pixtone SFX IDs
@@ -130,7 +130,7 @@ index fc1d35863..3f516035e 100644
 +
 +/**
 + * \returns true if PC-speaker square-wave SFX is ENABLED for this process
-+ *          (SDL_HINT_DOSKUTSU_PCSPK_SFX != "0", resolved at pump Start on the
++ *          (SDL_HINT_DOS_PCSPK_SFX != "0", resolved at pump Start on the
 + *          AdLib path). The engine gates its SFX->beep mapping on this. False
 + *          when the killswitch is "0" or the pump never started (e.g. an SB is
 + *          present, so the pump refused and the AdLib path is not in use).
@@ -160,7 +160,7 @@ index 285180bb0..29751d626 100644
 + * the speaker off, then advances a small note ring (for two-note SFX). ch2 does
 + * NOT touch BIOS timekeeping (ch0 does), so it is clock-safe alongside the music
 + * pump. DEFAULT ON on the AdLib path via the strict-"0" killswitch
-+ * SDL_HINT_DOSKUTSU_PCSPK_SFX (resolved at Start); when off, the unchanged
++ * SDL_HINT_DOS_PCSPK_SFX (resolved at Start); when off, the unchanged
 + * SDL/0110 music-only ISR is installed (byte-identical to v1.5.0, no ch2/0x61
 + * touch). Engine-facing API contract: include/SDL3/SDL_dosopltimer.h. */
 +
@@ -171,7 +171,7 @@ index 285180bb0..29751d626 100644
 +#define PCSPK_DUR_MAX     5000u
 +
 +/* Killswitch + restore state (resolved / captured once at pump Start). */
-+static bool     s_pcspk_sfx_enabled = false; /* SDL_HINT_DOSKUTSU_PCSPK_SFX != "0" (default ON) */
++static bool     s_pcspk_sfx_enabled = false; /* SDL_HINT_DOS_PCSPK_SFX != "0" (default ON) */
 +static Uint8    s_pcspk_saved_61    = 0;     /* port 0x61 saved at Start, restored at Stop */
 +static uint32_t s_pcspk_fire_hz     = 0;     /* ch0 pump fire rate, for ms->tick conversion */
 +
@@ -219,7 +219,7 @@ index 285180bb0..29751d626 100644
  
 +/* DOSKUTSU patch (SDL/0118): PC-speaker-capable IRQ-0 ISR. Installed (instead
 +   of the unchanged OplPitISR) ONLY when the PC-speaker SFX killswitch is on
-+   (SDL_HINT_DOSKUTSU_PCSPK_SFX != "0", the default on the AdLib path). Same
++   (SDL_HINT_DOS_PCSPK_SFX != "0", the default on the AdLib path). Same
 +   clock advance + music tick + BIOS-INT8 chain as OplPitISR, plus: when a
 +   square-wave note is sounding, count it down and -- on expiry -- advance to
 +   the next queued note (or silence the speaker + go idle). outportb-only, no
@@ -283,7 +283,7 @@ index 285180bb0..29751d626 100644
 +       below -- byte-identical to v1.5.0, no ch2/0x61 touch. Also cache the ch0
 +       fire rate (for ms->tick conversion) + snapshot port 0x61 for restore. */
 +    {
-+        const char *e = SDL_GetHint("SDL_HINT_DOSKUTSU_PCSPK_SFX");
++        const char *e = SDL_GetHint("SDL_HINT_DOS_PCSPK_SFX");
 +        s_pcspk_sfx_enabled = !(e && e[0] == '0' && e[1] == '\0');
 +    }
 +    s_pcspk_fire_hz = (uint32_t)(DOS_PIT_INPUT_HZ / (s_pit_div ? s_pit_div : 1u));
@@ -349,7 +349,7 @@ index 285180bb0..29751d626 100644
                                      : "NULL(no MidiScheduler tick registered!)");
 +    doskutsu_dbg_log("audio: SDL/0118 [pcspk] square-wave SFX %s (PIT ch2 mode-3; "
 +                     "ch0 pump %u Hz gates note duration; ring depth %d; killswitch "
-+                     "SDL_HINT_DOSKUTSU_PCSPK_SFX=0 -> v1.5.0 music-only byte-identical)",
++                     "SDL_HINT_DOS_PCSPK_SFX=0 -> v1.5.0 music-only byte-identical)",
 +                     s_pcspk_sfx_enabled ? "ENABLED" : "disabled (killswitch=0)",
 +                     (unsigned)s_pcspk_fire_hz, PCSPK_NOTE_RING);
      return true;

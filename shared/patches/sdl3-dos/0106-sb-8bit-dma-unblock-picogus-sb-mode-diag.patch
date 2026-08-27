@@ -20,7 +20,7 @@ so "DSP version >= 4" is the wrong proxy for "use the 16-bit high-DMA path."
 This patch decouples them at the single detection site:
 
   1. FORCE_SB_8BIT promoted to a runtime hint
-     SDL_HINT_DOSKUTSU_AUDIO_SB_FORCE_8BIT (strict-"1", default 0=OFF);
+     SDL_HINT_DOS_AUDIO_SB_FORCE_8BIT (strict-"1", default 0=OFF);
      the compile-time #define is retained as an OR'd override.
   2. is_sb16 now also requires soundblaster_highdma_channel >= 0 (a real H
      token in BLASTER). A DSP-4.x card with no H GRACEFULLY falls back to
@@ -84,7 +84,7 @@ index 578f7bf8a..842d14040 100644
 -// Set to 1 to force 8-bit mono (pre-SB16) code path even on SB16 hardware.
 -// Useful for testing in DOSBox which always emulates an SB16 (DSP 4.x).
 +// DOSKUTSU patch (SDL/0106): forcing the pre-SB16 8-bit / D-channel path is
-+// now primarily a RUNTIME knob -- SDL_HINT_DOSKUTSU_AUDIO_SB_FORCE_8BIT (strict
++// now primarily a RUNTIME knob -- SDL_HINT_DOS_AUDIO_SB_FORCE_8BIT (strict
 +// "1", default OFF), resolved in IsSoundBlasterPresent() and OR'd with this
 +// #define. The PicoGUS-in-SB-mode / SB2.0-class case (DSP 4.x but no 16-bit
 +// high DMA) also reaches the 8-bit path automatically via the highdma>=0 term
@@ -239,7 +239,7 @@ index 578f7bf8a..842d14040 100644
 +       DMA via the D channel + the WaveBlaster header directly.
 +
 +       Two independent levers:
-+         1. force_8bit  -- SDL_HINT_DOSKUTSU_AUDIO_SB_FORCE_8BIT, strict-"1",
++         1. force_8bit  -- SDL_HINT_DOS_AUDIO_SB_FORCE_8BIT, strict-"1",
 +            default 0 (OFF). =1 forces the pre-SB16 8-bit/D-channel path
 +            regardless of DSP version (the old compile-time FORCE_SB_8BIT,
 +            now runtime). FORCE_SB_8BIT (the #define) is retained as an OR'd
@@ -265,7 +265,7 @@ index 578f7bf8a..842d14040 100644
 +       channel or when the hint/override forces 8-bit -- neither of which is
 +       the Vibra16 default path. */
 +    {
-+        const char *f8_hint = SDL_GetHint("SDL_HINT_DOSKUTSU_AUDIO_SB_FORCE_8BIT");
++        const char *f8_hint = SDL_GetHint("SDL_HINT_DOS_AUDIO_SB_FORCE_8BIT");
 +        const bool force_8bit =
 +            FORCE_SB_8BIT ||
 +            (f8_hint && f8_hint[0] == '1' && f8_hint[1] == '\0');
@@ -296,7 +296,7 @@ index 578f7bf8a..842d14040 100644
 +                             "fall back to the 8-bit low-DMA D-channel path "
 +                             "(D=%d) instead of erroring; this is the "
 +                             "PicoGUS-in-SB-mode / SB2.0-class unblock. Set "
-+                             "SDL_HINT_DOSKUTSU_AUDIO_SB_FORCE_8BIT=1 to force "
++                             "SDL_HINT_DOS_AUDIO_SB_FORCE_8BIT=1 to force "
 +                             "this path on any card.",
 +                             soundblaster_version, soundblaster_version_minor,
 +                             soundblaster_dma_channel);

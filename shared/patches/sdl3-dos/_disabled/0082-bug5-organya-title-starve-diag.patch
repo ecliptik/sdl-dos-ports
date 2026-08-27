@@ -25,7 +25,7 @@ counters this reads). When the main thread wedges, PlayDevice stops and the
 snd: lines stop -- the last line's avail/consec_silent/cb_fills trajectory
 names the mechanism alongside nxengine 0192's "starve-diag/eng:" bracket.
 
-SDL_HINT_DOSKUTSU_STARVE_DIAG=1 (strict-1, default OFF) gates BOTH the SDL
+SDL_HINT_DOS_STARVE_DIAG=1 (strict-1, default OFF) gates BOTH the SDL
 "snd:" layer and the engine "eng:" layer via one env. Read-only w.r.t. the
 audio output. Workspace-local; never upstreamed.
 
@@ -52,7 +52,7 @@ index 36c280e15..58fd29ec2 100644
 +       after-the-ring-write placement misses them entirely, and on a fully-
 +       silent DOSBox title never runs at all -- build-qa's cheap-catch.)
 +
-+       When SDL_HINT_DOSKUTSU_STARVE_DIAG=1 (strict-1, default OFF) emit the SB16
++       When SDL_HINT_DOS_STARVE_DIAG=1 (strict-1, default OFF) emit the SB16
 +       ring + silent-IRQ state on a coarse cadence (every 100 PlayDevice calls)
 +       PLUS an edge-triggered line the first call the ring drops below one chunk
 +       (underflow onset). PlayDevice is non-IRQ context so doskutsu_dbg_log
@@ -77,7 +77,7 @@ index 36c280e15..58fd29ec2 100644
 +        static Uint32 s_sd_cadence = 0;     /* 0..99 heartbeat cadence */
 +        static bool   s_sd_low     = false; /* edge: ring was below one chunk last call */
 +        if (s_sd_enabled < 0) {
-+            const char *sd = SDL_GetHint("SDL_HINT_DOSKUTSU_STARVE_DIAG");
++            const char *sd = SDL_GetHint("SDL_HINT_DOS_STARVE_DIAG");
 +            s_sd_enabled = (sd && sd[0] == '1' && sd[1] == '\0') ? 1 : 0;
 +            if (s_sd_enabled) {
 +                doskutsu_dbg_log("audio: SDL/0082 STARVE_DIAG=1 -- Bug-5 ring/"

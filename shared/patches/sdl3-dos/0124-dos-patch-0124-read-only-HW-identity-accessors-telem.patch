@@ -169,7 +169,7 @@ index 000000000..5084c0621
 +/**
 + * \returns the force-8bit OVERRIDE lever as resolved at OpenDevice: true if the
 + *          SB was forced onto the pre-SB16 8-bit/D-channel path via
-+ *          SDL_HINT_DOSKUTSU_AUDIO_SB_FORCE_8BIT=1 (or the FORCE_SB_8BIT compile
++ *          SDL_HINT_DOS_AUDIO_SB_FORCE_8BIT=1 (or the FORCE_SB_8BIT compile
 + *          override), regardless of card identity. false before the device is
 + *          open. Distinguishes a card that fell to 8-bit because it lacks a
 + *          valid 16-bit channel from one deliberately forced there.
@@ -267,7 +267,7 @@ index f67964209..128a1f80c 100644
 +
  /* DOSKUTSU patch (Phase 11 patch 0050): killswitch state for the
     GetDeviceBuf quiescence gate. Default ON (false = gate engages); set
-    SDL_HINT_DOSKUTSU_DOS_AUDIO_QUIESCENCE_GATE=0 to flip to true and
+    SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE=0 to flip to true and
 @@ -4466,6 +4508,7 @@ static bool IsSoundBlasterPresent(void)
          const bool force_8bit =
              FORCE_SB_8BIT ||

@@ -5,7 +5,7 @@ Subject: [PATCH] dos: patch 0108 -- format-aware Pixtone IRQ-mix on the 8-bit
  U8 path
 
 SDL/0107 made the pre-SB16 8-bit device open U8 (mono by default). But the
-Lever-3 Pixtone IRQ-mix (PixtoneISRMix, SDL_HINT_DOSKUTSU_PIXTONE_IRQ_MIX,
+Lever-3 Pixtone IRQ-mix (PixtoneISRMix, SDL_HINT_DOS_PIXTONE_IRQ_MIX,
 default ON) unconditionally treated the DMA ring as S16 stereo: it cast
 dma_dst to int16_t*, computed stereo pairs as dma_len/4, and wrote 2-byte
 signed samples to dst[2p]/dst[2p+1]. On the 8-bit U8 device that is both a

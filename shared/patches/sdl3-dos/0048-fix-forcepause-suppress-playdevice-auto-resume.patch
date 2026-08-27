@@ -22,7 +22,7 @@ an auto-resume gate (SDL_dosaudio_sb.c:828 post-SDL/0040):
       MaybeServiceIdlePauseRequests();  // -> 0xD6 -> DSP resumed
   }
 
-g_dos_audio_force_dsp_pause was set ONLY by SDL_HINT_DOSKUTSU_AUDIO_FORCE_DSP_PAUSE=1
+g_dos_audio_force_dsp_pause was set ONLY by SDL_HINT_DOS_AUDIO_FORCE_DSP_PAUSE=1
 (SDL/0040 OpenDevice path). SDL_DOSAudioForcePause() did NOT set it.
 Auto-resume fired unconditionally on every PlayDevice call.
 

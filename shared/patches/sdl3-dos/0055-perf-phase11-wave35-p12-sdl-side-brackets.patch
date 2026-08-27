@@ -59,8 +59,8 @@ one audio chunk processed):
                  underlying counter is identical to what nx 0131 reports
                  via the engine-side [p10-audio ...] line.
 
-Gating. BOTH SDL_HINT_DOSKUTSU_FLIP_INSTR=1 AND
-SDL_HINT_DOSKUTSU_P12_AUDIO_INSTR=1 must be set (strict-"1" per
+Gating. BOTH SDL_HINT_DOS_FLIP_INSTR=1 AND
+SDL_HINT_DOS_P12_AUDIO_INSTR=1 must be set (strict-"1" per
 CLAUDE.md). Default OFF; opt-in only. Per
 contract_grep_targets_require_enabling_env_vars.md the BAT cell that
 engages the [p12-audio sdl ...] emit MUST set both env vars; wave-35
@@ -119,12 +119,12 @@ let the operator grep-verify the gate chain:
             n=100 ...] per 100 PlayDevice calls)"
 
   OFF:     "audio: SDL/0055 P12 SDL-side audio brackets OFF (set BOTH
-            SDL_HINT_DOSKUTSU_FLIP_INSTR=1 and
-            SDL_HINT_DOSKUTSU_P12_AUDIO_INSTR=1 to engage)"
+            SDL_HINT_DOS_FLIP_INSTR=1 and
+            SDL_HINT_DOS_P12_AUDIO_INSTR=1 to engage)"
 
 Validation:
-  - Strings verified in libSDL3.a: SDL_HINT_DOSKUTSU_P12_AUDIO_INSTR
-    + SDL_HINT_DOSKUTSU_FLIP_INSTR + emit template + both banner
+  - Strings verified in libSDL3.a: SDL_HINT_DOS_P12_AUDIO_INSTR
+    + SDL_HINT_DOS_FLIP_INSTR + emit template + both banner
     variants present.
   - Compile clean at i486 -O3.
   - Off-path semantics unchanged (default OFF): every bracket guarded
@@ -141,7 +141,7 @@ Cross-reference:
     this patch corrects via the gate chain documented in OpenDevice
     banner)
   - patches/nxengine-evo/0131-perf-phase11-wave35-p12-audio-instrumentation.patch
-    (engine-side sibling; SAME env-var SDL_HINT_DOSKUTSU_P12_AUDIO_INSTR
+    (engine-side sibling; SAME env-var SDL_HINT_DOS_P12_AUDIO_INSTR
     enables both halves)
   - memory/audio_cost_attribution_unknown.md (the ~31 ms unattributed
     audio cost this patch helps decompose)
@@ -169,8 +169,8 @@ index 44eedd70d..22a5f5864 100644
 +   wave-36 PLAY5 audio cost attribution per
 +   docs/PHASE11-WAVE-36-CONTRACT.md section 8.
 +
-+   Gates: BOTH SDL_HINT_DOSKUTSU_FLIP_INSTR=1 AND
-+   SDL_HINT_DOSKUTSU_P12_AUDIO_INSTR=1 must be set (strict-"1" match
++   Gates: BOTH SDL_HINT_DOS_FLIP_INSTR=1 AND
++   SDL_HINT_DOS_P12_AUDIO_INSTR=1 must be set (strict-"1" match
 +   per CLAUDE.md env-var convention). FLIP_INSTR is the parent gate
 +   (shared with engine-side instrumentation); P12_AUDIO_INSTR is the
 +   sub-gate (so a single SET on the engine side enables both halves).
@@ -285,8 +285,8 @@ index 44eedd70d..22a5f5864 100644
 +       only the leaf var was set. Boot banner emit names both vars
 +       explicitly so the operator can grep-verify the gate chain. */
 +    {
-+        const char *flip_hint = SDL_GetHint("SDL_HINT_DOSKUTSU_FLIP_INSTR");
-+        const char *p12_hint = SDL_GetHint("SDL_HINT_DOSKUTSU_P12_AUDIO_INSTR");
++        const char *flip_hint = SDL_GetHint("SDL_HINT_DOS_FLIP_INSTR");
++        const char *p12_hint = SDL_GetHint("SDL_HINT_DOS_P12_AUDIO_INSTR");
 +        const bool flip_on =
 +            (flip_hint && flip_hint[0] == '1' && flip_hint[1] == 0);
 +        const bool p12_on =
@@ -306,8 +306,8 @@ index 44eedd70d..22a5f5864 100644
 +            g_p12_sdl_irq_wall_us_baseline = doskutsu_audio_irq_wall_us;
 +        } else {
 +            doskutsu_dbg_log("audio: SDL/0055 P12 SDL-side audio brackets OFF "
-+                             "(set BOTH SDL_HINT_DOSKUTSU_FLIP_INSTR=1 and "
-+                             "SDL_HINT_DOSKUTSU_P12_AUDIO_INSTR=1 to engage)");
++                             "(set BOTH SDL_HINT_DOS_FLIP_INSTR=1 and "
++                             "SDL_HINT_DOS_P12_AUDIO_INSTR=1 to engage)");
 +        }
 +    }
 +

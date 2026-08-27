@@ -15,7 +15,7 @@ BLT); if they don't, KPI retargets to ~30 fps per WAVE-49 sec. 7.
 
 Three new public APIs in include/SDL3/SDL_dosvesa_directaccess.h:
 
-  #define SDL_HINT_DOSKUTSU_VRAM_RESIDENT "SDL_HINT_DOSKUTSU_VRAM_RESIDENT"
+  #define SDL_HINT_DOS_VRAM_RESIDENT "SDL_HINT_DOS_VRAM_RESIDENT"
   bool SDL_DOSVesaGetBackBufferPage(const SDL_DOSVesaDirectState *st,
                                      int page_idx, Uint8 **out_nearptr,
                                      int *out_pitch);
@@ -37,7 +37,7 @@ register state stays deterministic across page toggles.
 
 Strict Cirrus 5434 detection (CRTC[0x27] == 0xA8) reuses SDL/0060's
 SDL_DOSVesaDirect_IsCirrusBLTAvailable() probe -- same chip-rev anchor,
-same killswitch composition (SDL_HINT_DOSKUTSU_CIRRUS_BLT=0 also
+same killswitch composition (SDL_HINT_DOS_CIRRUS_BLT=0 also
 disables this helper because the probe was verified only on Cirrus 5434).
 Other Cirrus variants (5430/5436/5446) and non-Cirrus VESA chips fall
 through to "not available" since the encoding probe verified only on
@@ -144,7 +144,7 @@ index 528f1e7f0..041d140fd 100644
 + * display origin to that page via CRTC[0x0C/0x0D] direct programming.
 + *
 + * Cycle 1 (wave-50) is a ESSENTIAL DIAGNOSTIC: when
-+ * SDL_HINT_DOSKUTSU_VRAM_RESIDENT=1, SDL diverts the existing dosmemput
++ * SDL_HINT_DOS_VRAM_RESIDENT=1, SDL diverts the existing dosmemput
 + * / SDL_memcpy in SDL_DOSVesaDirectPresentFull to write to an off-screen
 + * back-page, then CRTC-swaps that page into visibility. Engine code is
 + * unchanged. The diagnostic answers whether VRAM writes (LFB nearptr OR
@@ -167,7 +167,7 @@ index 528f1e7f0..041d140fd 100644
 + * Strict Cirrus 5434 detection (CRTC[0x27] == 0xA8) is required;
 + * other Cirrus variants and non-Cirrus VESA chips fall through to
 + * "not available" because the encoding probe verified only on 5434.
-+ * Killswitch SDL_HINT_DOSKUTSU_VRAM_RESIDENT=0 (default; cycle 1)
++ * Killswitch SDL_HINT_DOS_VRAM_RESIDENT=0 (default; cycle 1)
 + * keeps the legacy sysmem-to-visible-page path; =1 engages the divert.
 + *
 + * RUNTIME ENCODING SANITY CHECK: at first engagement the helper reads
@@ -193,7 +193,7 @@ index 528f1e7f0..041d140fd 100644
 + * [[author_flagged_caveat_overrides_let_data_decide]]); flips to
 + * default-ON after cycle 2 validates fps gain.
 + */
-+#define SDL_HINT_DOSKUTSU_VRAM_RESIDENT "SDL_HINT_DOSKUTSU_VRAM_RESIDENT"
++#define SDL_HINT_DOS_VRAM_RESIDENT "SDL_HINT_DOS_VRAM_RESIDENT"
 +
 +/**
 + * Returns an LFB nearptr to a specific off-screen VRAM page.
@@ -245,7 +245,7 @@ index 528f1e7f0..041d140fd 100644
 + * WaitForVBlank() primitive (port 0x3DA bit 3 edge) so the swap is
 + * tear-free.
 + *
-+ * Cycle-1 self-test contract: when the SDL_HINT_DOSKUTSU_VRAM_RESIDENT
++ * Cycle-1 self-test contract: when the SDL_HINT_DOS_VRAM_RESIDENT
 + * divert is engaged, SDL_DOSVesaDirectPresentFull calls this helper
 + * internally after writing pixel data to the back-page. Engines need
 + * not call this directly until cycle 2 (engine surface repointing).
@@ -313,7 +313,7 @@ index 8fdc0fa00..18d02e062 100644
      }
 +
 +    // DOSKUTSU patch 0061 (Phase 11 wave-50 cycle 1) -- VRAM-resident
-+    // page-flip divert. When SDL_HINT_DOSKUTSU_VRAM_RESIDENT=1 AND chip
++    // page-flip divert. When SDL_HINT_DOS_VRAM_RESIDENT=1 AND chip
 +    // is Cirrus 5434 AND runtime encoding sanity-check passes, redirect
 +    // the present write to an off-screen back-page and CRTC-swap. Else
 +    // fall through to the legacy write-to-visible-page path. The
@@ -393,7 +393,7 @@ index 8fdc0fa00..18d02e062 100644
 +// Two new public helpers (SDL_DOSVesaGetBackBufferPage +
 +// SDL_DOSVesaPagePresent) plus an in-place divert inside
 +// SDL_DOSVesaDirectPresentFull (above) that, when
-+// SDL_HINT_DOSKUTSU_VRAM_RESIDENT=1, redirects the present write to an
++// SDL_HINT_DOS_VRAM_RESIDENT=1, redirects the present write to an
 +// off-screen back-page and CRTC-swaps that page into visibility. Engine
 +// code is unchanged for cycle 1; this is the essential diagnostic
 +// for whether VRAM writes (LFB or banked dosmemput to off-screen pages)
@@ -463,7 +463,7 @@ index 8fdc0fa00..18d02e062 100644
 +    }
 +
 +    // Killswitch first -- strict-"1" match (default-OFF for cycle 1).
-+    const char *env = SDL_getenv("SDL_HINT_DOSKUTSU_VRAM_RESIDENT");
++    const char *env = SDL_getenv("SDL_HINT_DOS_VRAM_RESIDENT");
 +    if (!env || env[0] != '1' || env[1] != 0) {
 +        // No banner emitted in the default-off path; the absence of any
 +        // wave-50 banner in the log is itself the "off" signal.
@@ -477,7 +477,7 @@ index 8fdc0fa00..18d02e062 100644
 +    // 6.7; we refuse engagement on other chips/firmware combinations.
 +    if (!SDL_DOSVesaDirect_IsCirrusBLTAvailable()) {
 +        doskutsu_dbg_log("sdl: wave-50 VRAM-resident page-flip DISABLED "
-+                         "(chip not Cirrus 5434 OR SDL_HINT_DOSKUTSU_CIRRUS_BLT=0; "
++                         "(chip not Cirrus 5434 OR SDL_HINT_DOS_CIRRUS_BLT=0; "
 +                         "engine uses sysmem fallback)");
 +        _vram_resident_state = 0;
 +        return 0;

@@ -108,7 +108,7 @@
  *                            production fix. Add poll to vendor/SDL/src/
  *                            core/dos/SDL_dos_audio_synth.c at the
  *                            direct-port branch (Init L134 + WriteByte
- *                            L240) and flip SDL_HINT_DOSKUTSU_AUDIO_WB_
+ *                            L240) and flip SDL_HINT_DOS_AUDIO_WB_
  *                            DIRECT_PORT default to ON. Campaign succeeds.
  *   V1 silent / boops     -> direct-port silence is NOT just about polling;
  *                            deeper issue. Campaign closes per flush-instr
@@ -668,7 +668,7 @@ static void verdict_table(void)
     plog("                       before outportb mpu+1 0x3F) and L240");
     plog("                       (WriteByte direct-port branch, before");
     plog("                       outportb mpu+0 byte). Flip");
-    plog("                       SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT default");
+    plog("                       SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT default");
     plog("                       to ON. Set this as the new SDL/0047 direct-");
     plog("                       port branch standard.");
     plog("  organ + cowbell   -> direct-port silence is NOT just about bit-6");

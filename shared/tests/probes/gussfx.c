@@ -13,7 +13,7 @@
  *
  * ===================== THE CRASH (what is known) ========================
  * From memory/gus_campaign_picogus_diag_wedge.md + GUS-SFX-38-HANDOFF.md: every
- * GUS launch must set SDL_HINT_DOSKUTSU_SFX_OFF=1 or the game QUITS TO DOS at
+ * GUS launch must set SDL_HINT_DOS_SFX_OFF=1 or the game QUITS TO DOS at
  * SFX init/upload before music starts. The crash is "~715 KB DRAM / a LATE slot,
  * slot-data-SPECIFIC; NOT transport, NOT address-encoding, NOT plain DRAM
  * exhaustion." Root cause UNKNOWN. This probe gets ground truth.

@@ -39,7 +39,7 @@ Everything else in this directory does not have this dependency.
 Probe-owned environment variables have been renamed from doskutsu's
 originals to a neutral prefix (e.g. `DOSKUTSU_LOG_TAG` -> `DOS_PORT_LOG_TAG`)
 since these are read by the probe's own code and are safe to rename freely.
-Comments referencing `SDL_HINT_DOSKUTSU_*` hints still use that name because
+Comments referencing `SDL_HINT_DOS_*` hints still use that name because
 they document behavior of doskutsu's *current* (not-yet-renamed) SDL patch
 set — see `docs/patch-conventions.md`'s neutral-hint-naming convention for
 what these should become once `shared/patches/sdl3-dos/` completes its own

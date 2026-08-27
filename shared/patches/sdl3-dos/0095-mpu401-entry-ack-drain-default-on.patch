@@ -14,7 +14,7 @@ blind/poll engine WB path wedges at "Loading" where cell-P -- which drains
 the ACK -- plays clean. Draining the entry ACK removes that source.
 
 This adds a shared bounded drain, default-ON with a strict-"0" killswitch
-SDL_HINT_DOSKUTSU_AUDIO_WB_ENTRY_ACK_DRAIN, called after the 0x3F write on
+SDL_HINT_DOS_AUDIO_WB_ENTRY_ACK_DRAIN, called after the 0x3F write on
 BOTH the blind/poll direct-port path and the 0094 opt-in reset-init path
 (which otherwise ended with the same undrained ACK). Bounded + DSR-capped
 exactly like 0094's reset-ACK drain: poll bit-7 (DSR) up to a hard cap,
@@ -54,7 +54,7 @@ index 080f6299c..02d33076d 100644
  }
  
 +/* DOSKUTSU patch (SDL/0095): MPU-401 UART-entry (0x3F) ACK-drain.
-+   Default ON; strict-"0" killswitch SDL_HINT_DOSKUTSU_AUDIO_WB_ENTRY_ACK_DRAIN.
++   Default ON; strict-"0" killswitch SDL_HINT_DOS_AUDIO_WB_ENTRY_ACK_DRAIN.
 +
 +   FORWARD ROBUSTNESS -- NOT a v1.0.8.1 restoration. v1.0.8.1's 0080 init body is
 +   byte-identical to ours and never drained the entry ACK either, yet WB worked;
@@ -87,7 +87,7 @@ index 080f6299c..02d33076d 100644
 +{
 +    if (!s_mpu401_entry_ack_drain_enabled) {
 +        doskutsu_dbg_log("mpu401: entry-ack drain SKIPPED at port_base=0x%04x "
-+                         "(%s; SDL_HINT_DOSKUTSU_AUDIO_WB_ENTRY_ACK_DRAIN=0 -- "
++                         "(%s; SDL_HINT_DOS_AUDIO_WB_ENTRY_ACK_DRAIN=0 -- "
 +                         "undrained 0x3F ACK baseline; IRQ-5 starvation risk on "
 +                         "live SB16)",
 +                         (unsigned)port_base, path_label);
@@ -110,7 +110,7 @@ index 080f6299c..02d33076d 100644
 +        doskutsu_dbg_log("mpu401: entry-ack drain at port_base=0x%04x "
 +                         "(%s; drain=1 ack=0x%02X via=%s; SDL/0095 "
 +                         "mandatory-for-IRQ-5-health; killswitch "
-+                         "SDL_HINT_DOSKUTSU_AUDIO_WB_ENTRY_ACK_DRAIN=0)",
++                         "SDL_HINT_DOS_AUDIO_WB_ENTRY_ACK_DRAIN=0)",
 +                         (unsigned)port_base, path_label,
 +                         (unsigned)(ack & 0xFF), via_dsr ? "DSR" : "uncond");
 +    }
@@ -118,7 +118,7 @@ index 080f6299c..02d33076d 100644
 +
  /* DOSKUTSU patch (Phase 10 patch 0047): direct-port path extracted from
     the patch-0044 SDL_DOSMpu401Init body. Entry guarded behind the
-    SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT=1 hint. Body unchanged from
+    SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=1 hint. Body unchanged from
 @@ -272,6 +335,14 @@ static bool SDL_DOSMpu401Init_DirectPort(uint16_t port_base)
          s_mpu401_drr_poll_enabled = (drr && drr[0] == '1' && drr[1] == 0);
      }
@@ -127,13 +127,13 @@ index 080f6299c..02d33076d 100644
 +       Default ON; only the literal "0" disables (the undrained baseline used by
 +       the iter-6 A/B control cell). See mpu401_drain_entry_ack for rationale. */
 +    {
-+        const char *ead = SDL_GetHint("SDL_HINT_DOSKUTSU_AUDIO_WB_ENTRY_ACK_DRAIN");
++        const char *ead = SDL_GetHint("SDL_HINT_DOS_AUDIO_WB_ENTRY_ACK_DRAIN");
 +        s_mpu401_entry_ack_drain_enabled = !(ead && ead[0] == '0' && ead[1] == 0);
 +    }
 +
      if (!do_probe) {
          /* DOSKUTSU patch (SDL/0094): opt-in DOOM/DMX-sequence reset init.
-            SDL_HINT_DOSKUTSU_AUDIO_WB_RESET_INIT=1 (default OFF). g2k iter-3/4/5
+            SDL_HINT_DOS_AUDIO_WB_RESET_INIT=1 (default OFF). g2k iter-3/4/5
 @@ -327,6 +398,10 @@ static bool SDL_DOSMpu401Init_DirectPort(uint16_t port_base)
  
              /* 3. UART mode entry. */

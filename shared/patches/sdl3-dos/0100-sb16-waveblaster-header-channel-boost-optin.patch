@@ -11,9 +11,9 @@ plays significantly quieter than OPL3 (FM) and SFX (PCM Voice) on g2k (operator
 iter-9).
 
 Extend the SDL/0074 mixer-balance family with two INDEPENDENT, default-UNSET
-knobs under the existing SDL_HINT_DOSKUTSU_SB16_MIXER_PROGRAM killswitch:
-  SDL_HINT_DOSKUTSU_SB16_LINEIN_VOL -> CT1745 0x38/0x39 (Line-In), 0..31
-  SDL_HINT_DOSKUTSU_SB16_CD_VOL     -> CT1745 0x36/0x37 (CD),      0..31
+knobs under the existing SDL_HINT_DOS_SB16_MIXER_PROGRAM killswitch:
+  SDL_HINT_DOS_SB16_LINEIN_VOL -> CT1745 0x38/0x39 (Line-In), 0..31
+  SDL_HINT_DOS_SB16_CD_VOL     -> CT1745 0x36/0x37 (CD),      0..31
 UNSET = not programmed = byte-identical to SDL/0074 (no regression, no guess
 shipped). The exact CT1745 input the WB header feeds is Vibra16S-CT2490-specific
 and not determinable from source/logs/DOSBox (no S2), so these let an iter-10 A/B
@@ -33,7 +33,7 @@ index ba8929843..7cc422c06 100644
 +++ b/src/audio/dos/SDL_dosaudio_sb.c
 @@ -2839,6 +2839,37 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
                                   "voice=%d fm=%d (CT1745 0x30/32/34; tune "
-                                  "SDL_HINT_DOSKUTSU_SB16_FM_VOL=0..31)",
+                                  "SDL_HINT_DOS_SB16_FM_VOL=0..31)",
                                   voice_vol, fm_vol);
 +                /* DOSKUTSU patch (SDL/0100, T74): optional WaveBlaster-header
 +                   channel boost. The DreamBlaster S2 on the SB16 WaveBlaster
@@ -46,11 +46,11 @@ index ba8929843..7cc422c06 100644
 +                   shipping a register guess; the confirmed channel then ships
 +                   default-ON. UNSET = not programmed = byte-identical to SDL/0074.
 +                   Mic (0x3A) intentionally untouched (mic-path boost = hum). Scoped
-+                   to is_sb16 + the same SDL_HINT_DOSKUTSU_SB16_MIXER_PROGRAM
++                   to is_sb16 + the same SDL_HINT_DOS_SB16_MIXER_PROGRAM
 +                   killswitch as the rest of this block. */
 +                {
-+                    const char *li = SDL_GetHint("SDL_HINT_DOSKUTSU_SB16_LINEIN_VOL");
-+                    const char *cd = SDL_GetHint("SDL_HINT_DOSKUTSU_SB16_CD_VOL");
++                    const char *li = SDL_GetHint("SDL_HINT_DOS_SB16_LINEIN_VOL");
++                    const char *cd = SDL_GetHint("SDL_HINT_DOS_SB16_CD_VOL");
 +                    if (li && li[0] != '\0') {
 +                        int lv = SDL_atoi(li); lv = (lv < 0) ? 0 : (lv > 31) ? 31 : lv;
 +                        outportb(mixer_addr, 0x38); outportb(mixer_data, (Uint8)(lv << 3)); // Line-In L
@@ -68,7 +68,7 @@ index ba8929843..7cc422c06 100644
 +                }
              } else {
                  doskutsu_dbg_log("audio: SDL/0074 SB16 mixer balance: DISABLED "
-                                  "(SDL_HINT_DOSKUTSU_SB16_MIXER_PROGRAM=0; CT1745 "
+                                  "(SDL_HINT_DOS_SB16_MIXER_PROGRAM=0; CT1745 "
 -- 
 2.47.3
 

@@ -11,7 +11,7 @@ Pure-diagnostic backstop for wave-36 PLAY6 Shape D fps lever per
 docs/PHASE11-WAVE-36-CONTRACT.md section 4 + section 6.4. Per-100-
 PlayDevice-call histogram of Shape A scan outcomes (silent vs noisy)
 and per-outcome scan wall-clock. Gated on
-SDL_HINT_DOSKUTSU_SILENCE_HISTO=1 (strict-"1"; default OFF).
+SDL_HINT_DOS_SILENCE_HISTO=1 (strict-"1"; default OFF).
 
 Mechanism:
 
@@ -21,7 +21,7 @@ Mechanism:
     bucket), g_p58_pd_call_count (cadence counter; ticks under BOTH
     Shape A and Shape D when HISTO=1 -- see below).
 
-  - OpenDevice reads SDL_HINT_DOSKUTSU_SILENCE_HISTO; sets
+  - OpenDevice reads SDL_HINT_DOS_SILENCE_HISTO; sets
     g_p58_silence_histo_active; emits banner.
 
   - PlayDevice silence-detect dispatch: per-bucket scan-wall-clock
@@ -143,7 +143,7 @@ Banner variants:
                     only under Shape A scan); cadence + emit fire
                     under both Shapes.
   OFF (default):   "audio: SDL/0058 Shape A mechanism histogram OFF
-                    (set SDL_HINT_DOSKUTSU_SILENCE_HISTO=1 to engage)"
+                    (set SDL_HINT_DOS_SILENCE_HISTO=1 to engage)"
 
 Engagement-verify per contract_grep_targets_require_enabling_env_vars.md:
 operator's PLAY6 BAT cell sets HISTO=1 alongside SHAPE=D; the ACTIVE
@@ -221,7 +221,7 @@ index 6c040d7a1..0aeebfef7 100644
 +       cost is somewhere OTHER than the scan itself
 +     - per-scan averages: instructions-per-byte sanity check
 +
-+   Gated on SDL_HINT_DOSKUTSU_SILENCE_HISTO=1 (strict-"1" match per
++   Gated on SDL_HINT_DOS_SILENCE_HISTO=1 (strict-"1" match per
 +   CLAUDE.md env-var convention; default OFF). Cost when OFF: zero
 +   (cached static-bool short-circuits). Cost when ON: 2
 +   SDL_GetTicksNS reads per Shape A scan + accumulator updates +
@@ -264,7 +264,7 @@ index 6c040d7a1..0aeebfef7 100644
 +       that enables histo MUST set the env var; banner emit names the
 +       var explicitly so the operator can grep-verify. */
 +    {
-+        const char *histo_hint = SDL_GetHint("SDL_HINT_DOSKUTSU_SILENCE_HISTO");
++        const char *histo_hint = SDL_GetHint("SDL_HINT_DOS_SILENCE_HISTO");
 +        g_p58_silence_histo_active =
 +            (histo_hint && histo_hint[0] == '1' && histo_hint[1] == 0);
 +        if (g_p58_silence_histo_active) {
@@ -280,7 +280,7 @@ index 6c040d7a1..0aeebfef7 100644
 +            g_p58_pd_call_count = 0;
 +        } else {
 +            doskutsu_dbg_log("audio: SDL/0058 Shape A mechanism histogram OFF "
-+                             "(set SDL_HINT_DOSKUTSU_SILENCE_HISTO=1 to engage)");
++                             "(set SDL_HINT_DOS_SILENCE_HISTO=1 to engage)");
 +        }
 +    }
 +

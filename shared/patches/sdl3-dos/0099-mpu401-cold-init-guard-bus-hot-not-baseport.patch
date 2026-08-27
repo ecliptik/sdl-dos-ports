@@ -165,7 +165,7 @@ index 56a880e63..e3431f9f3 100644
 +                                 "DECLINING to avoid the hot-0x331 wedge (no bus "
 +                                 "touch) -> WB falls back to organya. Cold-init "
 +                                 "must run BEFORE MIX_CreateMixerDevice; set "
-                                  "SDL_HINT_DOSKUTSU_AUDIO_WB_COLD_INIT=0 to disable "
+                                  "SDL_HINT_DOS_AUDIO_WB_COLD_INIT=0 to disable "
                                   "cold-init entirely.", (unsigned)port_base);
                  return false;
 diff --git a/src/core/dos/SDL_dos_audio_synth.h b/src/core/dos/SDL_dos_audio_synth.h

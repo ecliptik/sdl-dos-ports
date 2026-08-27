@@ -4,7 +4,7 @@ Date: Wed, 3 Jun 2026 08:27:16 -0700
 Subject: [PATCH 2/3] dos: patch 0089 -- RING_CHUNKS=32 deeper-ring lever
  (v1.0.8 coherence)
 
-Extends resolve_ring_chunks() to accept SDL_HINT_DOSKUTSU_AUDIO_RING_CHUNKS=32
+Extends resolve_ring_chunks() to accept SDL_HINT_DOS_AUDIO_RING_CHUNKS=32
 (default stays 16; byte-identical when unset). At 32 chunks the ring holds
 ~743 ms at 11025 stereo S16 (vs 372 ms at 16), giving the v1.0.8 depth-setpoint
 pump more underrun runway across bursty render stalls.
@@ -31,16 +31,16 @@ index 9d4092049..67e8e9ae4 100644
  // the ISR just does a memcpy (no SDL calls, no DPMI, no allocator).
  
  // Number of DMA half-buffers that fit in the ring. Must be a power of two
--// (we accept 4, 8, 16). Resolved from SDL_HINT_DOSKUTSU_AUDIO_RING_CHUNKS;
-+// (we accept 4, 8, 16, 32 -- SDL/0089 added 32). Resolved from SDL_HINT_DOSKUTSU_AUDIO_RING_CHUNKS;
+-// (we accept 4, 8, 16). Resolved from SDL_HINT_DOS_AUDIO_RING_CHUNKS;
++// (we accept 4, 8, 16, 32 -- SDL/0089 added 32). Resolved from SDL_HINT_DOS_AUDIO_RING_CHUNKS;
  // see resolve_ring_chunks() below.
  //
  // DOSKUTSU patch (Phase 9 wave 13.6.1): wave 13.6 hardcoded this to 16
 @@ -615,6 +615,7 @@ static Uint8 ReadSoundBlasterDSP(void)
- //   SET SDL_HINT_DOSKUTSU_AUDIO_RING_CHUNKS=4   (8 KB ring, 92 ms -- wave 13.5 baseline)
- //   SET SDL_HINT_DOSKUTSU_AUDIO_RING_CHUNKS=8   (16 KB ring, 184 ms -- intermediate)
- //   SET SDL_HINT_DOSKUTSU_AUDIO_RING_CHUNKS=16  (32 KB ring, 372 ms -- wave 13.6 default)
-+//   SET SDL_HINT_DOSKUTSU_AUDIO_RING_CHUNKS=32  (SDL/0089 deeper-ring lever; the KB/ms above are the wave-13 2048 B-chunk basis -- in the current 256-frame/1024 B-chunk config 32 chunks = 32 KB = ~743 ms at 11025 stereo / ~186 ms at 44100)
+ //   SET SDL_HINT_DOS_AUDIO_RING_CHUNKS=4   (8 KB ring, 92 ms -- wave 13.5 baseline)
+ //   SET SDL_HINT_DOS_AUDIO_RING_CHUNKS=8   (16 KB ring, 184 ms -- intermediate)
+ //   SET SDL_HINT_DOS_AUDIO_RING_CHUNKS=16  (32 KB ring, 372 ms -- wave 13.6 default)
++//   SET SDL_HINT_DOS_AUDIO_RING_CHUNKS=32  (SDL/0089 deeper-ring lever; the KB/ms above are the wave-13 2048 B-chunk basis -- in the current 256-frame/1024 B-chunk config 32 chunks = 32 KB = ~743 ms at 11025 stereo / ~186 ms at 44100)
  // Default (unset / unrecognized) = 16 to match wave 13.6 behaviour
  // when no env vars are set.
  //

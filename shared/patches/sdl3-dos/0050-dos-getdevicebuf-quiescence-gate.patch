@@ -35,7 +35,7 @@ uclock()-polling so other time-blocked threads can wake. ~100 iter/sec
 audio thread loop is well below buffer rate (43 Hz @ 22050/512), so
 SFX-trigger latency unaffected.
 
-Killswitch: SDL_HINT_DOSKUTSU_DOS_AUDIO_QUIESCENCE_GATE=0 disables the
+Killswitch: SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE=0 disables the
 gate (returns staging_buffer unconditionally; pre-0050 always-fill-ring
 behavior; auto-engage idle-pause cannot fire). Default ON. Strict-"0"
 match per CLAUDE.md env-var convention. Cached at module scope; resolved
@@ -86,7 +86,7 @@ Validation status:
 
 One TU touched (vendor/SDL/src/audio/dos/SDL_dosaudio_sb.c). ~95 lines
 added across the OpenDevice killswitch resolve + GetDeviceBuf gate logic.
-No new public API. New env var SDL_HINT_DOSKUTSU_DOS_AUDIO_QUIESCENCE_GATE
+No new public API. New env var SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE
 documented in docs/BOOT.md (user-facing/fallback section).
 
 Cross-reference: docs/PHASE12-PIXTONE-DECOUPLE-DESIGN.md Option A.
@@ -108,7 +108,7 @@ index b6cd35b3d..e41b4d79a 100644
  
 +/* DOSKUTSU patch (Phase 11 patch 0050): killswitch state for the
 +   GetDeviceBuf quiescence gate. Default ON (false = gate engages); set
-+   SDL_HINT_DOSKUTSU_DOS_AUDIO_QUIESCENCE_GATE=0 to flip to true and
++   SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE=0 to flip to true and
 +   disable (revert to pre-0050 always-return-staging behavior). Per
 +   CLAUDE.md strict-"0" env-var convention: only literal "0" disables;
 +   any other value leaves gate active. Resolved once at OpenDevice time;
@@ -128,11 +128,11 @@ index b6cd35b3d..e41b4d79a 100644
 +       env-var convention. Cached at module scope; read by
 +       DOSSOUNDBLASTER_GetDeviceBuf in the hot path. */
 +    {
-+        const char *gate_hint = SDL_GetHint("SDL_HINT_DOSKUTSU_DOS_AUDIO_QUIESCENCE_GATE");
++        const char *gate_hint = SDL_GetHint("SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE");
 +        g_dos_audio_quiescence_gate_disabled =
 +            (gate_hint && gate_hint[0] == '0' && gate_hint[1] == 0);
 +        if (g_dos_audio_quiescence_gate_disabled) {
-+            doskutsu_dbg_log("audio: SDL_HINT_DOSKUTSU_DOS_AUDIO_QUIESCENCE_GATE=0 "
++            doskutsu_dbg_log("audio: SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE=0 "
 +                             "(SDL/0050 quiescence gate DISABLED; pre-0050 always-"
 +                             "fill-ring behavior; auto-engage idle-pause cannot fire)");
 +        } else {
@@ -172,7 +172,7 @@ index b6cd35b3d..e41b4d79a 100644
 +       PlayDevice -> ring drains via IRQ -> 4 silent IRQs trip auto-engage ->
 +       DSP pause -> IRQ-5 stops -> fps recovered.
 +
-+       Killswitch: SDL_HINT_DOSKUTSU_DOS_AUDIO_QUIESCENCE_GATE=0 disables
++       Killswitch: SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE=0 disables
 +       the gate (returns staging_buffer unconditionally; pre-0050 behavior).
 +       Iter L PLAY2 (control) sets this env var; PLAY1 (treatment) leaves
 +       unset. Within-iter PLAY1-PLAY2 = SDL/0050 isolation signal.

@@ -48,7 +48,7 @@ Fix, both in DOSSOUNDBLASTER_WaitDevice, both under one killswitch:
 
 Both parts sit under one killswitch so the off path is a true revert:
 correctness fix -> ships default-ON with a strict-"0" killswitch
-SDL_HINT_DOSKUTSU_DOS_AUDIO_WAITDEVICE_TIMEOUT. With =0 NOTHING 0063
+SDL_HINT_DOS_DOS_AUDIO_WAITDEVICE_TIMEOUT. With =0 NOTHING 0063
 added runs -- WaitDevice is the verbatim pre-0063 unbounded spin --
 so the operator's 486DX2 A/B run can reproduce the pre-fix hang
 cleanly. OpenDevice resolves the hint once and emits a boot banner.
@@ -84,7 +84,7 @@ index 4dbc05f54..33a7e7bd7 100644
 +/* DOSKUTSU patch (Phase 11 patch 0063): killswitch state for the
 +   DOSSOUNDBLASTER_WaitDevice ring-drain timeout backstop. Default ON
 +   (false = backstop active). Set
-+   SDL_HINT_DOSKUTSU_DOS_AUDIO_WAITDEVICE_TIMEOUT=0 to flip true and
++   SDL_HINT_DOS_DOS_AUDIO_WAITDEVICE_TIMEOUT=0 to flip true and
 +   disable -- WaitDevice then reverts to the pre-0063 unbounded ring-
 +   drain spin. Per CLAUDE.md strict-"0" env-var convention: only the
 +   literal "0" disables. Resolved once at OpenDevice time; read by
@@ -125,7 +125,7 @@ index 4dbc05f54..33a7e7bd7 100644
 +
 +        /* DOSKUTSU patch (Phase 11 patch 0063): the ring is full. Both
 +           the part-1 DSP-resume kick and the part-2 wall-clock backstop
-+           sit under one killswitch so SDL_HINT_DOSKUTSU_DOS_AUDIO_
++           sit under one killswitch so SDL_HINT_DOS_DOS_AUDIO_
 +           WAITDEVICE_TIMEOUT=0 is a TRUE revert to the pre-0063
 +           unbounded ring-drain spin -- nothing 0063 added runs in that
 +           mode. That clean revert is what the operator's 486DX2 A/B
@@ -201,11 +201,11 @@ index 4dbc05f54..33a7e7bd7 100644
 +       the Intel 486DX2 configs (docs/internal/486-CLASS-CAMPAIGN-
 +       FINDINGS.md sec.9, Bug 2). */
 +    {
-+        const char *wdt_hint = SDL_GetHint("SDL_HINT_DOSKUTSU_DOS_AUDIO_WAITDEVICE_TIMEOUT");
++        const char *wdt_hint = SDL_GetHint("SDL_HINT_DOS_DOS_AUDIO_WAITDEVICE_TIMEOUT");
 +        g_dos_audio_waitdevice_timeout_disabled =
 +            (wdt_hint && wdt_hint[0] == '0' && wdt_hint[1] == 0);
 +        if (g_dos_audio_waitdevice_timeout_disabled) {
-+            doskutsu_dbg_log("audio: SDL_HINT_DOSKUTSU_DOS_AUDIO_WAITDEVICE_TIMEOUT=0 "
++            doskutsu_dbg_log("audio: SDL_HINT_DOS_DOS_AUDIO_WAITDEVICE_TIMEOUT=0 "
 +                             "(SDL/0063 ring-drain backstop DISABLED; WaitDevice "
 +                             "reverts to pre-0063 unbounded spin)");
 +        } else {

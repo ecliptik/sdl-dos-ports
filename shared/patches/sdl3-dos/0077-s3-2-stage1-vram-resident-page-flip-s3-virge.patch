@@ -30,7 +30,7 @@ the present becomes a display-start page-flip with no copy:
 Approved properties:
   - Chip gate: S3 ViRGE/DX (unlock CR38=0x48/CR39=0xA5, read device-ID
     CR2D/CR2E, gate strict 0x8A01), decoupled from the Cirrus gate /
-    SDL_HINT_DOSKUTSU_CIRRUS_BLT.
+    SDL_HINT_DOS_CIRRUS_BLT.
   - Flip via chip-agnostic VBE 0x4F07 (scanline = offset/pitch), replacing
     the Cirrus-specific direct-CRTC programming.
   - HANG-SAFE engage: at first engage, self-verify 0x4F07 via GET / SET(1-
@@ -45,7 +45,7 @@ Approved properties:
     has no nearptr the engine could composite into) and pitches_match (so
     the surface pitch never changes under the engine).
 
-Killswitch SDL_HINT_DOSKUTSU_VRAM_RESIDENT stays strict-"1" default-OFF; the
+Killswitch SDL_HINT_DOS_VRAM_RESIDENT stays strict-"1" default-OFF; the
 OFF path falls through to the legacy copy-present, byte-identical to pre-0061.
 Alpha/RMW composites land in VRAM in this always-VRAM model (slow-but-correct
 under the default-OFF killswitch; the KPI Mimiga scene is write-only so it is
@@ -113,7 +113,7 @@ index 87e660cdb..0ddd9d943 100644
      }
  
 -    // DOSKUTSU patch 0061 (Phase 11 wave-50 cycle 1) -- VRAM-resident
--    // page-flip divert. When SDL_HINT_DOSKUTSU_VRAM_RESIDENT=1 AND chip
+-    // page-flip divert. When SDL_HINT_DOS_VRAM_RESIDENT=1 AND chip
 -    // is Cirrus 5434 AND runtime encoding sanity-check passes, redirect
 -    // the present write to an off-screen back-page and CRTC-swap. Else
 -    // fall through to the legacy write-to-visible-page path. The
@@ -121,7 +121,7 @@ index 87e660cdb..0ddd9d943 100644
 -    // remains unchanged for cycle 1; this is the essential diagnostic
 -    // for whether VRAM writes escape the sysmem 20 MB/s ceiling.
 +    // DOSKUTSU patch 0077 (S3-2 Stage 1) -- always-VRAM page-flip present.
-+    // When SDL_HINT_DOSKUTSU_VRAM_RESIDENT=1 AND chip is S3 ViRGE/DX AND
++    // When SDL_HINT_DOS_VRAM_RESIDENT=1 AND chip is S3 ViRGE/DX AND
 +    // the 0x4F07 self-verify passed (all in _vram_resident_compute_back_page
 +    // -> _vram_resident_check_enabled) AND we are on the LFB nearptr path,
 +    // present by FLIPPING to the off-screen page instead of copying:
@@ -218,14 +218,14 @@ index 87e660cdb..0ddd9d943 100644
 -// Two new public helpers (SDL_DOSVesaGetBackBufferPage +
 -// SDL_DOSVesaPagePresent) plus an in-place divert inside
 -// SDL_DOSVesaDirectPresentFull (above) that, when
--// SDL_HINT_DOSKUTSU_VRAM_RESIDENT=1, redirects the present write to an
+-// SDL_HINT_DOS_VRAM_RESIDENT=1, redirects the present write to an
 -// off-screen back-page and CRTC-swaps that page into visibility. Engine
 -// code is unchanged for cycle 1; this is the essential diagnostic
 -// for whether VRAM writes (LFB or banked dosmemput to off-screen pages)
 -// escape the PODP83 sysmem 20 MB/s ceiling.
 +// Two public helpers (SDL_DOSVesaGetBackBufferPage + SDL_DOSVesaPagePresent)
 +// plus an in-place divert inside SDL_DOSVesaDirectPresentFull (above) that,
-+// when SDL_HINT_DOSKUTSU_VRAM_RESIDENT=1, present an off-screen VRAM
++// when SDL_HINT_DOS_VRAM_RESIDENT=1, present an off-screen VRAM
 +// back-page by flipping the display origin to it instead of copying.
  //
 -// Encoding anchor: tests/probes/crtcswap.c verdict at
@@ -255,7 +255,7 @@ index 87e660cdb..0ddd9d943 100644
 -// visibility but do not gate engagement (VGA bit polarity for word/byte
 -// varies; safe default is trust the probe-verified byte path unless
 -// dword is clearly configured).
-+// Killswitch SDL_HINT_DOSKUTSU_VRAM_RESIDENT default-OFF; the OFF path is
++// Killswitch SDL_HINT_DOS_VRAM_RESIDENT default-OFF; the OFF path is
 +// byte-identical to the legacy sysmem copy-present. Every engage gate
 +// fails SAFE to the copy-present -- never a hang (HW-IO safety per
 +// dosbox_not_proxy).
@@ -360,9 +360,9 @@ index 87e660cdb..0ddd9d943 100644
 +// DOSKUTSU patch 0077 (S3-2 Stage 1) -- retargeted from the wave-50
 +// Cirrus-5434 path to the S3 ViRGE/DX. Three gates, all fail-safe to the
 +// legacy copy-present (never hang):
-+//   1. strict-"1" killswitch SDL_HINT_DOSKUTSU_VRAM_RESIDENT (default-OFF).
++//   1. strict-"1" killswitch SDL_HINT_DOS_VRAM_RESIDENT (default-OFF).
 +//   2. chip is S3 ViRGE/DX (chip-id 0x8A01) -- decoupled from the Cirrus
-+//      gate / SDL_HINT_DOSKUTSU_CIRRUS_BLT.
++//      gate / SDL_HINT_DOS_CIRRUS_BLT.
 +//   3. HANG-SAFE VBE 0x4F07 self-verify: GET current display-start, SET a
 +//      1-scanline test value (BX=0x0000 = set immediately, NO BIOS
 +//      retrace-wait so the call cannot spin on a missing retrace), GET
@@ -382,7 +382,7 @@ index 87e660cdb..0ddd9d943 100644
 +    // banner; the absence of any "S3-2 stage1" line in the log is the
 +    // off signal, and the CR38/39 S3 unlock below never runs on a
 +    // default boot.
-     const char *env = SDL_getenv("SDL_HINT_DOSKUTSU_VRAM_RESIDENT");
+     const char *env = SDL_getenv("SDL_HINT_DOS_VRAM_RESIDENT");
      if (!env || env[0] != '1' || env[1] != 0) {
 -        // No banner emitted in the default-off path; the absence of any
 -        // wave-50 banner in the log is itself the "off" signal.
@@ -396,10 +396,10 @@ index 87e660cdb..0ddd9d943 100644
 -    // 6.7; we refuse engagement on other chips/firmware combinations.
 -    if (!SDL_DOSVesaDirect_IsCirrusBLTAvailable()) {
 -        doskutsu_dbg_log("sdl: wave-50 VRAM-resident page-flip DISABLED "
--                         "(chip not Cirrus 5434 OR SDL_HINT_DOSKUTSU_CIRRUS_BLT=0; "
+-                         "(chip not Cirrus 5434 OR SDL_HINT_DOS_CIRRUS_BLT=0; "
 -                         "engine uses sysmem fallback)");
 +    // (2) S3 ViRGE/DX detect (NOT the Cirrus gate). Decoupled from
-+    // SDL_HINT_DOSKUTSU_CIRRUS_BLT -- this lever ships for the S3.
++    // SDL_HINT_DOS_CIRRUS_BLT -- this lever ships for the S3.
 +    Uint16 chip_id = 0;
 +    if (!_vram_resident_is_s3_virge(&chip_id)) {
 +        doskutsu_dbg_log("sdl: S3-2 stage1 VRAM-resident page-flip DISABLED "

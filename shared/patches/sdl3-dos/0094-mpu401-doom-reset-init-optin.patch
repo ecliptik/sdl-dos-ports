@@ -14,7 +14,7 @@ exit), and a 0x3F sent to an already-UART MPU is read as MIDI DATA, not
 a command -- which can leave the device unprogrammed / wedged.
 
 This adds an opt-in path mimicking DOOM's sequence, gated by
-SDL_HINT_DOSKUTSU_AUDIO_WB_RESET_INIT (default OFF, killswitch-shaped):
+SDL_HINT_DOS_AUDIO_WB_RESET_INIT (default OFF, killswitch-shaped):
 0xFF reset -> HARD-BOUNDED DSR(bit-7) poll + 0xFE drain -> 0x3F UART
 entry. The drain cap is CORRECTNESS, not politeness: status bit 7 LIES
 on this Vibra16S CT2490 (W22-WB-F MPUPROBE -- it never clears), so an
@@ -39,7 +39,7 @@ index 301e39438..080f6299c 100644
  
      if (!do_probe) {
 +        /* DOSKUTSU patch (SDL/0094): opt-in DOOM/DMX-sequence reset init.
-+           SDL_HINT_DOSKUTSU_AUDIO_WB_RESET_INIT=1 (default OFF). g2k iter-3/4/5
++           SDL_HINT_DOS_AUDIO_WB_RESET_INIT=1 (default OFF). g2k iter-3/4/5
 +           wedged at MPU init where DOOM's DreamBlaster MIDI plays fine on the
 +           SAME 0x330 MPU + SB16. The bring-up diff (docs/internal/WB-INIT-DIFF.md):
 +           DOOM/DMX always RESETS (0xFF) + drains the 0xFE ACK before UART entry;
@@ -47,7 +47,7 @@ index 301e39438..080f6299c 100644
 +           state a prior program (DOOM doesn't reset on exit) left, and a 0x3F
 +           sent to an already-UART MPU is read as MIDI DATA, not a command.
 +           This path mimics DOOM: reset -> bounded ACK drain -> UART entry. */
-+        const char *rst_env = SDL_GetHint("SDL_HINT_DOSKUTSU_AUDIO_WB_RESET_INIT");
++        const char *rst_env = SDL_GetHint("SDL_HINT_DOS_AUDIO_WB_RESET_INIT");
 +        if (rst_env && rst_env[0] == '1' && rst_env[1] == 0) {
 +            int cap = 60000;
 +            int ack = -1;
@@ -82,7 +82,7 @@ index 301e39438..080f6299c 100644
 +            }
 +
 +            doskutsu_dbg_log("mpu401: reset-init at port_base=0x%04x "
-+                             "(SDL_HINT_DOSKUTSU_AUDIO_WB_RESET_INIT=1; DOOM/DMX "
++                             "(SDL_HINT_DOS_AUDIO_WB_RESET_INIT=1; DOOM/DMX "
 +                             "sequence: 0xFF reset -> bounded ACK drain -> 0x3F UART; "
 +                             "bit-6 DRR poll on writes). ack_drained=0x%02X via=%s. "
 +                             "(via-DSR + 0xFE = clean reset+ack; uncond = bit-7 lie / "
@@ -98,7 +98,7 @@ index 301e39438..080f6299c 100644
 +
          if (s_mpu401_drr_poll_enabled) {
              doskutsu_dbg_log("mpu401: direct-port init at port_base=0x%04x "
-                              "(DRR poll ON via SDL_HINT_DOSKUTSU_AUDIO_WB_DRR_POLL=1; "
+                              "(DRR poll ON via SDL_HINT_DOS_AUDIO_WB_DRR_POLL=1; "
 -- 
 2.47.3
 

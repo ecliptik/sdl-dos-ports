@@ -29,7 +29,7 @@ that collapses the cursors, deactivate every g_dos_pix_chan[] (active=false,
 channel_id=-1) and zero g_dos_pixtone_active_count -- so PixtoneISRMix injects
 nothing after the flush and a starved ISR loops the zeroed buffer (= silence).
 UNCONDITIONAL (no separate SDL killswitch): the rc5 A/B toggles the nx-side call
-gate SDL_HINT_DOSKUTSU_LOADSTAGE_SILENCE (whether the load_stage flush fires),
+gate SDL_HINT_DOS_LOADSTAGE_SILENCE (whether the load_stage flush fires),
 not this. Benign at the shared cold-render (nx 0206/0209) call sites too -- a
 scene reset should stop SFX anyway. Banner label genericized "pre-cold-render
 quiesce" -> "ring+DMA silence quiesce"; the flush banner now prints
@@ -37,7 +37,7 @@ pixtone_quiesced=N.
 
 Probe (rides along; zero hot-path cost): SDL_DOSAudioIsrRingWrite() exposes the
 software-ring producer byte cursor for the engine's per-cave [loadband-stat]
-line (SDL_HINT_DOSKUTSU_LOADBAND_STAT, engine-gated). The other two STAT counters
+line (SDL_HINT_DOS_LOADBAND_STAT, engine-gated). The other two STAT counters
 -- doskutsu_audio_irq_count (fires) and g_dos_pixtone_active_count (the screech
 discriminator, the path the ring cursor is blind to) -- are already extern
 globals, read directly. No new SDL env var.
@@ -68,7 +68,7 @@ index 44ead6553..a5244c91a 100644
 + *
 + * The engine snapshots the load-band counters at load_stage entry (AFTER
 + * SDL_DOSAudioFlushRingSilence) and exit -- gated engine-side by
-+ * SDL_HINT_DOSKUTSU_LOADBAND_STAT -- and emits one per-cave [loadband-stat] line
++ * SDL_HINT_DOS_LOADBAND_STAT -- and emits one per-cave [loadband-stat] line
 + * to disambiguate the rc3/rc4 PicoGUS-SB cave-transition screech (whether stale
 + * audio is looping because a post-flush RING write, an active Pixtone IRQ-mix
 + * channel, or an IRQ-starved DMA replay). The other two STAT counters are read
@@ -119,7 +119,7 @@ index 00e091b9f..f67964209 100644
 +       block a starved ISR loops that re-injected SFX = the rc3/rc4 cave-transition
 +       screech. Deactivating the channels here (same cli, atomic vs the ISR) closes
 +       that hole. UNCONDITIONAL (no separate SDL gate): the rc5 A/B toggles the
-+       nx-side call gate SDL_HINT_DOSKUTSU_LOADSTAGE_SILENCE (whether the load_stage
++       nx-side call gate SDL_HINT_DOS_LOADSTAGE_SILENCE (whether the load_stage
 +       flush fires at all), not this. Benign at the cold-render (nx 0206/0209) call
 +       sites too -- a scene reset should stop SFX. */
 +    for (int c = 0; c < DOS_PIXTONE_CHANNELS; ++c) {
@@ -150,7 +150,7 @@ index 00e091b9f..f67964209 100644
  
 +/* DOSKUTSU patch (SDL/0120, task #17): load-band audio-starvation probe
 +   accessor for the software-ring producer cursor. The engine snapshots this at
-+   load_stage entry (POST-flush) + exit (gated by SDL_HINT_DOSKUTSU_LOADBAND_STAT
++   load_stage entry (POST-flush) + exit (gated by SDL_HINT_DOS_LOADBAND_STAT
 +   engine-side) for the per-cave [loadband-stat] line: a delta > 0 across the band
 +   means the mixer wrote new SFX into the RING after the flush. (The OTHER two STAT
 +   counters are read directly: doskutsu_audio_irq_count + g_dos_pixtone_active_count

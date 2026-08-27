@@ -236,7 +236,7 @@ index 000000000..8e52a114d
 + *
 + * ## Killswitch
 + *
-+ * SDL_HINT_DOSKUTSU_MIDI_ISR_TICK strict-"1" engages; default OFF.
++ * SDL_HINT_DOS_MIDI_ISR_TICK strict-"1" engages; default OFF.
 + * Resolved once at DOSSOUNDBLASTER_OpenDevice; cached. Two banner
 + * variants emit on the SDL log channel: `audio: SDL/0072 midi tick
 + * from ISR: ENABLED (opt-in)` / `audio: SDL/0072 midi tick from ISR:
@@ -317,7 +317,7 @@ index 000000000..8e52a114d
 +/**
 + * Register the IRQ-5 MIDI tick callback. Called once at engine init
 + * from the main thread; the callback is invoked from the IRQ-5 ISR
-+ * at each fire when SDL_HINT_DOSKUTSU_MIDI_ISR_TICK is engaged.
++ * at each fire when SDL_HINT_DOS_MIDI_ISR_TICK is engaged.
 + *
 + * Pass NULL to deregister (the ISR reverts to no-op for the tick step
 + * even when the killswitch is still engaged).
@@ -346,14 +346,14 @@ index 000000000..8e52a114d
 +/**
 + * Returns true if Lever 2b ISR MIDI tick is active for this process.
 + * Resolved once at DOSSOUNDBLASTER_OpenDevice from
-+ * SDL_HINT_DOSKUTSU_MIDI_ISR_TICK (strict-"1"); stable post-init.
++ * SDL_HINT_DOS_MIDI_ISR_TICK (strict-"1"); stable post-init.
 + *
 + * The engine reads this to decide whether to (a) register an ISR
 + * callback via SDL_DOSMidiTickRegister and (b) skip the per-frame
 + * MidiScheduler::tick(now_ms) call from the engine main loop. When
 + * false, the engine retains pre-Lever-2b behavior unchanged.
 + *
-+ * \returns true if Lever 2b is engaged (SDL_HINT_DOSKUTSU_MIDI_ISR
++ * \returns true if Lever 2b is engaged (SDL_HINT_DOS_MIDI_ISR
 + *          _TICK=1 was observed at OpenDevice); false otherwise.
 + *
 + * \threadsafety Engine main thread; the cached bool is set once at
@@ -400,7 +400,7 @@ index 8592684e8..cf65f8e9f 100644
 + * The engine's main-loop MidiScheduler::tick callsite is SKIPPED
 + * when SDL_DOSMidiIsrTickActive() returns true.
 + *
-+ * Killswitch: SDL_HINT_DOSKUTSU_MIDI_ISR_TICK strict-"1" engages;
++ * Killswitch: SDL_HINT_DOS_MIDI_ISR_TICK strict-"1" engages;
 + * default OFF. No backend-gate -- Lever 2b is orthogonal to the music
 + * backend choice (the engine simply doesn't register a callback when
 + * running under Organya, which doesn't use MidiScheduler).
@@ -488,7 +488,7 @@ index 8592684e8..cf65f8e9f 100644
 +       callback when running under Organya (which doesn't use
 +       MidiScheduler). Per LEVER2B sec.3 + sec.6. */
 +    {
-+        const char *m2b_hint = SDL_GetHint("SDL_HINT_DOSKUTSU_MIDI_ISR_TICK");
++        const char *m2b_hint = SDL_GetHint("SDL_HINT_DOS_MIDI_ISR_TICK");
 +        const bool hint_set =
 +            (m2b_hint && m2b_hint[0] == '1' && m2b_hint[1] == 0);
 +        g_dos_midi_us_accum = 0;
@@ -497,7 +497,7 @@ index 8592684e8..cf65f8e9f 100644
 +        if (hint_set) {
 +            g_dos_midi_isr_tick_active = true;
 +            doskutsu_dbg_log("audio: SDL/0072 midi tick from ISR: ENABLED "
-+                             "(opt-in via SDL_HINT_DOSKUTSU_MIDI_ISR_TICK=1; "
++                             "(opt-in via SDL_HINT_DOS_MIDI_ISR_TICK=1; "
 +                             "MidiScheduler::tick piggybacks the SB16 IRQ-5 "
 +                             "at ~43 Hz Tier-2; render-rate decoupling for "
 +                             "MIDI tempo; Bug 4 music-tempo-wobble structural "
@@ -506,7 +506,7 @@ index 8592684e8..cf65f8e9f 100644
 +        } else {
 +            g_dos_midi_isr_tick_active = false;
 +            doskutsu_dbg_log("audio: SDL/0072 midi tick from ISR: DISABLED "
-+                             "(default; set SDL_HINT_DOSKUTSU_MIDI_ISR_TICK=1 "
++                             "(default; set SDL_HINT_DOS_MIDI_ISR_TICK=1 "
 +                             "to engage; off-path cost is two cached reads + "
 +                             "early branch per IRQ-5; engine main-loop "
 +                             "MidiScheduler::tick path unchanged)");

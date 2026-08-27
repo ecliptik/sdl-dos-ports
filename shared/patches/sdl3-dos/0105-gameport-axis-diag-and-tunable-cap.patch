@@ -5,7 +5,7 @@ Subject: [PATCH] patch 0105 -- gameport axis diag (JOY_DIAG) + runtime
  discharge cap (JOY_CAP)
 
 Diagnostic + tunable-cap support added while root-causing the g2k dead-axis.
-SDL_HINT_DOSKUTSU_JOY_DIAG=1 logs raw+calibrated axis values; JOY_CAP makes the
+SDL_HINT_DOS_JOY_DIAG=1 logs raw+calibrated axis values; JOY_CAP makes the
 direct-port discharge cap runtime-tunable (default 3000). The read itself was
 proven correct (raw swung full range, cal hit +/-32767); kept as a shippable
 diag lever (default off, harmless).
@@ -23,7 +23,7 @@ index b135c1b6c..1b95417f7 100644
      return cached != 0;
  }
  
-+/* DOSKUTSU diag: SDL_HINT_DOSKUTSU_JOY_DIAG=1 periodically logs the raw +
++/* DOSKUTSU diag: SDL_HINT_DOS_JOY_DIAG=1 periodically logs the raw +
 + * calibrated gameport axis values to the SDL debug log, so a dead in-game stick
 + * can be diagnosed from data instead of guesswork: raw=-1 means the read timed
 + * out (direct cap exceeded) or the BIOS call failed; a raw that never changes
@@ -33,7 +33,7 @@ index b135c1b6c..1b95417f7 100644
 +{
 +    static int cached = -1;
 +    if (cached < 0) {
-+        const char *h = SDL_GetHint("SDL_HINT_DOSKUTSU_JOY_DIAG");
++        const char *h = SDL_GetHint("SDL_HINT_DOS_JOY_DIAG");
 +        cached = (h && h[0] == '1' && h[1] == '\0') ? 1 : 0;
 +    }
 +    return cached != 0;
@@ -42,13 +42,13 @@ index b135c1b6c..1b95417f7 100644
 +/* DOSKUTSU: runtime-tunable discharge-count cap for the direct-port read
 + * (SDL/0103 default 3000). A flightstick whose pots discharge slower than 3000
 + * inportb iterations at full deflection reads -1 ("not connected") and goes
-+ * dead; SDL_HINT_DOSKUTSU_JOY_CAP raises it to test/fix that without a rebuild.
++ * dead; SDL_HINT_DOS_JOY_CAP raises it to test/fix that without a rebuild.
 + * Keep SETUP's joyport.c cap in sync if this default ever changes. */
 +static unsigned long DOS_GameportCap(void)
 +{
 +    static long cached = -1;
 +    if (cached < 0) {
-+        const char *h = SDL_GetHint("SDL_HINT_DOSKUTSU_JOY_CAP");
++        const char *h = SDL_GetHint("SDL_HINT_DOS_JOY_CAP");
 +        cached = (h && *h) ? SDL_atoi(h) : 3000;
 +        if (cached < 100) cached = 100;
 +    }
@@ -99,7 +99,7 @@ index b135c1b6c..1b95417f7 100644
          SDL_SendJoystickAxis(0, joystick, 1, cal_y);
      }
 +
-+    /* DOSKUTSU diag (SDL_HINT_DOSKUTSU_JOY_DIAG=1): rate-limited raw+cal trace so
++    /* DOSKUTSU diag (SDL_HINT_DOS_JOY_DIAG=1): rate-limited raw+cal trace so
 +     * a dead in-game stick is diagnosable from the SDL log. */
 +    if (DOS_JoyDiag()) {
 +        static unsigned diag_n = 0;

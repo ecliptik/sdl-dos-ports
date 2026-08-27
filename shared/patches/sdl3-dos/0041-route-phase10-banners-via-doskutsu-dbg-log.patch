@@ -29,7 +29,7 @@ Fix: replace SDL_Log with doskutsu_dbg_log for the three Phase 10
 init banners I added in 0039 + 0040:
   - "audio IRQ timer: RDTSC (Pentium-class detected, ...)"
   - "audio IRQ timer: 8253 PIT counter 0 (486-class fallback, ...)"
-  - "audio: DSP forcefully paused via SDL_HINT_DOSKUTSU_AUDIO_FORCE_DSP_PAUSE=1; ..."
+  - "audio: DSP forcefully paused via SDL_HINT_DOS_AUDIO_FORCE_DSP_PAUSE=1; ..."
 
 doskutsu_dbg_log self-initializes via doskutsu_dbg_open on first
 call + fsyncs per line, so banners become greppable in iter logs
@@ -72,11 +72,11 @@ index 3856acc43..ee73723fb 100644
  
  /* DOSKUTSU patch (Phase 10 patch 0038): IRQ-5 instrumentation +
 @@ -691,10 +692,14 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
-         const char *e = SDL_getenv("SDL_HINT_DOSKUTSU_AUDIO_FORCE_DSP_PAUSE");
+         const char *e = SDL_getenv("SDL_HINT_DOS_AUDIO_FORCE_DSP_PAUSE");
          if (e && e[0] == '1' && e[1] == 0) {
              g_dos_audio_force_dsp_pause = true;
 -            SDL_Log("audio: DSP forcefully paused via "
--                    "SDL_HINT_DOSKUTSU_AUDIO_FORCE_DSP_PAUSE=1; gameplay "
+-                    "SDL_HINT_DOS_AUDIO_FORCE_DSP_PAUSE=1; gameplay "
 -                    "will be silent; expect IRQ-5 to stop firing for fps "
 -                    "comparison");
 +            /* DOSKUTSU patch 0041: route via doskutsu_dbg_log so the
@@ -84,7 +84,7 @@ index 3856acc43..ee73723fb 100644
 +               stderr (where SDL_Log routes by default on DOS, and
 +               stderr isn't file-captured under DJGPP). */
 +            doskutsu_dbg_log("audio: DSP forcefully paused via "
-+                             "SDL_HINT_DOSKUTSU_AUDIO_FORCE_DSP_PAUSE=1; gameplay "
++                             "SDL_HINT_DOS_AUDIO_FORCE_DSP_PAUSE=1; gameplay "
 +                             "will be silent; expect IRQ-5 to stop firing for fps "
 +                             "comparison");
              /* Issue DSP pause via the existing service path. The pause

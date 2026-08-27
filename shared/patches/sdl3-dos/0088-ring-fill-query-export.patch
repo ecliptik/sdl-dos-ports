@@ -87,7 +87,7 @@ index 207c553f6..586423fcf 100644
 + *
 + * The ring depth (RING_CHUNKS x chunk frames) converted to ms via the open
 + * device's frame rate. Changes with both the device rate and the
-+ * SDL_HINT_DOSKUTSU_AUDIO_RING_CHUNKS lever (SDL/0089 adds a 32-chunk option),
++ * SDL_HINT_DOS_AUDIO_RING_CHUNKS lever (SDL/0089 adds a 32-chunk option),
 + * so the depth-setpoint pump should read this rather than hardcode a ceiling.
 + *
 + * \returns the ring capacity in integer ms, or 0 if no device is open.
@@ -205,7 +205,7 @@ index cde248f53..9d4092049 100644
 +    g_dos_ring_bytes_per_frame = (int)SDL_AUDIO_FRAMESIZE(device->spec);
      if (g_dos_pixtone_irq_mix_active) {
          const char *rd_hint =
-             SDL_GetHint("SDL_HINT_DOSKUTSU_PIXTONE_IRQ_RATEDIV");
+             SDL_GetHint("SDL_HINT_DOS_PIXTONE_IRQ_RATEDIV");
 -- 
 2.47.3
 

@@ -18,7 +18,7 @@ mode pitch / height.
 This is now a DISPLAY-START register problem, not an LFB / banked /
 aperture problem.
 
-Two approaches, both env-gated by SDL_HINT_DOSKUTSU_DISPLAY_START_FIX
+Two approaches, both env-gated by SDL_HINT_DOS_DISPLAY_START_FIX
 (strict "1" match per CLAUDE.md DOSKUTSU env-var convention; default
 OFF preserves current patch-0018 behaviour). Sequential -- the
 chip-direct display-start writes only fire if the VBE call failed.
@@ -134,7 +134,7 @@ index 861470cb3..c734f8964 100644
 +    // confirmed -- the display controller scan-caps at 64KB and never
 +    // reads bytes >=65536 for display output, regardless of pitch / height.
 +    //
-+    // Two approaches, both env-gated by SDL_HINT_DOSKUTSU_DISPLAY_START_FIX
++    // Two approaches, both env-gated by SDL_HINT_DOS_DISPLAY_START_FIX
 +    // (strict "1" match per CLAUDE.md DOSKUTSU env-var convention; default
 +    // OFF preserves current patch-0018 behaviour). Sequential -- Approach 2
 +    // display-start writes only fire if Approach 1 failed.
@@ -197,7 +197,7 @@ index 861470cb3..c734f8964 100644
 +    {
 +        static int _ds_fix_enabled_cached = -1;
 +        if (_ds_fix_enabled_cached == -1) {
-+            const char *e = SDL_getenv("SDL_HINT_DOSKUTSU_DISPLAY_START_FIX");
++            const char *e = SDL_getenv("SDL_HINT_DOS_DISPLAY_START_FIX");
 +            _ds_fix_enabled_cached = (e && e[0] == '1' && e[1] == 0) ? 1 : 0;
 +        }
 +        if (_ds_fix_enabled_cached) {

@@ -19,7 +19,7 @@ scheduled -- at 15 fps that's ~67 ms between yields, well under one
 audio chunk's worth of buffer (186 ms at 22050 Hz stereo S16, default
 4096-frame chunk size).
 
-Set SDL_HINT_DOSKUTSU_FORCE_PUMP_YIELD=1 in the env to restore the
+Set SDL_HINT_DOS_FORCE_PUMP_YIELD=1 in the env to restore the
 original per-pump yield (debug fallback if audio glitches).
 
 Predicted impact: title scene 5.5 fps -> ~15 fps on PODP 5V83.
@@ -49,11 +49,11 @@ index 78a50b649..22906c6b6 100644
 +       WaitDevice spin (SDL_dosaudio_sb.c:189), not the keyboard/mouse
 +       drain below. Default-skip the yield here; the engine is expected
 +       to call SDL_Delay(0) once per flip to keep the audio thread
-+       scheduled. Set SDL_HINT_DOSKUTSU_FORCE_PUMP_YIELD=1 in the env to
++       scheduled. Set SDL_HINT_DOS_FORCE_PUMP_YIELD=1 in the env to
 +       restore the original behavior (debug fallback if audio glitches). */
 +    static int yield_skip_cached = -1;
 +    if (yield_skip_cached == -1) {
-+        const char *force = SDL_getenv("SDL_HINT_DOSKUTSU_FORCE_PUMP_YIELD");
++        const char *force = SDL_getenv("SDL_HINT_DOS_FORCE_PUMP_YIELD");
 +        yield_skip_cached = (force && force[0] == '1' && force[1] == 0) ? 0 : 1;
 +    }
 +    if (!yield_skip_cached) {

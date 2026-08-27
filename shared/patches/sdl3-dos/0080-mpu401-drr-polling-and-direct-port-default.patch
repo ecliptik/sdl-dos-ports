@@ -46,7 +46,7 @@ Patch contents:
      observed iters_max=238 from WBTEST-006).
    - Returns true on DRR-clear-in-time, false on cap-hit.
    - One-shot cap-warn via doskutsu_dbg_log naming the killswitch
-     path (SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT=0); avoids log
+     path (SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=0); avoids log
      spam if a chip variant has stuck-high DRR.
    - Callers fail-soft (write the byte regardless of cap-hit) so
      chips that worked unpolled still work.
@@ -62,7 +62,7 @@ Patch contents:
    MIDI events (program-change, controller, pitch-bend, etc.)
    through to the wavetable chip.
 
-4. Flip the default of SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT from
+4. Flip the default of SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT from
    OFF to ON. SDL_DOSMpu401Init's dispatch now selects direct-port
    when the env var is unset (or any value other than strict "0").
    Strict-"0" killswitch reverts to the patch-0047 DSP-mediated
@@ -98,7 +98,7 @@ master. The vendor/SDL/CLAUDE.md AI restriction scopes to PR
 contributions; this patch series stays local to patches/SDL/.
 
 Docs update in companion: docs/internal/BOOT.md
-SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT entry updated to document
+SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT entry updated to document
 the new default-ON + strict-"0" killswitch semantics.
 
 See:
@@ -124,7 +124,7 @@ index 066f78b2b..587aaf8af 100644
 -          + 0x38 via SDL_DOSAudioSB_DSPMidi* helpers (vendor/SDL/src/audio/
 -          dos/SDL_dosaudio_sb.c).
 -   false = direct-port (Option A from analysis) -- writes to port_base+0/1
--           directly. Selected when SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT=1.
+-           directly. Selected when SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=1.
 -   Per W22-WB-F MPUPROBE forensic analysis (docs/MPUPROBE-W22WB-F-ANALYSIS.md),
 -   DSP-mediated avoids cross-firmware races between MPU-port access and
 -   DSP DMA programming that caused W22-WB-C/D lockups. */
@@ -135,7 +135,7 @@ index 066f78b2b..587aaf8af 100644
 -   SDL_DOSMpu401Init's direct-port branch. */
 +/* DOSKUTSU patch (Phase 11 patch 0080): dispatch path selector.
 +   true  = DSP-mediated MIDI fallback (opt-in via strict-"0" killswitch on
-+           SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT). Funnels through SB16
++           SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT). Funnels through SB16
 +           DSP cmd 0x34 + 0x38 via SDL_DOSAudioSB_DSPMidi* helpers
 +           (vendor/SDL/src/audio/dos/SDL_dosaudio_sb.c).
 +   false = direct-port + bit-6 DRR polling (default since patch 0080).
@@ -168,7 +168,7 @@ index 066f78b2b..587aaf8af 100644
 -       bus contender (port 0x22C), eliminating cross-firmware races.
 -
 -       Direct-port path (Option A from analysis) retained behind opt-in
--       hint SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT=1 for hardware where
+-       hint SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=1 for hardware where
 -       DSP-mediated turns out to be fragile. Strict-1 env-var match per
 +    /* DOSKUTSU patch (Phase 11 patch 0080): default = direct-port +
 +       bit-6 DRR polling.
@@ -185,7 +185,7 @@ index 066f78b2b..587aaf8af 100644
 +
 +       The patch-0047 DSP-mediated path stays in-tree as an opt-in
 +       fallback, selectable via strict-"0" killswitch on the
-+       SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT env var (set to "0" to
++       SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT env var (set to "0" to
 +       revert to the DSP-mediated cmd 0x34/0x38 route). The W22-WB-F
 +       MPUPROBE forensic analysis path concern about cross-firmware
 +       races is not refuted -- but in practice the DSP-mediated route
@@ -207,7 +207,7 @@ index 066f78b2b..587aaf8af 100644
 +       SDL_DOSMpu401Init AFTER SoundManager::init has run AND after
 +       the audio thread has serviced at least one frame. We check
 +       IsInitialized() inside the fallback branch. */
-     const char *direct_env = SDL_getenv("SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT");
+     const char *direct_env = SDL_getenv("SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT");
 -    const bool use_direct = (direct_env && direct_env[0] == '1' && direct_env[1] == 0);
 +    const bool use_dsp_fallback = (direct_env && direct_env[0] == '0' && direct_env[1] == 0);
  
@@ -228,10 +228,10 @@ index 066f78b2b..587aaf8af 100644
          }
 -        doskutsu_dbg_log("mpu401: DSP-mediated init at port_base=0x%04x "
 -                         "(default since patch 0047; DSP cmd 0x34 UART entry; "
--                         "set SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT=1 to use "
+-                         "set SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=1 to use "
 -                         "direct-port path instead)",
 +        doskutsu_dbg_log("mpu401: DSP-mediated fallback init at port_base=0x%04x "
-+                         "(opt-in via SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT=0; "
++                         "(opt-in via SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=0; "
 +                         "default since patch 0080 is direct-port + bit-6 DRR "
 +                         "polling per WBTEST-006 H20 confirmation; DSP cmd 0x34 "
 +                         "UART entry)",
@@ -286,7 +286,7 @@ index 066f78b2b..587aaf8af 100644
 +                         "chip variant may have stuck DRR; fail-soft "
 +                         "blind write follows -- direct-port path may be "
 +                         "unreliable on this hardware; set "
-+                         "SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT=0 to "
++                         "SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=0 to "
 +                         "fall back to DSP-mediated path)",
 +                         (unsigned)port_base);
 +        s_mpu401_drr_cap_warned = true;
@@ -296,22 +296,22 @@ index 066f78b2b..587aaf8af 100644
 +
  /* DOSKUTSU patch (Phase 10 patch 0047): direct-port path extracted from
     the patch-0044 SDL_DOSMpu401Init body. Entry guarded behind the
-    SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT=1 hint. Body unchanged from
+    SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=1 hint. Body unchanged from
 @@ -170,15 +235,26 @@ static bool SDL_DOSMpu401Init_DirectPort(uint16_t port_base)
      const bool do_probe = (probe_env && probe_env[0] == '1' && probe_env[1] == 0);
  
      if (!do_probe) {
 -        doskutsu_dbg_log("mpu401: blind init at port_base=0x%04x "
 -                         "(probe disabled -- patch 0044 default; set "
--                         "SDL_HINT_DOSKUTSU_AUDIO_PROBE_MPU401=1 to enable "
+-                         "SDL_HINT_DOS_AUDIO_PROBE_MPU401=1 to enable "
 -                         "probe path with LOCKUP RISK on real Vibra16S+S2)",
 +        doskutsu_dbg_log("mpu401: direct-port init at port_base=0x%04x "
 +                         "(default since patch 0080; bit-6 DRR polling "
 +                         "before UART entry + every byte write per "
 +                         "WBTEST-006 H20 confirmation; probe path "
-+                         "disabled, set SDL_HINT_DOSKUTSU_AUDIO_PROBE_MPU401=1 "
++                         "disabled, set SDL_HINT_DOS_AUDIO_PROBE_MPU401=1 "
 +                         "to enable it with LOCKUP RISK on real Vibra16S+S2; "
-+                         "set SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT=0 "
++                         "set SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=0 "
 +                         "to fall back to DSP-mediated path)",
                           (unsigned)port_base);
 -        /* UART mode entry. After this, all writes to data port pass

@@ -16,7 +16,7 @@ inportb never retires, so no software cap or wall-clock timeout can break a
 hardware bus wait-state. The only safe option is to not issue the read.
 
 Gate ALL port_base+1 status reads behind a new strict-"1" hint
-SDL_HINT_DOSKUTSU_AUDIO_WB_DRR_POLL, default OFF. OFF =>
+SDL_HINT_DOS_AUDIO_WB_DRR_POLL, default OFF. OFF =>
 SDL_DOSMpu401WaitDRR returns "ready" with no inportb, so init + every byte
 write are blind -- patch-0044's proven-safe "fail-to-silence beats
 fail-to-lockup" semantics, un-stallable on any hardware. ON => today's capped
@@ -47,7 +47,7 @@ index 2d7a4db71..301e39438 100644
 +
 +/* DOSKUTSU patch (SDL/0093): DRR-poll opt-in gate. Default OFF.
 +   Resolved once at SDL_DOSMpu401Init_DirectPort() from
-+   SDL_HINT_DOSKUTSU_AUDIO_WB_DRR_POLL (strict-"1").
++   SDL_HINT_DOS_AUDIO_WB_DRR_POLL (strict-"1").
 +
 +   Why this exists: the bit-6 DRR poll (patch 0080) READS the MPU status
 +   register at port_base+1. On real Vibra16S+S2 that read is issued HOT --
@@ -80,14 +80,14 @@ index 2d7a4db71..301e39438 100644
      for (int iter = 0; iter < 10000; iter++) {
          if ((inportb(status_port) & 0x40) == 0) {
 @@ -234,27 +264,41 @@ static bool SDL_DOSMpu401Init_DirectPort(uint16_t port_base)
-     const char *probe_env = SDL_getenv("SDL_HINT_DOSKUTSU_AUDIO_PROBE_MPU401");
+     const char *probe_env = SDL_getenv("SDL_HINT_DOS_AUDIO_PROBE_MPU401");
      const bool do_probe = (probe_env && probe_env[0] == '1' && probe_env[1] == 0);
  
 +    /* DOSKUTSU patch (SDL/0093): resolve the DRR-poll opt-in once. Default
 +       OFF => blind init (no status-register read; cannot stall the ISA bus).
 +       See SDL_DOSMpu401WaitDRR for the full HOT-read / IOCHRDY rationale. */
 +    {
-+        const char *drr = SDL_GetHint("SDL_HINT_DOSKUTSU_AUDIO_WB_DRR_POLL");
++        const char *drr = SDL_GetHint("SDL_HINT_DOS_AUDIO_WB_DRR_POLL");
 +        s_mpu401_drr_poll_enabled = (drr && drr[0] == '1' && drr[1] == 0);
 +    }
 +
@@ -96,9 +96,9 @@ index 2d7a4db71..301e39438 100644
 -                         "(default since patch 0080; bit-6 DRR polling "
 -                         "before UART entry + every byte write per "
 -                         "WBTEST-006 H20 confirmation; probe path "
--                         "disabled, set SDL_HINT_DOSKUTSU_AUDIO_PROBE_MPU401=1 "
+-                         "disabled, set SDL_HINT_DOS_AUDIO_PROBE_MPU401=1 "
 -                         "to enable it with LOCKUP RISK on real Vibra16S+S2; "
--                         "set SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT=0 "
+-                         "set SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=0 "
 -                         "to fall back to DSP-mediated path)",
 -                         (unsigned)port_base);
 -        /* DOSKUTSU patch (Phase 11 patch 0080): bit-6 DRR poll before
@@ -114,7 +114,7 @@ index 2d7a4db71..301e39438 100644
 -           per DOSMID source (mpu401_uart in MPU401.C). */
 +        if (s_mpu401_drr_poll_enabled) {
 +            doskutsu_dbg_log("mpu401: direct-port init at port_base=0x%04x "
-+                             "(DRR poll ON via SDL_HINT_DOSKUTSU_AUDIO_WB_DRR_POLL=1; "
++                             "(DRR poll ON via SDL_HINT_DOS_AUDIO_WB_DRR_POLL=1; "
 +                             "bit-6 DRR polling before UART entry + every byte "
 +                             "write per WBTEST-006 H20. ONLY enable on HW where "
 +                             "the MPU status read is confirmed safe -- the read "
@@ -128,10 +128,10 @@ index 2d7a4db71..301e39438 100644
 +                             "(DRR poll OFF by default since SDL/0093 -- no MPU "
 +                             "status-register read, cannot stall the ISA bus; "
 +                             "patch-0044 fail-to-silence policy. Set "
-+                             "SDL_HINT_DOSKUTSU_AUDIO_WB_DRR_POLL=1 to re-enable "
++                             "SDL_HINT_DOS_AUDIO_WB_DRR_POLL=1 to re-enable "
 +                             "bit-6 DRR polling on HW where the status read is "
 +                             "confirmed safe. Set "
-+                             "SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT=0 for the "
++                             "SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=0 for the "
 +                             "DSP-mediated path)",
 +                             (unsigned)port_base);
 +        }

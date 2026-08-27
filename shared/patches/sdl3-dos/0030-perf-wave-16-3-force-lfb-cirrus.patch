@@ -25,7 +25,7 @@ banked-mode bug class AND gains bandwidth (LFB is direct memcpy,
 no banked overhead).
 
 This patch adds an experimental escape hatch:
-SDL_HINT_DOSKUTSU_FORCE_LFB=1 overrides both the SDL/0019 Cirrus
+SDL_HINT_DOS_FORCE_LFB=1 overrides both the SDL/0019 Cirrus
 auto-detect AND the SDL_HINT_DOS_DISABLE_LFB manual disable, forcing
 LFB at both the mode-set layer (SDL_dosmodes.c:838 force_banked
 calculation, fed to VBE 0x4F02 SETMODE_LFB at line ~855) AND the
@@ -37,9 +37,9 @@ The hint is strict-match per CLAUDE.md DOSKUTSU env-var convention
 (`e && e[0] == '1' && e[1] == 0`) so SET FORCE_LFB=0 / empty / unset
 all leave SDL/0019's auto-disable behaviour intact. Default behaviour
 is unchanged; the override only fires when the iter explicitly opts in.
-The env-var name SDL_HINT_DOSKUTSU_FORCE_LFB matches the symbol
-constant identically (same convention as SDL_HINT_DOSKUTSU_BANK_SENTINEL,
-SDL_HINT_DOSKUTSU_FORCE_PUMP_YIELD).
+The env-var name SDL_HINT_DOS_FORCE_LFB matches the symbol
+constant identically (same convention as SDL_HINT_DOS_BANK_SENTINEL,
+SDL_HINT_DOS_FORCE_PUMP_YIELD).
 
 One diagnostic line lands in SDLDBG.LOG at modeset time:
 
@@ -141,7 +141,7 @@ index d6d9cda0f..2e0bd0f96 100644
 + * See docs/PHASE9-WAVE-17-18-PLAN.md / the wave 16.3 LFB experiment for
 + * context.
 + */
-+#define SDL_HINT_DOSKUTSU_FORCE_LFB "SDL_HINT_DOSKUTSU_FORCE_LFB"
++#define SDL_HINT_DOS_FORCE_LFB "SDL_HINT_DOS_FORCE_LFB"
 +
  /**
   * Set the level of checking for invalid parameters passed to SDL functions.
@@ -157,13 +157,13 @@ index 85d4e3d28..6c34ad55d 100644
 -    const bool force_banked = data->force_banked_path || hint_disable_lfb;
 +
 +    // DOSKUTSU patch 0030 (Phase 9 wave 16.3) -- LFB-force override. When
-+    // SDL_HINT_DOSKUTSU_FORCE_LFB is strict-match "1", clear the
++    // SDL_HINT_DOS_FORCE_LFB is strict-match "1", clear the
 +    // Cirrus auto-disable + manual-disable so the LFB nearptr write path
 +    // is selected here even when force_banked would otherwise route writes
 +    // through the banked window. Mirrors the same override at the
 +    // mode-set layer in SDL_dosmodes.c so both layers stay in sync per
 +    // patch 0020's policy. Strict env-var match per CLAUDE.md convention.
-+    const char *force_lfb_env = SDL_getenv("SDL_HINT_DOSKUTSU_FORCE_LFB");
++    const char *force_lfb_env = SDL_getenv("SDL_HINT_DOS_FORCE_LFB");
 +    const bool hint_force_lfb = (force_lfb_env && force_lfb_env[0] == '1' && force_lfb_env[1] == 0);
 +    const bool force_banked = !hint_force_lfb &&
 +                              (data->force_banked_path || hint_disable_lfb);
@@ -181,14 +181,14 @@ index 20543df1b..861470cb3 100644
 -    const bool force_banked = (data->force_banked_path || hint_disable_lfb) && is_banked_usable;
 +
 +    // DOSKUTSU patch 0030 (Phase 9 wave 16.3) -- LFB-force override. When
-+    // SDL_HINT_DOSKUTSU_FORCE_LFB is strict-match "1", clear the
++    // SDL_HINT_DOS_FORCE_LFB is strict-match "1", clear the
 +    // Cirrus auto-disable + manual-disable so LFB is engaged anyway. The
 +    // wave 16.2 banked-flush bottom-strip bug on real Cirrus banked is the
 +    // motivating case: if LFB happens to work on this chip, we retire the
 +    // entire banked-mode bug class AND gain bandwidth (LFB is direct memcpy,
 +    // no banked overhead). Strict env-var match per CLAUDE.md convention so
 +    // SET FORCE_LFB=0 / SET FORCE_LFB= keep the auto-disable active.
-+    const char *force_lfb_env = SDL_getenv("SDL_HINT_DOSKUTSU_FORCE_LFB");
++    const char *force_lfb_env = SDL_getenv("SDL_HINT_DOS_FORCE_LFB");
 +    const bool hint_force_lfb = (force_lfb_env && force_lfb_env[0] == '1' && force_lfb_env[1] == 0);
 +    const bool force_banked = !hint_force_lfb &&
 +                              (data->force_banked_path || hint_disable_lfb) &&

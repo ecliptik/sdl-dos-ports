@@ -2,7 +2,7 @@ From 3f837946497ff26c24d18f2496456363c0ba3006 Mon Sep 17 00:00:00 2001
 From: Micheal Waltz <micheal@ecliptik.com>
 Date: Tue, 16 Jun 2026 11:55:51 -0700
 Subject: [PATCH] dos: patch 0102 -- persisted gameport joystick calibration
- (SDL_HINT_DOSKUTSU_JOY_CAL)
+ (SDL_HINT_DOS_JOY_CAL)
 
 The DOS gameport driver auto-calibrates at runtime: SDL_GetJoystickAxis only
 reports a usable range after the stick has been swept to its extremes, so the
@@ -13,7 +13,7 @@ off-center.
 
 SETUP.EXE's Calibrate screen (Phase 3 / #40) captures the per-axis center +
 extremes once and stores them in DOSKUTSU.CFG; the CFG shim exports them as
-SDL_HINT_DOSKUTSU_JOY_CAL="xmin,xcenter,xmax,ymin,ycenter,ymax" before
+SDL_HINT_DOS_JOY_CAL="xmin,xcenter,xmax,ymin,ycenter,ymax" before
 SDL_Init. This patch reads that hint at DOS_JoystickOpen and applies the stored
 range plus the explicit center directly, so the stick is fully calibrated from
 the first frame -- no swirl, and no "assume centered at launch" guess. The
@@ -74,7 +74,7 @@ index 4fde0f0f4..8d5497059 100644
 + * SETUP.EXE's "Calibrate joystick" screen captures the gameport per-axis
 + * center + extents (3-step cal) and stores them in DOSKUTSU.CFG; the engine's
 + * CFG shim exports them before SDL_Init as
-+ * SDL_HINT_DOSKUTSU_JOY_CAL="xmin,xcenter,xmax,ymin,ycenter,ymax". When present
++ * SDL_HINT_DOS_JOY_CAL="xmin,xcenter,xmax,ymin,ycenter,ymax". When present
 + * + sane we apply the stored range AND the explicit per-axis center, marking
 + * the stick fully calibrated from the first frame, so the player needn't swirl
 + * the stick each boot and there's no launch-time "assume centered" guess. This
@@ -90,7 +90,7 @@ index 4fde0f0f4..8d5497059 100644
 + */
 +static bool DOS_ApplyStoredCalibration(struct joystick_hwdata *hwdata)
 +{
-+    const char *hint = SDL_GetHint("SDL_HINT_DOSKUTSU_JOY_CAL");
++    const char *hint = SDL_GetHint("SDL_HINT_DOS_JOY_CAL");
 +    int xmin, xcen, xmax, ymin, ycen, ymax;
 +
 +    if (!hint || !*hint) {
@@ -133,7 +133,7 @@ index 4fde0f0f4..8d5497059 100644
      hwdata->calibrated = false;
  
 +    /* DOSKUTSU patch (SDL/0102): seed from a stored SETUP calibration if one is
-+       present. No-op (returns false) absent SDL_HINT_DOSKUTSU_JOY_CAL, leaving
++       present. No-op (returns false) absent SDL_HINT_DOS_JOY_CAL, leaving
 +       the auto-calibration path untouched. */
 +    DOS_ApplyStoredCalibration(hwdata);
 +

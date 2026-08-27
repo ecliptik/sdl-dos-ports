@@ -1,7 +1,7 @@
 From 3dd32b6d810541c744c9f18b06d39bedab50a847 Mon Sep 17 00:00:00 2001
 From: Micheal Waltz <micheal@ecliptik.com>
 Date: Tue, 25 Aug 2026 19:09:47 -0700
-Subject: [PATCH] dos: patch 0126 -- SDL_HINT_DOSKUTSU_FORCE_MODE_ID
+Subject: [PATCH] dos: patch 0126 -- SDL_HINT_DOS_FORCE_MODE_ID
  enumeration filter
 
 Why DOS needs this: SDL_GetClosestFullscreenDisplayMode (SDL_video.c)
@@ -16,7 +16,7 @@ mode-sets. The Mach64-to-30fps plan needs both 0x0101 (Phase 1: isolate
 the LFB at a fixed 640x480 under UniVBE) and 0x0100 (Phase 2: 640x400 to
 buy back scanout bandwidth), and neither is reachable today.
 
-Shape: read SDL_HINT_DOSKUTSU_FORCE_MODE_ID once during enumeration in
+Shape: read SDL_HINT_DOS_FORCE_MODE_ID once during enumeration in
 DOSVESA_GetDisplayModes and drop every enumerated VESA mode whose id does
 not match -- same insertion point and style as patch 0006's DOS_MAX_BPP
 depth cap, which already filters this list. Filtering the ENUMERATION
@@ -96,7 +96,7 @@ index a105eeb0b..268ac99a4 100644
 + *
 + * Added by patches/SDL/0126 (DOSKUTSU local patch, never upstreamed).
 + */
-+#define SDL_HINT_DOSKUTSU_FORCE_MODE_ID "SDL_HINT_DOSKUTSU_FORCE_MODE_ID"
++#define SDL_HINT_DOS_FORCE_MODE_ID "SDL_HINT_DOS_FORCE_MODE_ID"
 +
  /**
   * A variable that pins the DOS VBE mode to whatever was set first and
@@ -109,7 +109,7 @@ index 322232f24..5663bb441 100644
      const char *max_bpp_str = SDL_GetHint(SDL_HINT_DOS_MAX_BPP);
      const int max_bpp = max_bpp_str ? SDL_atoi(max_bpp_str) : 0;
  
-+    // Patch 0126 (DOSKUTSU): SDL_HINT_DOSKUTSU_FORCE_MODE_ID forces the mode
++    // Patch 0126 (DOSKUTSU): SDL_HINT_DOS_FORCE_MODE_ID forces the mode
 +    // pick to a single named VBE mode id by filtering the enumerated list down
 +    // to that one id -- same insertion point and style as patch 0006's bpp cap
 +    // just above. Why DOS needs this: SDL_GetClosestFullscreenDisplayMode
@@ -130,7 +130,7 @@ index 322232f24..5663bb441 100644
 +    // about the configurations that exist today, and the phases that set this
 +    // hint are exactly the configurations that break it. Anyone changing the
 +    // default breaks the "byte-unchanged for every other card" property silently.
-+    const char *force_mode_id_str = SDL_GetHint(SDL_HINT_DOSKUTSU_FORCE_MODE_ID);
++    const char *force_mode_id_str = SDL_GetHint(SDL_HINT_DOS_FORCE_MODE_ID);
 +    const long force_mode_id_parsed = force_mode_id_str ? SDL_strtol(force_mode_id_str, NULL, 0) : 0;
 +    const int force_mode_id_req = (force_mode_id_parsed > 0 && force_mode_id_parsed <= 0xFFFF)
 +                                      ? (int)force_mode_id_parsed

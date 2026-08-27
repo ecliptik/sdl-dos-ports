@@ -43,7 +43,7 @@ sdl_ai_policy memory):
 - SDL_DOSVesaDirectBankedFlush    -- wrap BankedDosmemput() (existing inline)
 - SDL_DOSVesaDirectProgramPalette -- wrap ProgramVGADAC() for INDEX8 DAC sync
 - SDL_DOSVesaDirectPresentFull    -- convenience: cheapest full-screen present
-- SDL_HINT_DOSKUTSU_DIRECT_VESA   -- hint name; engine-side gating only
+- SDL_HINT_DOS_DIRECT_VESA   -- hint name; engine-side gating only
                                     (SDL itself does not consume it)
 
 Engine integration FAQ baked into header doc-comments:
@@ -266,7 +266,7 @@ index 000000000..034bedf74
 + * not for synchronization.)
 + *
 + * The hint-driven path-selection (SDL_HINT_DOS_PREFER_LFB,
-+ * SDL_HINT_DOS_DISABLE_LFB, SDL_HINT_DOSKUTSU_FORCE_LFB) is read at
++ * SDL_HINT_DOS_DISABLE_LFB, SDL_HINT_DOS_FORCE_LFB) is read at
 + * mode-set / lazy-reinit time and DOES NOT bump the generation counter.
 + * Restart the app to apply hint changes.
 + *
@@ -644,7 +644,7 @@ index 2e0bd0f96..9b05b3c45 100644
 +++ b/include/SDL3/SDL_hints.h
 @@ -977,6 +977,52 @@ extern "C" {
   */
- #define SDL_HINT_DOSKUTSU_FORCE_LFB "SDL_HINT_DOSKUTSU_FORCE_LFB"
+ #define SDL_HINT_DOS_FORCE_LFB "SDL_HINT_DOS_FORCE_LFB"
  
 +/**
 + * A variable that, when set to "1", instructs the application (typically
@@ -690,7 +690,7 @@ index 2e0bd0f96..9b05b3c45 100644
 + * Added by patches/SDL/0034 (DOSKUTSU local patch, never upstreamed).
 + * See docs/PHASE9-WAVE-17-18-PLAN.md sec. 4 for the wave-18 plan.
 + */
-+#define SDL_HINT_DOSKUTSU_DIRECT_VESA "SDL_HINT_DOSKUTSU_DIRECT_VESA"
++#define SDL_HINT_DOS_DIRECT_VESA "SDL_HINT_DOS_DIRECT_VESA"
 +
  /**
   * Set the level of checking for invalid parameters passed to SDL functions.

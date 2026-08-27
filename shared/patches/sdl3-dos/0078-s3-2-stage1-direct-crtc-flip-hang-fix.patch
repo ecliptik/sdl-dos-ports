@@ -51,7 +51,7 @@ CR0D/CR0C/CR69 the page-1 WORD value, read back, restore -- synchronous
 DISABLEs to copy-present. Removed the now-unused _vram_resident_pitch
 cache (the WORD address = byte_offset >> 1 needs no pitch).
 
-Killswitch SDL_HINT_DOSKUTSU_VRAM_RESIDENT strict-"1" default-OFF; the OFF
+Killswitch SDL_HINT_DOS_VRAM_RESIDENT strict-"1" default-OFF; the OFF
 path is unchanged (byte-identical copy-present). Banners retagged
 "direct-CRTC ... NO INT 0x10" (embed witness + INT-0x10-removed proof for
 build-qa's two-witness).
@@ -137,9 +137,9 @@ index 0ddd9d943..e5a46cfa1 100644
 +// Cirrus-5434 path to the S3 ViRGE/DX; patch 0078 made the flip
 +// real-mode-INT-free (direct CRTC). Gates, all fail-safe to the legacy
 +// copy-present (never hang, never a real-mode INT):
- //   1. strict-"1" killswitch SDL_HINT_DOSKUTSU_VRAM_RESIDENT (default-OFF).
+ //   1. strict-"1" killswitch SDL_HINT_DOS_VRAM_RESIDENT (default-OFF).
  //   2. chip is S3 ViRGE/DX (chip-id 0x8A01) -- decoupled from the Cirrus
- //      gate / SDL_HINT_DOSKUTSU_CIRRUS_BLT.
+ //      gate / SDL_HINT_DOS_CIRRUS_BLT.
 -//   3. HANG-SAFE VBE 0x4F07 self-verify: GET current display-start, SET a
 -//      1-scanline test value (BX=0x0000 = set immediately, NO BIOS
 -//      retrace-wait so the call cannot spin on a missing retrace), GET

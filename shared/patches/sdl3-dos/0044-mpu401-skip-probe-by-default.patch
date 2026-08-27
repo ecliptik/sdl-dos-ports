@@ -42,7 +42,7 @@ chain selects WB), the user takes responsibility for hardware
 presence. The driver's job is to not crash the system when the
 hardware isn't there.
 
-Probe path retained behind SDL_HINT_DOSKUTSU_AUDIO_PROBE_MPU401=1
+Probe path retained behind SDL_HINT_DOS_AUDIO_PROBE_MPU401=1
 opt-in for diagnosis on hardware known-safe to probe (DOSBox-X
 emulated MPU-401, hypothetical future ISA chips that don't stall
 the bus on cold reads). Strict-1 env-var match per CLAUDE.md
@@ -62,7 +62,7 @@ doskutsu_dbg_log lines:
     fail/ok) preserved.
 
 BOOT.md entry added per env_vars_document_in_user_docs.md:
-  SDL_HINT_DOSKUTSU_AUDIO_PROBE_MPU401=1
+  SDL_HINT_DOS_AUDIO_PROBE_MPU401=1
   Category: dev-only (LOCKUP RISK on real Vibra16S+S2; opt-in
   for diagnosis on emulated or known-safe hardware only).
 
@@ -121,19 +121,19 @@ index e1bb0555a..a5509d3cd 100644
 +       WB), they take responsibility for hardware presence. Failing-
 +       to-silence beats failing-to-lockup.
 +
-+       Probe path retained behind SDL_HINT_DOSKUTSU_AUDIO_PROBE_MPU401=1
++       Probe path retained behind SDL_HINT_DOS_AUDIO_PROBE_MPU401=1
 +       for hardware known-safe to probe (e.g. DOSBox-X emulated
 +       MPU-401, or hypothetical future ISA chips that don't stall
 +       the bus on cold reads). Default OFF: even the auto-detect
 +       chain gets blind init (fail-open semantics). Strict-1 env-var
 +       match per CLAUDE.md convention. */
-+    const char *probe_env = SDL_getenv("SDL_HINT_DOSKUTSU_AUDIO_PROBE_MPU401");
++    const char *probe_env = SDL_getenv("SDL_HINT_DOS_AUDIO_PROBE_MPU401");
 +    const bool do_probe = (probe_env && probe_env[0] == '1' && probe_env[1] == 0);
 +
 +    if (!do_probe) {
 +        doskutsu_dbg_log("mpu401: blind init at port_base=0x%04x "
 +                         "(probe disabled -- patch 0044 default; set "
-+                         "SDL_HINT_DOSKUTSU_AUDIO_PROBE_MPU401=1 to enable "
++                         "SDL_HINT_DOS_AUDIO_PROBE_MPU401=1 to enable "
 +                         "probe path with LOCKUP RISK on real Vibra16S+S2)",
 +                         (unsigned)port_base);
 +        /* UART mode entry. After this, all writes to data port pass
@@ -145,14 +145,14 @@ index e1bb0555a..a5509d3cd 100644
 +        return true;
 +    }
 +
-+    /* === Probe path (opt-in via SDL_HINT_DOSKUTSU_AUDIO_PROBE_MPU401=1) ===
++    /* === Probe path (opt-in via SDL_HINT_DOS_AUDIO_PROBE_MPU401=1) ===
 +
 +       LOCKUP RISK on real Vibra16S+S2 -- see W22-WB-D postmortem.
 +       Retained for diagnosis on emulated MPU-401 hardware (DOSBox-X)
 +       or future chips known-safe to probe. Logic preserved from
 +       patch 0042 (open-bus early-exit + iteration-cap). */
 +    doskutsu_dbg_log("mpu401: probe entry port_base=0x%04x "
-+                     "(SDL_HINT_DOSKUTSU_AUDIO_PROBE_MPU401=1; LOCKUP RISK)",
++                     "(SDL_HINT_DOS_AUDIO_PROBE_MPU401=1; LOCKUP RISK)",
 +                     (unsigned)port_base);
 +
 +    /* Open-bus early-exit (from patch 0042): if the status register

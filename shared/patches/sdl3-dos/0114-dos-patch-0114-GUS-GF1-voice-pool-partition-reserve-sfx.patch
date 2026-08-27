@@ -15,7 +15,7 @@ far more headroom, sounds markedly cleaner).
 
 Partition the pool so SFX get a reserved TOP slice and can never eat into
 music's voices:
-  - g_gus_sfx_reserve, from SDL_HINT_DOSKUTSU_GUS_SFX_VOICES (default 4),
+  - g_gus_sfx_reserve, from SDL_HINT_DOS_GUS_SFX_VOICES (default 4),
     clamped to <= g_gus_voices/4 so music always keeps >= 3/4 of the pool.
     Resolved in Init after gus_resolve_voices (voices already known).
   - SDL_DOSGusAllocVoice (music) scans ONLY [0, voices - reserve).
@@ -53,7 +53,7 @@ index ae67412f5..e5f47861c 100644
 + * Allocate a hardware voice from the RESERVED SFX partition.
 + *
 + * Identical contract to SDL_DOSGusAllocVoice, but scans ONLY the top
-+ * SDL_HINT_DOSKUTSU_GUS_SFX_VOICES-sized slice of the pool -- the voices at
++ * SDL_HINT_DOS_GUS_SFX_VOICES-sized slice of the pool -- the voices at
 + * [num_voices - reserve, num_voices). Main-loop Pixtone SFX call THIS (music
 + * note_on keeps calling SDL_DOSGusAllocVoice, the complementary
 + * [0, num_voices - reserve) slice) so an SFX burst can never claim a voice the
@@ -70,7 +70,7 @@ index ae67412f5..e5f47861c 100644
 + * \returns a voice index in [num_voices - reserve, num_voices), or -1 if the
 + *          SFX partition is exhausted (caller does its own steal/drop policy,
 + *          unchanged). Returns -1 unconditionally when the reserve is 0
-+ *          (SDL_HINT_DOSKUTSU_GUS_SFX_VOICES=0).
++ *          (SDL_HINT_DOS_GUS_SFX_VOICES=0).
 + *
 + * \since DOSKUTSU patch SDL/0114.
 + */
@@ -94,13 +94,13 @@ index 362bd2ee1..1447fb233 100644
 @@ -929,6 +930,34 @@ bool SDL_DOSGusInit(void)
         8-bit allocs too (Pixtone SFX). OFF reproduces the crash; =1 engages the
         guard -- both from the SAME binary for the g2k A/B. */
-     g_gus_sfx_bankalign = gus_hint_is_one("SDL_HINT_DOSKUTSU_GUS_SFX_BANKALIGN");
+     g_gus_sfx_bankalign = gus_hint_is_one("SDL_HINT_DOS_GUS_SFX_BANKALIGN");
 +    /* gustune-1 #38 fidelity: partition the GF1 voice pool so main-loop SFX get a
 +       reserved TOP slice and never LRU-steal music's voices. Pre-partition the
 +       pool was one flat FCFS scan shared between IRQ-0 music note_on and main-loop
 +       SFX; when it filled, MidiBackendGus stole music's own oldest note, so every
 +       SFX burst starved music polyphony (the scratchy music at 20 voices). The
-+       reserve count comes from SDL_HINT_DOSKUTSU_GUS_SFX_VOICES (default 5), and
++       reserve count comes from SDL_HINT_DOS_GUS_SFX_VOICES (default 5), and
 +       is CLAMPED to <= g_gus_voices/4 so music always keeps >= 3/4 of the pool.
 +       Music allocs from [0, g_gus_voices - reserve) (SDL_DOSGusAllocVoice); SFX
 +       from [g_gus_voices - reserve, g_gus_voices) (SDL_DOSGusAllocVoiceSfx). This
@@ -109,7 +109,7 @@ index 362bd2ee1..1447fb233 100644
 +       Read like gus_resolve_voices (numeric hint via SDL_GetHint); g_gus_voices
 +       is already resolved above so the voices/4 clamp is valid here. */
 +    {
-+        const char *h = SDL_GetHint("SDL_HINT_DOSKUTSU_GUS_SFX_VOICES");
++        const char *h = SDL_GetHint("SDL_HINT_DOS_GUS_SFX_VOICES");
 +        int want = 5;                    /* default reserve (g2k ear-judge: 5 beat 4 -- more SFX headroom, music still >= 3/4) */
 +        int cap = g_gus_voices / 4;      /* music keeps >= 3/4 of the pool */
 +        if (h && h[0]) {
@@ -124,7 +124,7 @@ index 362bd2ee1..1447fb233 100644
 +        g_gus_sfx_reserve = want;
 +    }
      g_gus_dr_head = g_gus_dr_tail = 0; /* arm the IRQ-safe diag ring */
-     skip = gus_hint_is_one("SDL_HINT_DOSKUTSU_GUS_SKIP_DETECTION");
+     skip = gus_hint_is_one("SDL_HINT_DOS_GUS_SKIP_DETECTION");
  
 @@ -1006,6 +1035,14 @@ bool SDL_DOSGusInit(void)
                       g_gus_pio_autoinc ? "+autoinc" : "",
@@ -188,7 +188,7 @@ index 362bd2ee1..1447fb233 100644
 +       SDL_DOSGusAllocVoice -- SFX allocs from the main loop while music note_on
 +       allocs from the PIT IRQ, and they share one busy-list, so find-free+claim
 +       must be atomic across the IRQ boundary. When reserve==0
-+       (SDL_HINT_DOSKUTSU_GUS_SFX_VOICES=0) the slice is empty -> always -1 (the
++       (SDL_HINT_DOS_GUS_SFX_VOICES=0) the slice is empty -> always -1 (the
 +       caller falls back to its own steal/drop policy, i.e. the pre-partition
 +       behavior). */
 +    int music_top = g_gus_voices - g_gus_sfx_reserve;

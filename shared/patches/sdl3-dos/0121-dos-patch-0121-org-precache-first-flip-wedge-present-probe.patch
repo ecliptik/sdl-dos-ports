@@ -14,7 +14,7 @@ INSIDE the present is invisible to it. This SDL half brackets the HW ops those
 branches funnel into, so the LAST per-line-fsync'd log line before the machine
 hangs names the exact wedging op.
 
-Gated by the SHARED opt-in hint SDL_HINT_DOSKUTSU_ORGCACHE_PRESENT_PROBE
+Gated by the SHARED opt-in hint SDL_HINT_DOS_ORGCACHE_PRESENT_PROBE
 (strict-"1", default OFF, cache-at-boot) -- the same hint nx/0271 reads, so one
 env var arms both halves. Default OFF == a single cached-int check, zero
 hot-path perturbation; this is diagnostic instrumentation, not a shipping lever.
@@ -51,7 +51,7 @@ index a95b41218..dde73e0ed 100644
  
 +// DOSKUTSU patch 0121 (v1.6.3 task #1, org-precache first-flip WEDGE probe):
 +// present-path HW-IO breadcrumbs. Gated by the SHARED opt-in hint
-+// SDL_HINT_DOSKUTSU_ORGCACHE_PRESENT_PROBE (strict-"1", default OFF,
++// SDL_HINT_DOS_ORGCACHE_PRESENT_PROBE (strict-"1", default OFF,
 +// cache-at-boot), coordinated with nx-engine/0271 -- the engine half brackets
 +// flip()'s present branches (ENTER dv-presentfull / sdl-full ...), this SDL half
 +// brackets the HW ops those branches funnel into so the LAST fsync'd line before
@@ -67,7 +67,7 @@ index a95b41218..dde73e0ed 100644
 +static int _orgcache_probe_active(void)
 +{
 +    if (_orgcache_probe_cached < 0) {
-+        const char *h = SDL_GetHint("SDL_HINT_DOSKUTSU_ORGCACHE_PRESENT_PROBE");
++        const char *h = SDL_GetHint("SDL_HINT_DOS_ORGCACHE_PRESENT_PROBE");
 +        _orgcache_probe_cached = (h && h[0] == '1' && h[1] == 0) ? 1 : 0;
 +        if (_orgcache_probe_cached) {
 +            // One-time SDL-side ARM witness (mirrors nx/0271's "present-probe:

@@ -306,7 +306,7 @@ index d47bae177..208a31b80 100644
 +static bool _sd085_active(void)
 +{
 +    if (s_sd085_enabled < 0) {
-+        const char *sd = SDL_GetHint("SDL_HINT_DOSKUTSU_STARVE_DIAG");
++        const char *sd = SDL_GetHint("SDL_HINT_DOS_STARVE_DIAG");
 +        s_sd085_enabled = (sd && sd[0] == '1' && sd[1] == '\0') ? 1 : 0;
 +    }
 +    return s_sd085_enabled == 1 && g_title_diag_armed;

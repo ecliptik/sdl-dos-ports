@@ -70,7 +70,7 @@ MixerCallback invocation (~22 Hz at Tier-2 config; ~22 stores/sec).
 Negligible.
 
 Strict-"D" engagement: the volatile is READ by SDL3-DOS only when
-SDL_HINT_DOSKUTSU_SILENCE_SHAPE=D (env-var-gated; default-OFF;
+SDL_HINT_DOS_SILENCE_SHAPE=D (env-var-gated; default-OFF;
 Shape A bytewise-scan path remains the default). PLAY6 in wave-36
 sets SHAPE=D; all other PLAYs run Shape A and ignore this value.
 
@@ -164,7 +164,7 @@ index 242d6412..21b10e78 100644
 +       Tier-2 config; ~22 stores/sec). Negligible.
 +
 +       Strict-"D" engagement: the volatile is READ by SDL3-DOS only
-+       when SDL_HINT_DOSKUTSU_SILENCE_SHAPE=D (see SDL/0057);
++       when SDL_HINT_DOS_SILENCE_SHAPE=D (see SDL/0057);
 +       otherwise Shape A bytewise-scan path runs as before, ignoring
 +       this value. */
 +    extern volatile int doskutsu_mixer_actual_mixed_bytes;
@@ -176,7 +176,7 @@ index 242d6412..21b10e78 100644
 +/* DOSKUTSU patch (Phase 11 patch 0001): definition of the cross-module
 +   volatile that MixerCallback writes above. SDL3-DOS audio backend
 +   declares this as extern and reads it in PlayDevice when
-+   SDL_HINT_DOSKUTSU_SILENCE_SHAPE=D engages Shape D (per
++   SDL_HINT_DOS_SILENCE_SHAPE=D engages Shape D (per
 +   patches/SDL/0057). Initial value 0 means "silent" -- safe default
 +   that won't false-trigger ring writes before the first MixerCallback
 +   fires.

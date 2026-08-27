@@ -62,7 +62,7 @@ The earlier SDL/0063 WaitDevice ring-drain backstop guards a different
 top, before SDL/0063's part-1/part-2; under park, the loop returns
 from SDL_Delay+continue before reaching SDL/0063's code.
 
-Killswitch: SDL_HINT_DOSKUTSU_DOS_AUDIO_SHUTDOWN_PARK (default-ON,
+Killswitch: SDL_HINT_DOS_DOS_AUDIO_SHUTDOWN_PARK (default-ON,
 strict-"0"). =0 makes SDL_DOSAudioBeginShutdown skip the flag flip,
 so WaitDevice never parks -- pre-0066 behavior, used for the
 operator's DX2 A/B reproducer cell. Resolved once at OpenDevice;
@@ -133,7 +133,7 @@ index 3d74628cc..04a1b266d 100644
 +   shutdown alone and instead removing the audio thread from the
 +   lock-contention window via the WaitDevice loop.
 +
-+   Killswitch: SDL_HINT_DOSKUTSU_DOS_AUDIO_SHUTDOWN_PARK=0 disables the
++   Killswitch: SDL_HINT_DOS_DOS_AUDIO_SHUTDOWN_PARK=0 disables the
 +   park (g_dos_audio_shutdown_park_disabled true). With the killswitch
 +   set, SDL_DOSAudioBeginShutdown does NOT flip g_dos_audio_hard_park,
 +   so WaitDevice never parks -- pre-0066 behavior, used for the
@@ -174,7 +174,7 @@ index 3d74628cc..04a1b266d 100644
 +           main runs freely during the park (the DOS_Yield baked into
 +           SDL_Delay schedules main once per 5 ms wall-clock).
 +           Killswitched at OpenDevice via
-+           SDL_HINT_DOSKUTSU_DOS_AUDIO_SHUTDOWN_PARK=0 -- the setter in
++           SDL_HINT_DOS_DOS_AUDIO_SHUTDOWN_PARK=0 -- the setter in
 +           SDL_DOSAudioBeginShutdown is gated on the killswitch, so
 +           with =0 the flag never flips true and this check stays
 +           false; pre-0066 behavior preserved for the operator's DX2
@@ -200,11 +200,11 @@ index 3d74628cc..04a1b266d 100644
 +       the 486-class campaign surfaced on the Intel 486DX2 configs
 +       (docs/internal/486-CLASS-CAMPAIGN-FINDINGS.md sec.16, Bug 2). */
 +    {
-+        const char *park_hint = SDL_GetHint("SDL_HINT_DOSKUTSU_DOS_AUDIO_SHUTDOWN_PARK");
++        const char *park_hint = SDL_GetHint("SDL_HINT_DOS_DOS_AUDIO_SHUTDOWN_PARK");
 +        g_dos_audio_shutdown_park_disabled =
 +            (park_hint && park_hint[0] == '0' && park_hint[1] == 0);
 +        if (g_dos_audio_shutdown_park_disabled) {
-+            doskutsu_dbg_log("audio: SDL_HINT_DOSKUTSU_DOS_AUDIO_SHUTDOWN_PARK=0 "
++            doskutsu_dbg_log("audio: SDL_HINT_DOS_DOS_AUDIO_SHUTDOWN_PARK=0 "
 +                             "(SDL/0066 audio-thread hard-park DISABLED; "
 +                             "SDL_DOSAudioBeginShutdown will not park; A/B-only -- "
 +                             "reproduces pre-0066 quit hang on real DX2)");
@@ -218,7 +218,7 @@ index 3d74628cc..04a1b266d 100644
 +
      /* DOSKUTSU patch (Phase 11 patch 0064): resolve the SFX-stall
         instrumentation part-C gate once at OpenDevice time. Reuses the
-        existing FINE_INSTR env var (SDL_HINT_DOSKUTSU_FINE_INSTR,
+        existing FINE_INSTR env var (SDL_HINT_DOS_FINE_INSTR,
 @@ -1417,6 +1528,29 @@ void SDL_DOSAudioBeginShutdown(void)
          doskutsu_dbg_log("audio: SDL_DOSAudioBeginShutdown -- gate already "
                           "disabled (killswitch or repeat call); no-op");
@@ -228,7 +228,7 @@ index 3d74628cc..04a1b266d 100644
 +       DOSSOUNDBLASTER_WaitDevice parks the audio thread OUT of the
 +       lock-contention window during the MIX_DestroyMixer teardown
 +       that follows. Gated on the killswitch resolved at OpenDevice
-+       via SDL_HINT_DOSKUTSU_DOS_AUDIO_SHUTDOWN_PARK. Without this
++       via SDL_HINT_DOS_DOS_AUDIO_SHUTDOWN_PARK. Without this
 +       park, ObtainLogicalAudioDevice -- reached via SDL_DestroyAudioStream
 +       (mixer->output_stream)'s simplified-stream device close --
 +       wedges on real Intel 486DX2 hardware (486-class campaign Bug 2,

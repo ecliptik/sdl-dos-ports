@@ -14,7 +14,7 @@ DOSVESA_UpdateWindowFramebuffer -- the SLOW path -- which DIRECT_VESA
 bypasses, so on the path g2k actually runs we have zero bank-1 evidence.
 
 This adds, inside PresentFull's banked branch, a default-OFF diagnostic
-(SDL_HINT_DOSKUTSU_DV_BANK_AUDIT=1, strict "1", mirroring the FLIP_INSTR
+(SDL_HINT_DOS_DV_BANK_AUDIT=1, strict "1", mirroring the FLIP_INSTR
 / BANK_SENTINEL convention in this file):
   1. per-flush bank-switch + byte deltas (mirror of WAVE16-FB-FLUSH-AUDIT),
      emitted every 100 flips -- confirms bank 1 is still written 76800/2
@@ -74,7 +74,7 @@ index e5a46cfa1..48d873201 100644
 +//      win_size_bytes). Logs both + match + an all-zero flag. match=0 (esp.
 +//      VRAM all-zero while source is non-zero) is positive evidence for (B).
 +//
-+// Default OFF; enabled by SDL_HINT_DOSKUTSU_DV_BANK_AUDIT=1 (strict "1" match,
++// Default OFF; enabled by SDL_HINT_DOS_DV_BANK_AUDIT=1 (strict "1" match,
 +// mirroring the FLIP_INSTR / BANK_SENTINEL convention in this file -- read via
 +// SDL_getenv to match those neighbors exactly). The cadence readback adds 2
 +// bank switches on 1-of-100 flips (so that flip's switch delta reads ~4, not
@@ -91,7 +91,7 @@ index e5a46cfa1..48d873201 100644
 +                                                Uint32 sw_delta, Uint32 by_delta)
 +{
 +    if (_dv_bank_audit_enabled == -1) {
-+        const char *e = SDL_getenv("SDL_HINT_DOSKUTSU_DV_BANK_AUDIT");
++        const char *e = SDL_getenv("SDL_HINT_DOS_DV_BANK_AUDIT");
 +        _dv_bank_audit_enabled = (e && e[0] == '1' && e[1] == 0) ? 1 : 0;
 +    }
 +    if (!_dv_bank_audit_enabled || !st) {

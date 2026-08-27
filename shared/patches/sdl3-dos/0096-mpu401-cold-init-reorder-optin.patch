@@ -17,7 +17,7 @@ data/status/reset survived). DOOM plays WaveBlaster+SB concurrently on
 this exact board, so the hardware combo works -- the difference is
 bring-up ORDER.
 
-Add an opt-in cold-init: SDL_HINT_DOSKUTSU_AUDIO_WB_COLD_INIT=1
+Add an opt-in cold-init: SDL_HINT_DOS_AUDIO_WB_COLD_INIT=1
 (strict-"1", default OFF). The engine calls SDL_DOSMpu401Init BEFORE the
 SB16 opens, so the whole MPU bring-up runs on a cold bus: 0xFF reset ->
 bounded DSR-capped ACK drain (bit-7 lies on this Vibra16S CT2490 -- cap
@@ -55,7 +55,7 @@ index 02d33076d..db7a81098 100644
  
      if (!do_probe) {
 +        /* DOSKUTSU patch (SDL/0096): opt-in DOOM-shape COLD-INIT for the
-+           WaveBlaster. SDL_HINT_DOSKUTSU_AUDIO_WB_COLD_INIT=1 (strict-"1",
++           WaveBlaster. SDL_HINT_DOS_AUDIO_WB_COLD_INIT=1 (strict-"1",
 +           default OFF). The engine (SoundManager) calls SDL_DOSMpu401Init
 +           BEFORE MIX_CreateMixerDevice opens the SB16, so the WHOLE MPU-401
 +           bring-up runs on a COLD ISA bus -- no autoinit-DMA + IRQ-5
@@ -83,7 +83,7 @@ index 02d33076d..db7a81098 100644
 +           note byte = exactly the wedge class on the DX2-66. Cold clean entry +
 +           blind hot data writes is the correct composition. Default OFF; flips
 +           ON-for-wb only after the g2k play-through gate confirms. */
-+        const char *cold = SDL_GetHint("SDL_HINT_DOSKUTSU_AUDIO_WB_COLD_INIT");
++        const char *cold = SDL_GetHint("SDL_HINT_DOS_AUDIO_WB_COLD_INIT");
 +        if (cold && cold[0] == '1' && cold[1] == 0) {
 +            int cap = 60000;
 +            int ack = -1;
@@ -107,7 +107,7 @@ index 02d33076d..db7a81098 100644
 +            }
 +
 +            doskutsu_dbg_log("mpu401: cold-init at port_base=0x%04x "
-+                             "(SDL_HINT_DOSKUTSU_AUDIO_WB_COLD_INIT=1; MPU UART "
++                             "(SDL_HINT_DOS_AUDIO_WB_COLD_INIT=1; MPU UART "
 +                             "entered on the COLD bus BEFORE the SB16 open -- "
 +                             "0xFF reset -> bounded ACK drain -> 0x3F UART entry; "
 +                             "per-byte PLAY writes stay BLIND, no hot 0x331 DRR "
@@ -128,7 +128,7 @@ index 02d33076d..db7a81098 100644
 +        }
 +
          /* DOSKUTSU patch (SDL/0094): opt-in DOOM/DMX-sequence reset init.
-            SDL_HINT_DOSKUTSU_AUDIO_WB_RESET_INIT=1 (default OFF). g2k iter-3/4/5
+            SDL_HINT_DOS_AUDIO_WB_RESET_INIT=1 (default OFF). g2k iter-3/4/5
             wedged at MPU init where DOOM's DreamBlaster MIDI plays fine on the
 @@ -499,6 +572,12 @@ void SDL_DOSMpu401WriteByte(uint8_t byte)
          return; /* not initialized; silent no-op per docs */
@@ -141,7 +141,7 @@ index 02d33076d..db7a81098 100644
 +    doskutsu_mpu_write_count++;
 +
      /* DOSKUTSU patch (Phase 10 patch 0047): dispatch via DSP-mediated
-        path when default; via direct-port when SDL_HINT_DOSKUTSU_AUDIO_
+        path when default; via direct-port when SDL_HINT_DOS_AUDIO_
         WB_DIRECT_PORT=1 was set at init time. */
 @@ -916,6 +995,14 @@ volatile uint32_t doskutsu_audio_irq_wall_us = 0;
  volatile uint32_t doskutsu_audio_irq_count = 0;

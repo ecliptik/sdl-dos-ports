@@ -39,13 +39,13 @@ chunk -- the non-preemptive scheduler runs the audio thread N chunks
 uninterrupted between yields, building an N-deep buffer for the ISR to drain
 during main's slice. This is a TRADE: higher N -> deeper buffer (better audio)
 but fewer main slices (LOWER render fps; N=1 measured ~18 fps best-case, higher
-N lower). N is the new hint SDL_HINT_DOSKUTSU_DOS_AUDIO_COOP_YIELD_EVERY
+N lower). N is the new hint SDL_HINT_DOS_DOS_AUDIO_COOP_YIELD_EVERY
 (integer, clamp 1..64, resolved at OpenDevice, default 4 placeholder); N=1 ==
 the banked every-chunk behavior. The g2k organya sweep (EVERY=2/4/8) picks the
 ship default: lowest N that clears consec_silent (~0-2) while flip_n/fps stay
 acceptable.
 
-Killswitch SDL_HINT_DOSKUTSU_DOS_AUDIO_COOP_YIELD=0 (strict "0", UNCHANGED --
+Killswitch SDL_HINT_DOS_DOS_AUDIO_COOP_YIELD=0 (strict "0", UNCHANGED --
 the EVERY cadence is a separate hint so the killswitch semantics + the shipped
 BOOT.md/smoke-banner are untouched) reverts to the pre-fix monopoly for the
 g2k A/B. opl3/wb are unaffected by construction (they yield every iter via the
@@ -101,7 +101,7 @@ index 60437aa29..966f7ef2d 100644
 +   Unconditional: avail=0 (room available) is precisely when main is parked, so
 +   gating on not-starving would re-create the monopoly.
 +
-+   Default-ON; killswitch SDL_HINT_DOSKUTSU_DOS_AUDIO_COOP_YIELD=0 reverts to the
++   Default-ON; killswitch SDL_HINT_DOS_DOS_AUDIO_COOP_YIELD=0 reverts to the
 +   pre-fix monopoly for the g2k A/B. Resolved at OpenDevice. g_dos_wd_coop_yields
 +   counts the fired yields (rides patch 0082's snd: line; climbs with the fix ON,
 +   frozen 0 with =0) so the confirm iter witnesses the lever engaged. SDL-only;
@@ -118,7 +118,7 @@ index 60437aa29..966f7ef2d 100644
 +   handing main a slice. TRADE: higher N -> deeper buffer (better audio) but
 +   fewer main slices (LOWER render fps; N=1 measured ~18 fps best-case on g2k,
 +   higher N is lower). The g2k sweep (EVERY=2/4/8 on organya) picks the ship
-+   value. SDL_HINT_DOSKUTSU_DOS_AUDIO_COOP_YIELD_EVERY = integer N (clamp 1..64),
++   value. SDL_HINT_DOS_DOS_AUDIO_COOP_YIELD_EVERY = integer N (clamp 1..64),
 +   resolved at OpenDevice; N=1 == the banked every-chunk behavior. Default 4 is
 +   a placeholder until the sweep settles it. */
 +static Uint32 g_dos_audio_coop_yield_every   = 4;     /* SDL/0086 cadence N (1..64); sweep-tuned */
@@ -161,23 +161,23 @@ index 60437aa29..966f7ef2d 100644
      }
  
 +    /* DOSKUTSU patch (SDL/0086): resolve the Bug-5 in-band cooperative-yield
-+       killswitch. Default-ON (the fix); SDL_HINT_DOSKUTSU_DOS_AUDIO_COOP_YIELD=0
++       killswitch. Default-ON (the fix); SDL_HINT_DOS_DOS_AUDIO_COOP_YIELD=0
 +       reverts to the pre-fix cooperative-scheduler monopoly (organya title-hang)
 +       for the g2k A/B. Strict "0" per CLAUDE.md killswitch discipline. Resolved
 +       once here (main thread, before the audio thread starts) and read in
 +       DOSSOUNDBLASTER_WaitDevice. Banner emitted unconditionally so the smoke
 +       gate can verify the lever is wired. */
 +    {
-+        const char *cy_hint = SDL_GetHint("SDL_HINT_DOSKUTSU_DOS_AUDIO_COOP_YIELD");
++        const char *cy_hint = SDL_GetHint("SDL_HINT_DOS_DOS_AUDIO_COOP_YIELD");
 +        const bool cy_disabled = (cy_hint && cy_hint[0] == '0' && cy_hint[1] == 0);
 +        g_dos_audio_coop_yield_enabled = !cy_disabled;
 +        /* SDL/0086 cadence: resolve the yield-every-N hint (separate from the
 +           killswitch above so COOP_YIELD's strict-0 semantics stay unchanged).
-+           SDL_HINT_DOSKUTSU_DOS_AUDIO_COOP_YIELD_EVERY = integer N, clamp 1..64,
++           SDL_HINT_DOS_DOS_AUDIO_COOP_YIELD_EVERY = integer N, clamp 1..64,
 +           default 4 (placeholder; the g2k sweep picks the ship value). N=1 ==
 +           yield every chunk (the banked underrun). Malformed/<1 -> 1; >64 -> 64. */
 +        {
-+            const char *ce_hint = SDL_GetHint("SDL_HINT_DOSKUTSU_DOS_AUDIO_COOP_YIELD_EVERY");
++            const char *ce_hint = SDL_GetHint("SDL_HINT_DOS_DOS_AUDIO_COOP_YIELD_EVERY");
 +            g_dos_audio_coop_yield_every = 4;
 +            if (ce_hint && ce_hint[0]) {
 +                int v = SDL_atoi(ce_hint);

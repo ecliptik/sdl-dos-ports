@@ -20,7 +20,7 @@ gives a single-revert if v1.0.1 needs to roll back to default-OFF.
 
 Three transforms in SDL_dosaudio_sb.c:
 
-1. L3 gate (0071 resolve): SDL_HINT_DOSKUTSU_PIXTONE_IRQ_MIX flips from
+1. L3 gate (0071 resolve): SDL_HINT_DOS_PIXTONE_IRQ_MIX flips from
    strict-"1" (default OFF) to killswitch (default ON; only literal "0"
    disables). The backend-organya gate is UNCHANGED -- L3 is still forced
    OFF under AUDIO_BACKEND=organya (Bug 5 interlock holds at default-ON).
@@ -29,7 +29,7 @@ Three transforms in SDL_dosaudio_sb.c:
    flips the engine half. BOTH must flip or L3 stays off -- they're
    coordinated (cross-link-unit lock with nx-engine).
 
-2. L2b gate (0072 resolve): SDL_HINT_DOSKUTSU_MIDI_ISR_TICK flips the
+2. L2b gate (0072 resolve): SDL_HINT_DOS_MIDI_ISR_TICK flips the
    same way. L2b is ENTIRELY SDL-driven: the engine has no independent
    default and follows SDL_DOSMidiIsrTickActive() at every site (callback
    register + main-loop-skip + pause/resume), so this single SDL flip is
@@ -59,9 +59,9 @@ BOOT.md L3/L2b/FM_VOL entries updated to default-ON / default-28 + the
 
 Byte-identity: v1.0.1's default path is INTENTIONALLY no longer
 byte-identical to v1.0.0 -- it's the new ship config. The byte-identical
-fallbacks remain: SDL_HINT_DOSKUTSU_PIXTONE_IRQ_MIX=0 (L3 off ->
-SDL3_mixer path), SDL_HINT_DOSKUTSU_MIDI_ISR_TICK=0 (L2b off ->
-main-loop tick), SDL_HINT_DOSKUTSU_SB16_MIXER_PROGRAM=0 (CT1745
+fallbacks remain: SDL_HINT_DOS_PIXTONE_IRQ_MIX=0 (L3 off ->
+SDL3_mixer path), SDL_HINT_DOS_MIDI_ISR_TICK=0 (L2b off ->
+main-loop tick), SDL_HINT_DOS_SB16_MIXER_PROGRAM=0 (CT1745
 untouched). All killswitches preserved.
 
 DOSBox-X smoke confirms the ENABLED banners / boot path but NOT the
@@ -86,7 +86,7 @@ index 2f73af135..1a9617653 100644
 @@ -1662,8 +1662,15 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
         case which is the relevant safety boundary. */
      {
-         const char *l3_hint = SDL_GetHint("SDL_HINT_DOSKUTSU_PIXTONE_IRQ_MIX");
+         const char *l3_hint = SDL_GetHint("SDL_HINT_DOS_PIXTONE_IRQ_MIX");
 +        /* DOSKUTSU patch (Phase 11 patch 0075): v1.0.1 default-flip --
 +         * L3 default-ON; killswitch literal "0" disables (was strict-"1"
 +         * opt-in). The backend-organya gate below is UNCHANGED, so L3 is
@@ -98,7 +98,7 @@ index 2f73af135..1a9617653 100644
 -            (l3_hint && l3_hint[0] == '1' && l3_hint[1] == 0);
 +            !(l3_hint && l3_hint[0] == '0' && l3_hint[1] == 0);
          const char *backend_hint =
-             SDL_GetHint("SDL_HINT_DOSKUTSU_AUDIO_BACKEND");
+             SDL_GetHint("SDL_HINT_DOS_AUDIO_BACKEND");
          const bool backend_organya =
 @@ -1672,10 +1679,11 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
          if (hint_set && backend_organya) {
@@ -106,12 +106,12 @@ index 2f73af135..1a9617653 100644
              doskutsu_dbg_log("audio: SDL/0071 pixtone IRQ-mix: REQUESTED but "
 -                             "Organya backend active; skipping (Lever 3 "
 -                             "requires OPL3/WB/midi-stub backend for clean "
--                             "SFX-vs-music separation; SDL_HINT_DOSKUTSU_"
+-                             "SFX-vs-music separation; SDL_HINT_DOS_"
 -                             "AUDIO_BACKEND=organya overrides the killswitch)");
 +                             "Organya backend active; skipping (Lever 3 is "
 +                             "default-ON since v1.0.1 but requires OPL3/WB/"
 +                             "midi-stub for clean SFX-vs-music separation; "
-+                             "SDL_HINT_DOSKUTSU_AUDIO_BACKEND=organya forces "
++                             "SDL_HINT_DOS_AUDIO_BACKEND=organya forces "
 +                             "L3 off -- Bug 5 interlock)");
          } else if (hint_set) {
              g_dos_pixtone_irq_mix_active = true;
@@ -120,8 +120,8 @@ index 2f73af135..1a9617653 100644
                  const unsigned hr_db = hr_bits * 6u;
                  const unsigned hr_concurrent = 2u << hr_bits; /* 2^(N+1) */
                  doskutsu_dbg_log("audio: SDL/0071 pixtone IRQ-mix: ENABLED "
--                                 "(opt-in via SDL_HINT_DOSKUTSU_PIXTONE_IRQ_MIX=1; "
-+                                 "(default-ON since v1.0.1; set SDL_HINT_DOSKUTSU_"
+-                                 "(opt-in via SDL_HINT_DOS_PIXTONE_IRQ_MIX=1; "
++                                 "(default-ON since v1.0.1; set SDL_HINT_DOS_"
 +                                 "PIXTONE_IRQ_MIX=0 to disable; "
                                   "Pixtone PCM mixed directly in IRQ-5 ISR; "
                                   "cooperative-scheduler bypassed for SFX path; "
@@ -130,10 +130,10 @@ index 2f73af135..1a9617653 100644
          } else {
              g_dos_pixtone_irq_mix_active = false;
              doskutsu_dbg_log("audio: SDL/0071 pixtone IRQ-mix: DISABLED "
--                             "(default; set SDL_HINT_DOSKUTSU_PIXTONE_IRQ_MIX"
+-                             "(default; set SDL_HINT_DOS_PIXTONE_IRQ_MIX"
 -                             "=1 to engage; off-path cost is one cached-bool "
 -                             "test per IRQ-5; SDL3_mixer SFX path unchanged)");
-+                             "(killswitch SDL_HINT_DOSKUTSU_PIXTONE_IRQ_MIX=0; "
++                             "(killswitch SDL_HINT_DOS_PIXTONE_IRQ_MIX=0; "
 +                             "SFX revert to the SDL3_mixer cooperative path; "
 +                             "off-path cost is one cached-bool test per IRQ-5)");
          }
@@ -142,7 +142,7 @@ index 2f73af135..1a9617653 100644
 @@ -1761,15 +1770,23 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
         MidiScheduler). Per LEVER2B sec.3 + sec.6. */
      {
-         const char *m2b_hint = SDL_GetHint("SDL_HINT_DOSKUTSU_MIDI_ISR_TICK");
+         const char *m2b_hint = SDL_GetHint("SDL_HINT_DOS_MIDI_ISR_TICK");
 +        /* DOSKUTSU patch (Phase 11 patch 0075): v1.0.1 default-flip --
 +         * L2b default-ON; killswitch literal "0" disables (was strict-"1"
 +         * opt-in). L2b is entirely SDL-driven: the engine has NO independent
@@ -159,8 +159,8 @@ index 2f73af135..1a9617653 100644
          if (hint_set) {
              g_dos_midi_isr_tick_active = true;
              doskutsu_dbg_log("audio: SDL/0072 midi tick from ISR: ENABLED "
--                             "(opt-in via SDL_HINT_DOSKUTSU_MIDI_ISR_TICK=1; "
-+                             "(default-ON since v1.0.1; set SDL_HINT_DOSKUTSU_"
+-                             "(opt-in via SDL_HINT_DOS_MIDI_ISR_TICK=1; "
++                             "(default-ON since v1.0.1; set SDL_HINT_DOS_"
 +                             "MIDI_ISR_TICK=0 to disable; "
                               "MidiScheduler::tick piggybacks the SB16 IRQ-5 "
                               "at ~43 Hz Tier-2; render-rate decoupling for "
@@ -169,11 +169,11 @@ index 2f73af135..1a9617653 100644
          } else {
              g_dos_midi_isr_tick_active = false;
              doskutsu_dbg_log("audio: SDL/0072 midi tick from ISR: DISABLED "
--                             "(default; set SDL_HINT_DOSKUTSU_MIDI_ISR_TICK=1 "
+-                             "(default; set SDL_HINT_DOS_MIDI_ISR_TICK=1 "
 -                             "to engage; off-path cost is two cached reads + "
 -                             "early branch per IRQ-5; engine main-loop "
 -                             "MidiScheduler::tick path unchanged)");
-+                             "(killswitch SDL_HINT_DOSKUTSU_MIDI_ISR_TICK=0; "
++                             "(killswitch SDL_HINT_DOS_MIDI_ISR_TICK=0; "
 +                             "engine main-loop MidiScheduler::tick path stays "
 +                             "authoritative; off-path cost is two cached reads "
 +                             "+ early branch per IRQ-5)");
@@ -183,21 +183,21 @@ index 2f73af135..1a9617653 100644
 @@ -2378,7 +2395,8 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
               FM     0x34/0x35 = fm_vol<<3    (OPL3 music)
             Env knobs (cache-at-boot, clamp 0..31):
-              SDL_HINT_DOSKUTSU_SB16_VOICE_VOL (default 31)
--             SDL_HINT_DOSKUTSU_SB16_FM_VOL    (default 24 -- lowers music)
-+             SDL_HINT_DOSKUTSU_SB16_FM_VOL    (default 28 -- lowers music;
+              SDL_HINT_DOS_SB16_VOICE_VOL (default 31)
+-             SDL_HINT_DOS_SB16_FM_VOL    (default 24 -- lowers music)
++             SDL_HINT_DOS_SB16_FM_VOL    (default 28 -- lowers music;
 +                                               p0075 ship-validated, was 24)
-            Killswitch SDL_HINT_DOSKUTSU_SB16_MIXER_PROGRAM strict-"0" ->
+            Killswitch SDL_HINT_DOS_SB16_MIXER_PROGRAM strict-"0" ->
             touch nothing (byte-identical to pre-0074); default = program
             (the ship fix is ON). CT1745-specific so scoped to is_sb16.
 @@ -2387,7 +2405,7 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
-             const char *mp_hint = SDL_GetHint("SDL_HINT_DOSKUTSU_SB16_MIXER_PROGRAM");
+             const char *mp_hint = SDL_GetHint("SDL_HINT_DOS_SB16_MIXER_PROGRAM");
              const bool mixer_program = !(mp_hint && mp_hint[0] == '0' && mp_hint[1] == 0);
              if (mixer_program) {
 -                int voice_vol = 31, fm_vol = 24;
 +                int voice_vol = 31, fm_vol = 28; /* p0075 v1.0.1: fm 24->28, operator-validated SFX-vs-music balance (voice stays 31) */
-                 const char *vv = SDL_GetHint("SDL_HINT_DOSKUTSU_SB16_VOICE_VOL");
-                 const char *fv = SDL_GetHint("SDL_HINT_DOSKUTSU_SB16_FM_VOL");
+                 const char *vv = SDL_GetHint("SDL_HINT_DOS_SB16_VOICE_VOL");
+                 const char *fv = SDL_GetHint("SDL_HINT_DOS_SB16_FM_VOL");
                  if (vv && vv[0] != '\0') {
 -- 
 2.47.3

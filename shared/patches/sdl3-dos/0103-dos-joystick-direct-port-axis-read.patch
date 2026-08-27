@@ -19,7 +19,7 @@ axes are never waited on. Interrupts are masked around the loop so the
 in-ISR mixer (PIXTONE_IRQ_MIX) cannot preempt mid-count and corrupt the
 discharge timing; the cap bounds the masked window.
 
-Killswitch SDL_HINT_DOSKUTSU_JOY_DIRECTREAD default ON; strict "0"
+Killswitch SDL_HINT_DOS_JOY_DIRECTREAD default ON; strict "0"
 reverts to the BIOS read AND skips the stored SETUP cal (captured in the
 direct-port count domain, which would mismatch a BIOS-domain live read).
 SETUP's calibration capture uses the identical primitive so the JOY_CAL
@@ -49,7 +49,7 @@ index 8d5497059..76c88b136 100644
 +{
 +    static int cached = -1;
 +    if (cached < 0) {
-+        const char *h = SDL_GetHint("SDL_HINT_DOSKUTSU_JOY_DIRECTREAD");
++        const char *h = SDL_GetHint("SDL_HINT_DOS_JOY_DIRECTREAD");
 +        cached = (h && h[0] == '0' && h[1] == '\0') ? 0 : 1;
 +    }
 +    return cached != 0;
@@ -113,13 +113,13 @@ index 8d5497059..76c88b136 100644
 @@ -291,8 +360,14 @@ static bool DOS_JoystickOpen(SDL_Joystick *joystick, int device_index)
  
      /* DOSKUTSU patch (SDL/0102): seed from a stored SETUP calibration if one is
-        present. No-op (returns false) absent SDL_HINT_DOSKUTSU_JOY_CAL, leaving
+        present. No-op (returns false) absent SDL_HINT_DOS_JOY_CAL, leaving
 -       the auto-calibration path untouched. */
 -    DOS_ApplyStoredCalibration(hwdata);
 +       the auto-calibration path untouched.
 +       DOSKUTSU patch (SDL/0103): only honor the stored cal under the direct-port
 +       read -- SETUP captures the cal in the direct-port poll-count domain, so
-+       under the BIOS-read killswitch (SDL_HINT_DOSKUTSU_JOY_DIRECTREAD=0) the
++       under the BIOS-read killswitch (SDL_HINT_DOS_JOY_DIRECTREAD=0) the
 +       stored values are the wrong domain; skip them and auto-calibrate. */
 +    if (DOS_JoyDirectRead()) {
 +        DOS_ApplyStoredCalibration(hwdata);

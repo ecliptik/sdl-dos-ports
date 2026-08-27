@@ -32,7 +32,7 @@ Two fixes, both scoped strictly to the 8-bit branch:
      ring is memset to soundblaster_silence_value (0x80 on this path).
      Gated on !is_sb16.
 
-Killswitch SDL_HINT_DOSKUTSU_AUDIO_SB_8BIT_STEREO=1 (strict-"1", default 0)
+Killswitch SDL_HINT_DOS_AUDIO_SB_8BIT_STEREO=1 (strict-"1", default 0)
 restores the prior SB-Pro 8-bit STEREO program (channels=2 + 0x0E bit) for a
 genuine SB Pro (DSP 3.x) that supports it; a DSP < 3 card has no SB-Pro
 stereo so the flag cannot force it there.
@@ -87,7 +87,7 @@ index 842d14040..c72d4cf1a 100644
 +           physical audiostream downmixes the (already mono-content) app stream
 +           to the mono device losslessly.
 +
-+           Killswitch SDL_HINT_DOSKUTSU_AUDIO_SB_8BIT_STEREO=1 (strict-"1",
++           Killswitch SDL_HINT_DOS_AUDIO_SB_8BIT_STEREO=1 (strict-"1",
 +           default 0) restores the prior SB-Pro 8-bit STEREO program for a
 +           genuine SB Pro (DSP >= 3) that DOES support it. A DSP < 3 card has no
 +           SB-Pro stereo at all, so the killswitch cannot force stereo there
@@ -95,7 +95,7 @@ index 842d14040..c72d4cf1a 100644
 +           code lives inside this else (8-bit) branch -- the is_sb16 (16-bit)
 +           path above is byte-identical to pre-0107. */
 +        const char *sb8_stereo_hint =
-+            SDL_GetHint("SDL_HINT_DOSKUTSU_AUDIO_SB_8BIT_STEREO");
++            SDL_GetHint("SDL_HINT_DOS_AUDIO_SB_8BIT_STEREO");
 +        const bool sb_8bit_stereo =
 +            (sb8_stereo_hint && sb8_stereo_hint[0] == '1' && sb8_stereo_hint[1] == '\0');
 +
@@ -188,7 +188,7 @@ index 842d14040..c72d4cf1a 100644
 +           where it appears). Names the killswitch for the operator. */
 +        doskutsu_dbg_log("audio: SDL/0107 8-bit channel mode: ch=%d (%s) tc=%d "
 +                         "effective=%d Hz stereo_bit=%s ring_silence_primed=yes "
-+                         "(killswitch SDL_HINT_DOSKUTSU_AUDIO_SB_8BIT_STEREO=1 "
++                         "(killswitch SDL_HINT_DOS_AUDIO_SB_8BIT_STEREO=1 "
 +                         "restores SB-Pro stereo)",
 +                         device->spec.channels,
 +                         (device->spec.channels == 2) ? "STEREO" : "MONO",

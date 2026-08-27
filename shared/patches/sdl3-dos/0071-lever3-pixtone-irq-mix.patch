@@ -44,7 +44,7 @@ math was VERIFIED CLEAN per sec.24.6 (Tier-2 11025 Hz mono raw_master_
 buf -> stereo-duplicate to 11025 Hz stereo DMA; no rate mismatch).
 
 v5 replaces the hardcoded shift with a runtime-tunable shift via
-SDL_HINT_DOSKUTSU_PIXTONE_IRQ_HEADROOM (strict-"0"/"1"/"2"/"3" match;
+SDL_HINT_DOS_PIXTONE_IRQ_HEADROOM (strict-"0"/"1"/"2"/"3" match;
 value is the count of ADDITIONAL shift bits beyond the base 8). The
 v5 default = "1" -> shift = 9 = 50% per-SFX amplitude = -6 dB headroom
 = ~4 concurrent SFX without clip (per the uncorrelated-SFX aggregation
@@ -63,7 +63,7 @@ hardcoded shift, negligible vs the surrounding mul + clamp + store.
 DPMI-locked alongside the other Lever 3 globals so the IRQ-context
 read cannot page-fault on real-HW CWSDPMI. Banner-emit on the ENABLED
 variant extends with `mix-headroom=N bits / -N*6 dB; supports up to M
-concurrent SFX without clip; tune via SDL_HINT_DOSKUTSU_PIXTONE_IRQ_
+concurrent SFX without clip; tune via SDL_HINT_DOS_PIXTONE_IRQ_
 HEADROOM=0|1|2|3` so the operator can verify the resolved mode in the
 log.
 
@@ -132,10 +132,10 @@ Patch shape:
     ISR observes the slot only with all fields valid.
 
   - **Killswitch + backend-gate + headroom knob** at OpenDevice:
-    `SDL_HINT_DOSKUTSU_PIXTONE_IRQ_MIX` strict-"1" enables; default
+    `SDL_HINT_DOS_PIXTONE_IRQ_MIX` strict-"1" enables; default
     OFF. Backend-gate refuses engagement when
-    `SDL_HINT_DOSKUTSU_AUDIO_BACKEND` == "organya" (strict match).
-    `SDL_HINT_DOSKUTSU_PIXTONE_IRQ_HEADROOM` strict-"0"/"1"/"2"/"3"
+    `SDL_HINT_DOS_AUDIO_BACKEND` == "organya" (strict match).
+    `SDL_HINT_DOS_PIXTONE_IRQ_HEADROOM` strict-"0"/"1"/"2"/"3"
     resolves the inner-loop shift count (default = "1" -> shift = 9);
     only relevant when killswitch ENGAGED (DISABLED path skips the
     headroom resolve since the ISR never reads the shift). Three
@@ -287,9 +287,9 @@ index 000000000..4b4d2ad65
 + *
 + * ## Killswitch + backend-gate
 + *
-+ * `SDL_HINT_DOSKUTSU_PIXTONE_IRQ_MIX` strict-`"1"` engages; default OFF.
++ * `SDL_HINT_DOS_PIXTONE_IRQ_MIX` strict-`"1"` engages; default OFF.
 + * Backend-gate refuses engagement when
-+ * `SDL_HINT_DOSKUTSU_AUDIO_BACKEND` == `"organya"` (Lever 3 + Organya
++ * `SDL_HINT_DOS_AUDIO_BACKEND` == `"organya"` (Lever 3 + Organya
 + * is compatible by construction per LEVER3 sec.5.2 but the design
 + * prefers OPL3/WB/midi-stub for clean SFX-vs-music separation per
 + * sec.5.4). Resolved once at OpenDevice; cached.
@@ -476,8 +476,8 @@ index 000000000..4b4d2ad65
 +/**
 + * Returns true if Lever 3 IRQ-mix is active for this process.
 + * Resolved once at `DOSSOUNDBLASTER_OpenDevice` from
-+ * `SDL_HINT_DOSKUTSU_PIXTONE_IRQ_MIX` (strict-`"1"`) combined with
-+ * the `SDL_HINT_DOSKUTSU_AUDIO_BACKEND` backend-gate. Stable
++ * `SDL_HINT_DOS_PIXTONE_IRQ_MIX` (strict-`"1"`) combined with
++ * the `SDL_HINT_DOS_AUDIO_BACKEND` backend-gate. Stable
 + * post-init.
 + *
 + * The engine reads this to gate its Pixtone::play routing branch
@@ -560,7 +560,7 @@ index d37139cfa..91bfcea6f 100644
 +// 100% IRQ-driven audio. Under Organya, the ring carries Organya music
 +// samples + ISR adds Pixtone SFX = compatible co-mix.
 +//
-+// Killswitch: SDL_HINT_DOSKUTSU_PIXTONE_IRQ_MIX strict-"1" engages;
++// Killswitch: SDL_HINT_DOS_PIXTONE_IRQ_MIX strict-"1" engages;
 +// default OFF. Backend-gated: refuses engagement under
 +// AUDIO_BACKEND=organya per LEVER3 sec.5.4 (compatibility is fine but
 +// the design prefers OPL3/WB/midi-stub for clean SFX-vs-music
@@ -600,7 +600,7 @@ index d37139cfa..91bfcea6f 100644
 + * DX2-66"; flush-instr 486-CLASS-CAMPAIGN-FINDINGS.md sec.24.6).
 + *
 + * v5 replaces the hardcoded shift with a runtime-tunable shift via
-+ * SDL_HINT_DOSKUTSU_PIXTONE_IRQ_HEADROOM (strict-"0"/"1"/"2"/"3" match
++ * SDL_HINT_DOS_PIXTONE_IRQ_HEADROOM (strict-"0"/"1"/"2"/"3" match
 + * -- value is the count of ADDITIONAL shift bits beyond the base 8).
 + * v5 default = "1" -> shift = 9 = 50% amplitude per SFX = ~4 concurrent
 + * SFX without clip. Engine setVolume can amplify if needed via
@@ -705,7 +705,7 @@ index d37139cfa..91bfcea6f 100644
 +                     ? remaining_samples : n_stereo_pairs;
 +
 +        /* v5 mix-headroom: shift count cached at OpenDevice from
-+         * SDL_HINT_DOSKUTSU_PIXTONE_IRQ_HEADROOM. Default 9 = 50%
++         * SDL_HINT_DOS_PIXTONE_IRQ_HEADROOM. Default 9 = 50%
 +         * amplitude per SFX = ~4 concurrent SFX without clip. The
 +         * Uint8 volatile load is one cached byte per loop iteration. */
 +        const int shift = (int)g_dos_pixtone_irq_mix_shift;
@@ -887,16 +887,16 @@ index d37139cfa..91bfcea6f 100644
                       "[sdl-audiocb] block emit; no new env var)");
  
 +    /* DOSKUTSU patch (Phase 11 patch 0071): Lever 3 hint resolution
-+       + backend-gate. Read SDL_HINT_DOSKUTSU_PIXTONE_IRQ_MIX strict-"1"
++       + backend-gate. Read SDL_HINT_DOS_PIXTONE_IRQ_MIX strict-"1"
 +       to engage; backend-gate refuses engagement when
-+       SDL_HINT_DOSKUTSU_AUDIO_BACKEND=organya (Lever 3 + Organya is
++       SDL_HINT_DOS_AUDIO_BACKEND=organya (Lever 3 + Organya is
 +       compatible by construction per LEVER3 sec.5.2 but the design
 +       prefers OPL3/WB/midi-stub for clean SFX-vs-music separation per
 +       sec.5.4). Resolved once at OpenDevice; cached for the engine
 +       (via SDL_DOSPixtoneIRQMixActive) and the ISR (g_dos_pixtone_
 +       irq_mix_active).
 +
-+       Edge case: SDL_HINT_DOSKUTSU_AUDIO_BACKEND=auto with engine
++       Edge case: SDL_HINT_DOS_AUDIO_BACKEND=auto with engine
 +       runtime probe resolving to Organya is NOT caught here (SDL
 +       backend sees "auto" not "organya"). The engine's Pixtone::play
 +       routing can do its own runtime check if needed. v2 refinement;
@@ -904,11 +904,11 @@ index d37139cfa..91bfcea6f 100644
 +       v1's strict-"organya" check covers the operator-set-organya
 +       case which is the relevant safety boundary. */
 +    {
-+        const char *l3_hint = SDL_GetHint("SDL_HINT_DOSKUTSU_PIXTONE_IRQ_MIX");
++        const char *l3_hint = SDL_GetHint("SDL_HINT_DOS_PIXTONE_IRQ_MIX");
 +        const bool hint_set =
 +            (l3_hint && l3_hint[0] == '1' && l3_hint[1] == 0);
 +        const char *backend_hint =
-+            SDL_GetHint("SDL_HINT_DOSKUTSU_AUDIO_BACKEND");
++            SDL_GetHint("SDL_HINT_DOS_AUDIO_BACKEND");
 +        const bool backend_organya =
 +            (backend_hint && SDL_strcmp(backend_hint, "organya") == 0);
 +
@@ -917,7 +917,7 @@ index d37139cfa..91bfcea6f 100644
 +            doskutsu_dbg_log("audio: SDL/0071 pixtone IRQ-mix: REQUESTED but "
 +                             "Organya backend active; skipping (Lever 3 "
 +                             "requires OPL3/WB/midi-stub backend for clean "
-+                             "SFX-vs-music separation; SDL_HINT_DOSKUTSU_"
++                             "SFX-vs-music separation; SDL_HINT_DOS_"
 +                             "AUDIO_BACKEND=organya overrides the killswitch)");
 +        } else if (hint_set) {
 +            g_dos_pixtone_irq_mix_active = true;
@@ -931,14 +931,14 @@ index d37139cfa..91bfcea6f 100644
 +            }
 +            g_next_pix_channel_id = 0;
 +
-+            /* v5 mix-headroom resolution: SDL_HINT_DOSKUTSU_PIXTONE_IRQ
++            /* v5 mix-headroom resolution: SDL_HINT_DOS_PIXTONE_IRQ
 +             * _HEADROOM strict-"0"/"1"/"2"/"3" match. Value is the count
 +             * of ADDITIONAL shift bits beyond the base 8. Default = "1"
 +             * (50% per-SFX amplitude; ~4 concurrent SFX without clip).
 +             * Per flush-instr sec.24.6 + #132. */
 +            {
 +                const char *hr_hint =
-+                    SDL_GetHint("SDL_HINT_DOSKUTSU_PIXTONE_IRQ_HEADROOM");
++                    SDL_GetHint("SDL_HINT_DOS_PIXTONE_IRQ_HEADROOM");
 +                Uint8 add = 1; /* default: shift = 9 */
 +                if (hr_hint && hr_hint[0] != '\0' && hr_hint[1] == '\0') {
 +                    if (hr_hint[0] == '0') add = 0;
@@ -966,21 +966,21 @@ index d37139cfa..91bfcea6f 100644
 +                const unsigned hr_db = hr_bits * 6u;
 +                const unsigned hr_concurrent = 2u << hr_bits; /* 2^(N+1) */
 +                doskutsu_dbg_log("audio: SDL/0071 pixtone IRQ-mix: ENABLED "
-+                                 "(opt-in via SDL_HINT_DOSKUTSU_PIXTONE_IRQ_MIX=1; "
++                                 "(opt-in via SDL_HINT_DOS_PIXTONE_IRQ_MIX=1; "
 +                                 "Pixtone PCM mixed directly in IRQ-5 ISR; "
 +                                 "cooperative-scheduler bypassed for SFX path; "
 +                                 "Bug 2 hypothesis-C structural fix per "
 +                                 "LEVER3-PIXTONE-IRQ-MIX-DESIGN.md; v5 mix-"
 +                                 "headroom=%u bits / -%u dB; supports up to "
 +                                 "%u concurrent SFX without clip; tune via "
-+                                 "SDL_HINT_DOSKUTSU_PIXTONE_IRQ_HEADROOM="
++                                 "SDL_HINT_DOS_PIXTONE_IRQ_HEADROOM="
 +                                 "0|1|2|3)",
 +                                 hr_bits, hr_db, hr_concurrent);
 +            }
 +        } else {
 +            g_dos_pixtone_irq_mix_active = false;
 +            doskutsu_dbg_log("audio: SDL/0071 pixtone IRQ-mix: DISABLED "
-+                             "(default; set SDL_HINT_DOSKUTSU_PIXTONE_IRQ_MIX"
++                             "(default; set SDL_HINT_DOS_PIXTONE_IRQ_MIX"
 +                             "=1 to engage; off-path cost is one cached-bool "
 +                             "test per IRQ-5; SDL3_mixer SFX path unchanged)");
 +        }
@@ -1067,9 +1067,9 @@ index f602051df..dbd727b0c 100644
 + * on int16 samples (Pixtone PCM under Tier-2 is signed 16-bit mono at
 + * 11025 Hz per Pixtone.cpp:567's SDL_AudioSpec).
 + *
-+ * Killswitch: SDL_HINT_DOSKUTSU_PIXTONE_IRQ_MIX strict-"1" engages.
++ * Killswitch: SDL_HINT_DOS_PIXTONE_IRQ_MIX strict-"1" engages.
 + * Default OFF. Backend-gated: refuses engagement when
-+ * SDL_HINT_DOSKUTSU_AUDIO_BACKEND=organya (Lever 3 + Organya is
++ * SDL_HINT_DOS_AUDIO_BACKEND=organya (Lever 3 + Organya is
 + * compatible by construction but the design prefers OPL3/WB/midi-stub
 + * for clean SFX-vs-music separation per LEVER3 sec.5.4).
 + *
@@ -1102,7 +1102,7 @@ index f602051df..dbd727b0c 100644
 +
 +/* Engine-visible accessor: is Lever 3 IRQ-mix active for this
 + * process? Resolved once at DOSSOUNDBLASTER_OpenDevice from
-+ * SDL_HINT_DOSKUTSU_PIXTONE_IRQ_MIX (strict-"1") combined with the
++ * SDL_HINT_DOS_PIXTONE_IRQ_MIX (strict-"1") combined with the
 + * AUDIO_BACKEND backend-gate. Stable post-init; the engine reads it
 + * to gate its Pixtone::play routing branch (sec.4 of the design). */
 +extern SDL_DECLSPEC bool SDLCALL SDL_DOSPixtoneIRQMixActive(void);

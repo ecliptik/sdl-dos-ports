@@ -37,7 +37,7 @@ the symptom persists, so we want positive evidence rather than a code
 read.
 
 This patch adds a sentinel write+readback in the same flush, gated by
-SDL_HINT_DOSKUTSU_BANK_SENTINEL=1 (strict "1" match, default OFF so it
+SDL_HINT_DOS_BANK_SENTINEL=1 (strict "1" match, default OFF so it
 does NOT affect prod fps measurement). On the same 100-flush cadence as
 the existing audit, it:
 
@@ -136,7 +136,7 @@ index c0ec89709..6d60fc050 100644
 +            //             direct Cirrus bank registers, IO-delay between
 +            //             SwitchBank and dosmemput, or VBE 0x05 PMI.
 +            //
-+            // Env-gated by SDL_HINT_DOSKUTSU_BANK_SENTINEL=1 (strict "1"
++            // Env-gated by SDL_HINT_DOS_BANK_SENTINEL=1 (strict "1"
 +            // match, default OFF) so it does NOT affect prod perf
 +            // measurement. Same 100-flush cadence as the audit so a
 +            // single iter can run with the env on and capture both.
@@ -152,7 +152,7 @@ index c0ec89709..6d60fc050 100644
 +                fb_state.win_gran_bytes > 0 && fb_state.fb_size > fb_state.win_size_bytes) {
 +                static int _sentinel_enabled_cached = -1;
 +                if (_sentinel_enabled_cached == -1) {
-+                    const char *e = SDL_getenv("SDL_HINT_DOSKUTSU_BANK_SENTINEL");
++                    const char *e = SDL_getenv("SDL_HINT_DOS_BANK_SENTINEL");
 +                    _sentinel_enabled_cached = (e && e[0] == '1' && e[1] == 0) ? 1 : 0;
 +                }
 +                if (_sentinel_enabled_cached) {

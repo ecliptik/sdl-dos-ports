@@ -18,7 +18,7 @@ port-spin is a latent lockup. This patch bounds each spin with the same
 2,000,000-iteration guard cap patch 0077 uses, so the worst case is a
 finite stall + fall-through, never an infinite hang.
 
-DEFAULT-ON with a strict-"0" killswitch (SDL_HINT_DOSKUTSU_VBLANK_BOUND=0)
+DEFAULT-ON with a strict-"0" killswitch (SDL_HINT_DOS_VBLANK_BOUND=0)
 restoring the original unbounded spin, plus a one-shot boot banner
 "SDL/0116 VBLANK-BOUND" for the smoke banner gate. On a healthy card the
 retrace edge arrives in far fewer than 2M iterations, so behavior on the
@@ -39,7 +39,7 @@ index 741bd4a4f..a95b41218 100644
  
 +// DOSKUTSU patch 0116 (v1.6.1 public-HW): runtime lever for the bounded
 +// mainline WaitForVBlank spin. DEFAULT-ON; strict-"0" killswitch
-+// SDL_HINT_DOSKUTSU_VBLANK_BOUND=0 restores the original unbounded spin.
++// SDL_HINT_DOS_VBLANK_BOUND=0 restores the original unbounded spin.
 +static int g_vblank_bound = 1;
 +
  bool DOSVESA_CreateWindowFramebuffer(SDL_VideoDevice *device, SDL_Window *window, SDL_PixelFormat *format, void **pixels, int *pitch)
@@ -56,13 +56,13 @@ index 741bd4a4f..a95b41218 100644
 +        static bool _vb_resolved = false;
 +        if (!_vb_resolved) {
 +            _vb_resolved = true;
-+            const char *h = SDL_GetHint("SDL_HINT_DOSKUTSU_VBLANK_BOUND");
++            const char *h = SDL_GetHint("SDL_HINT_DOS_VBLANK_BOUND");
 +            g_vblank_bound = (h && SDL_strcmp(h, "0") == 0) ? 0 : 1;
 +            doskutsu_dbg_log("sdl: SDL/0116 VBLANK-BOUND %s "
 +                             "(mainline WaitForVBlank spins are guard-capped; a mode "
 +                             "whose retrace bit never toggles yields a finite stall + "
 +                             "fall-through instead of an infinite HW-IO hang; "
-+                             "killswitch SDL_HINT_DOSKUTSU_VBLANK_BOUND=0)",
++                             "killswitch SDL_HINT_DOS_VBLANK_BOUND=0)",
 +                             g_vblank_bound ? "ENABLED" : "DISABLED");
 +        }
 +    }
@@ -82,7 +82,7 @@ index 741bd4a4f..a95b41218 100644
 +        // (same 2,000,000-iteration bound as patch 0077's
 +        // _vram_resident_wait_vblank_bounded) makes the worst case a finite
 +        // stall + fall-through instead of an infinite HW-IO hang. Killswitch
-+        // SDL_HINT_DOSKUTSU_VBLANK_BOUND=0 restores the unbounded spin.
++        // SDL_HINT_DOS_VBLANK_BOUND=0 restores the unbounded spin.
 +        long guard;
 +        for (guard = 0; (inportb(VGA_STATUS_PORT) & VGA_STATUS_VBLANK) &&
 +                        guard < 2000000L; ++guard) {
@@ -95,7 +95,7 @@ index 741bd4a4f..a95b41218 100644
 +        return;
 +    }
 +
-+    // Legacy unbounded spin (killswitch SDL_HINT_DOSKUTSU_VBLANK_BOUND=0).
++    // Legacy unbounded spin (killswitch SDL_HINT_DOS_VBLANK_BOUND=0).
      while (inportb(VGA_STATUS_PORT) & VGA_STATUS_VBLANK) {
          SDL_CPUPauseInstruction();
      }

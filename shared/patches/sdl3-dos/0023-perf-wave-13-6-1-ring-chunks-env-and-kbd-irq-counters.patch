@@ -15,7 +15,7 @@ keypress). See docs/PHASE9-WAVE-14-PLAN.md sec.2.
 
 This patch makes wave 13.6 bisectable in a single CF-card swap:
 
-1. SDL_HINT_DOSKUTSU_AUDIO_RING_CHUNKS=4|8|16 toggles the audio ring
+1. SDL_HINT_DOS_AUDIO_RING_CHUNKS=4|8|16 toggles the audio ring
    depth at runtime. Default = 16 (matches wave 13.6 behaviour with no
    env vars set; the regression is intentionally still in the default --
    this slot is for diagnosis, not a pre-emptive fix). Strict-match
@@ -76,7 +76,7 @@ index eb3e50b2c..327260a8b 100644
 -   extra, trivial against 48 MB XMS budget. */
 -#define RING_BUFFER_CHUNKS 16
 +// Number of DMA half-buffers that fit in the ring. Must be a power of two
-+// (we accept 4, 8, 16). Resolved from SDL_HINT_DOSKUTSU_AUDIO_RING_CHUNKS;
++// (we accept 4, 8, 16). Resolved from SDL_HINT_DOS_AUDIO_RING_CHUNKS;
 +// see resolve_ring_chunks() below.
 +//
 +// DOSKUTSU patch (Phase 9 wave 13.6.1): wave 13.6 hardcoded this to 16
@@ -85,9 +85,9 @@ index eb3e50b2c..327260a8b 100644
 +// -- see docs/PHASE9-WAVE-14-PLAN.md sec.2. Wave 13.6.1 makes the value
 +// runtime-overridable so the regression can be bisected in a single
 +// CF-card swap by setting:
-+//   SET SDL_HINT_DOSKUTSU_AUDIO_RING_CHUNKS=4   (8 KB ring, 92 ms -- wave 13.5 baseline)
-+//   SET SDL_HINT_DOSKUTSU_AUDIO_RING_CHUNKS=8   (16 KB ring, 184 ms -- intermediate)
-+//   SET SDL_HINT_DOSKUTSU_AUDIO_RING_CHUNKS=16  (32 KB ring, 372 ms -- wave 13.6 default)
++//   SET SDL_HINT_DOS_AUDIO_RING_CHUNKS=4   (8 KB ring, 92 ms -- wave 13.5 baseline)
++//   SET SDL_HINT_DOS_AUDIO_RING_CHUNKS=8   (16 KB ring, 184 ms -- intermediate)
++//   SET SDL_HINT_DOS_AUDIO_RING_CHUNKS=16  (32 KB ring, 372 ms -- wave 13.6 default)
 +// Default (unset / unrecognized) = 16 to match wave 13.6 behaviour
 +// when no env vars are set.
 +//
@@ -103,7 +103,7 @@ index eb3e50b2c..327260a8b 100644
 +{
 +    static int cached = -1;
 +    if (cached == -1) {
-+        const char *e = SDL_getenv("SDL_HINT_DOSKUTSU_AUDIO_RING_CHUNKS");
++        const char *e = SDL_getenv("SDL_HINT_DOS_AUDIO_RING_CHUNKS");
 +        int v = 16; /* default -- matches wave 13.6 behaviour */
 +        if (e) {
 +            if (e[0] == '4' && e[1] == 0) {
@@ -130,7 +130,7 @@ index eb3e50b2c..327260a8b 100644
 -    // Ring size must be a power of two and hold RING_BUFFER_CHUNKS chunks.
 -    hidden->ring_size = hidden->chunk_size * RING_BUFFER_CHUNKS;
 +    // Ring size must be a power of two and hold N chunks, N resolved
-+    // from SDL_HINT_DOSKUTSU_AUDIO_RING_CHUNKS (4/8/16, default 16).
++    // from SDL_HINT_DOS_AUDIO_RING_CHUNKS (4/8/16, default 16).
 +    const int ring_chunks = resolve_ring_chunks();
 +    hidden->ring_size = hidden->chunk_size * ring_chunks;
      // Ensure power-of-two (chunk_size itself comes from SDL and may not be).
@@ -144,9 +144,9 @@ index eb3e50b2c..327260a8b 100644
 +       value alongside the resolved ring_size and chunk_size so a single
 +       DEBUG.LOG line tells us which audio config a run used. */
 +    {
-+        const char *env = SDL_getenv("SDL_HINT_DOSKUTSU_AUDIO_RING_CHUNKS");
++        const char *env = SDL_getenv("SDL_HINT_DOS_AUDIO_RING_CHUNKS");
 +        SDL_Log("SOUNDBLASTER: ring_chunks=%d chunk_size=%d ring_size=%d (env "
-+                "SDL_HINT_DOSKUTSU_AUDIO_RING_CHUNKS=%s)",
++                "SDL_HINT_DOS_AUDIO_RING_CHUNKS=%s)",
 +                ring_chunks, hidden->chunk_size, hidden->ring_size,
 +                env ? env : "(unset)");
 +    }

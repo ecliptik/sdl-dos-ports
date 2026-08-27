@@ -69,7 +69,7 @@ path is active. Foundation-only: not end-to-end testable until the engine side
 (MidiBackendOpl2 + adlib boot-gate); this confirms compile + symbol export.
 
 Deferred (coordination / later phases, per the design + lead decisions): the
-SDL_HINT_DOSKUTSU_OPL_TIMER_HZ + OPL2_PORT hints (engine reads HZ and passes it
+SDL_HINT_DOS_OPL_TIMER_HZ + OPL2_PORT hints (engine reads HZ and passes it
 to Start; the 0x388 port override is a later additive item), smoke BANNERS
 entries (Phase 2 -- the banners only emit on the engine-enabled AdLib path), and
 docs/BOOT.md rows (nx-engine owns per the design unless reassigned).

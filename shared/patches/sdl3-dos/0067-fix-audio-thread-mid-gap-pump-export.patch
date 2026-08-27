@@ -221,7 +221,7 @@ index 000000000..207c553f6
 + * The pump export itself is **unconditional** -- the export always
 + * attempts one iterate when called. The decision whether to call it
 + * lives engine-side and is gated by the engine's reading of
-+ * `SDL_HINT_DOSKUTSU_AUDIO_MIDGAP_PUMP` -- **default-ON, strict-"0"
++ * `SDL_HINT_DOS_AUDIO_MIDGAP_PUMP` -- **default-ON, strict-"0"
 + * disables** (killswitch shape, same as SDL/0066's SHUTDOWN_PARK).
 + * The engine reads this hint on its first `SDL_DOSAudioPump()`
 + * invocation and caches the decision; absent the killswitch, the
@@ -455,7 +455,7 @@ index 04a1b266d..d94af1c42 100644
 +   The pump is unconditional from SDL's side -- the export always
 +   attempts one iterate when called. The decision whether to call it
 +   lives engine-side and is gated by the engine's reading of
-+   SDL_HINT_DOSKUTSU_AUDIO_MIDGAP_PUMP -- default-ON, strict-"0"
++   SDL_HINT_DOS_AUDIO_MIDGAP_PUMP -- default-ON, strict-"0"
 +   disables (killswitch shape, same as SDL/0066's SHUTDOWN_PARK).
 +   Absent the killswitch, the engine calls SDL_DOSAudioPump in a
 +   top-up loop at each of the 6 load_stage seams (per
@@ -511,7 +511,7 @@ index 04a1b266d..d94af1c42 100644
 +       wedge-prone via cooperative-scheduler starvation (build-qa #84
 +       bisect). The SDL/0068 hunk above amends this acquisition to a
 +       TryLock+timeout backstop with a strict-"0" killswitch
-+       (SDL_HINT_DOSKUTSU_DOS_AUDIO_PUMP_TIMEOUT) that reverts to this
++       (SDL_HINT_DOS_DOS_AUDIO_PUMP_TIMEOUT) that reverts to this
 +       blocking path for the operator's A/B reproducer cell. */
 +    SDL_LockMutex(device->lock);
 +

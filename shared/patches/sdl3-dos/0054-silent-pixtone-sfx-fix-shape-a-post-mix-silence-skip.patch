@@ -11,7 +11,7 @@ Content-Transfer-Encoding: 8bit
 Wave-34 PLAY5 W34A4 confirmed root cause: SDL/0050's pre-mix
 quiescence gate in DOSSOUNDBLASTER_GetDeviceBuf traps Pixtone SFX
 under AUDIO_BACKEND=opl3. Operator heard SFX audibly with
-SDL_HINT_DOSKUTSU_DOS_AUDIO_QUIESCENCE_GATE=0 (killswitched) but
+SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE=0 (killswitched) but
 silence with default gate active.
 
 The bug: SDL/0050 returns *buffer_size=0 when no bound stream has
@@ -73,7 +73,7 @@ Coexistence with prior patches:
     SDL/0038 (DSP auto-resume on ring write): unchanged.
 
 Killswitch hint name retained for user-facing compat:
-SDL_HINT_DOSKUTSU_DOS_AUDIO_QUIESCENCE_GATE=0 still reverts to
+SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE=0 still reverts to
 pre-0050 behavior (always-write-to-ring). The OpenDevice log message
 updated to reflect Shape A's mechanism.
 
@@ -93,7 +93,7 @@ Validation status:
     on wave-35 binary rebuild
   - Real-HW behavioral smoke (wave-35 PLAY1-PLAY5): the actual gate;
     operator confirmation of SFX audibility under default env-baseline
-    (no SDL_HINT_DOSKUTSU_DOS_AUDIO_QUIESCENCE_GATE=0 set) is what
+    (no SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE=0 set) is what
     closes Task #23.
 
 Hot-path cost: bytewise silence scan ~1-2 us per audio-thread iter;
@@ -139,7 +139,7 @@ index 4a5dc2b05..44eedd70d 100644
 @@ -506,12 +506,16 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
              (gate_hint && gate_hint[0] == '0' && gate_hint[1] == 0);
          if (g_dos_audio_quiescence_gate_disabled) {
-             doskutsu_dbg_log("audio: SDL_HINT_DOSKUTSU_DOS_AUDIO_QUIESCENCE_GATE=0 "
+             doskutsu_dbg_log("audio: SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE=0 "
 -                             "(SDL/0050 quiescence gate DISABLED; pre-0050 always-"
 -                             "fill-ring behavior; auto-engage idle-pause cannot fire)");
 +                             "(SDL/0050-derived behavior DISABLED; under SDL/0054 "
@@ -216,7 +216,7 @@ index 4a5dc2b05..44eedd70d 100644
 -       PlayDevice -> ring drains via IRQ -> 4 silent IRQs trip auto-engage ->
 -       DSP pause -> IRQ-5 stops -> fps recovered.
 -
--       Killswitch: SDL_HINT_DOSKUTSU_DOS_AUDIO_QUIESCENCE_GATE=0 disables
+-       Killswitch: SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE=0 disables
 -       the gate (returns staging_buffer unconditionally; pre-0050 behavior).
 -       Iter L PLAY2 (control) sets this env var; PLAY1 (treatment) leaves
 -       unset. Within-iter PLAY1-PLAY2 = SDL/0050 isolation signal.
@@ -282,7 +282,7 @@ index 4a5dc2b05..44eedd70d 100644
 +       entire session.
 +
 +       Wave-34 H2 BAT cell confirmed root-cause: operator heard SFX
-+       audibly under `SDL_HINT_DOSKUTSU_DOS_AUDIO_QUIESCENCE_GATE=0`
++       audibly under `SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE=0`
 +       (killswitched gate; pre-0050 behavior) but silence with the
 +       default gate active.
 +
@@ -361,7 +361,7 @@ index 4a5dc2b05..44eedd70d 100644
 +       normal path (skip silence-detect; always write to ring). Two
 +       cases set it true:
 +
-+         - User sets `SDL_HINT_DOSKUTSU_DOS_AUDIO_QUIESCENCE_GATE=0`
++         - User sets `SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE=0`
 +           at OpenDevice (killswitch; reverts to pre-0050 behavior;
 +           e.g., the wave-34 H2 BAT cell that audibly confirmed SFX
 +           was being trapped by SDL/0050's pre-mix gate).

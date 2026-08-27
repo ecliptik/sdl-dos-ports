@@ -17,16 +17,16 @@ modes (precedence TX_DELAY > DRR_POLL=0 > default-poll):
   in-game WB win. Hot 0x331 READ; re-wedge risk LOW (iter-5 PROBEP did a hot
   0x331 read on this DX2-66 and survived; the wedge was the init coincidence,
   now removed) + bounded + fail-soft.
-- TIMED-DELAY (plan-B, FREEZE-PROOF): SDL_HINT_DOSKUTSU_AUDIO_WB_TX_DELAY=<us>
+- TIMED-DELAY (plan-B, FREEZE-PROOF): SDL_HINT_DOS_AUDIO_WB_TX_DELAY=<us>
   paces each byte via a PIT-latch busy-wait, ZERO hot 0x331 reads; ~320us = the
   31250-baud MIDI wire-byte time; ISR-safe (non-destructive latch, atomic in the
   IF-clear IRQ-5 handler) + capped 2000us so a runaway value cannot starve the
   SB16 DMA refill.
-- BLIND (control): SDL_HINT_DOSKUTSU_AUDIO_WB_DRR_POLL=0 = the iter-7-garbled
+- BLIND (control): SDL_HINT_DOS_AUDIO_WB_DRR_POLL=0 = the iter-7-garbled
   baseline.
 
 Poll-cost witness (flush-instr T48 contract): the cold-init poll cap is bounded
-SMALL -- default 512, tunable via SDL_HINT_DOSKUTSU_AUDIO_WB_DRR_CAP, clamped
+SMALL -- default 512, tunable via SDL_HINT_DOS_AUDIO_WB_DRR_CAP, clamped
 [16,10000] -- vs the legacy 10000 (~10 ms/byte) that would starve the IRQ-5 ISR
 on a persistently-busy chip. 512 covers the ~238-iter POD-83 max DRR wait with
 margin while bounding per-byte ISR latency to ~0.5-1 ms on the DX2-66. Exports
@@ -81,14 +81,14 @@ index db7a81098..030965e31 100644
 -                         "chip variant may have stuck DRR; fail-soft "
 -                         "blind write follows -- direct-port path may be "
 -                         "unreliable on this hardware; set "
--                         "SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT=0 to "
+-                         "SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=0 to "
 -                         "fall back to DSP-mediated path)",
 -                         (unsigned)port_base);
 +                         "(bit 6 stuck high after %u iter; chip may be "
 +                         "persistently busy; fail-soft blind write follows -- "
 +                         "drr_cap_hits now counting; high cap-hit rate = "
 +                         "latency-drag, prefer the timed-delay pace mode; set "
-+                         "SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT=0 for the "
++                         "SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=0 for the "
 +                         "DSP-mediated path)",
 +                         (unsigned)port_base, (unsigned)doskutsu_mpu_drr_cap);
          s_mpu401_drr_cap_warned = true;
@@ -100,7 +100,7 @@ index db7a81098..030965e31 100644
  
 +/* DOSKUTSU patch (SDL/0097 plan-B): per-byte TX pacing delay in microseconds.
 +   0 = disabled (use the DRR poll / blind path). Resolved on the cold-init path
-+   from SDL_HINT_DOSKUTSU_AUDIO_WB_TX_DELAY; consumed in SDL_DOSMpu401WriteByte
++   from SDL_HINT_DOS_AUDIO_WB_TX_DELAY; consumed in SDL_DOSMpu401WriteByte
 +   via mpu401_tx_pace_delay. */
 +static uint32_t s_mpu401_tx_delay_us = 0;
 +
@@ -109,7 +109,7 @@ index db7a81098..030965e31 100644
 +
  /* DOSKUTSU patch (Phase 10 patch 0047): direct-port path extracted from
     the patch-0044 SDL_DOSMpu401Init body. Entry guarded behind the
-    SDL_HINT_DOSKUTSU_AUDIO_WB_DIRECT_PORT=1 hint. Body unchanged from
+    SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=1 hint. Body unchanged from
 @@ -367,12 +387,28 @@ static bool SDL_DOSMpu401Init_DirectPort(uint16_t port_base)
             clean UART state; the 0xFF reset returns it to a known command state
             first.
@@ -122,7 +122,7 @@ index db7a81098..030965e31 100644
 -           ON-for-wb only after the g2k play-through gate confirms. */
 +           PER-BYTE PLAY DRR POLL (SDL/0097): this path ENABLES the bit-6 DRR
 +           poll for per-byte PLAY writes by default (killswitch
-+           SDL_HINT_DOSKUTSU_AUDIO_WB_DRR_POLL=0 forces blind). iter-7 proved
++           SDL_HINT_DOS_AUDIO_WB_DRR_POLL=0 forces blind). iter-7 proved
 +           cold-init clears the freeze (WCI1 ran 159s, "HANG CLEARED", dispatch
 +           climbed to 8148 bytes) BUT the music was garbled -- the
 +           WBTEST-001-FINDINGS H20 buffer overrun: without per-byte bit-6 DRR
@@ -142,7 +142,7 @@ index db7a81098..030965e31 100644
 +           the per-byte PLAY writes (SDL_DOSMpu401WriteByte) gain the poll.
 +           Nested under the opt-in cold-init path, so this is NOT default-on
 +           pre-g2k; the cold-init ship-flip still waits on the iter-8 audible. */
-         const char *cold = SDL_GetHint("SDL_HINT_DOSKUTSU_AUDIO_WB_COLD_INIT");
+         const char *cold = SDL_GetHint("SDL_HINT_DOS_AUDIO_WB_COLD_INIT");
          if (cold && cold[0] == '1' && cold[1] == 0) {
              int cap = 60000;
 @@ -396,22 +432,69 @@ static bool SDL_DOSMpu401Init_DirectPort(uint16_t port_base)
@@ -153,23 +153,23 @@ index db7a81098..030965e31 100644
 +               cold-init path. THREE mutually-exclusive modes, selected by hints
 +               (precedence: TX_DELAY > DRR_POLL killswitch > default poll):
 +                 - TX_DELAY (plan-B, FREEZE-PROOF): if
-+                   SDL_HINT_DOSKUTSU_AUDIO_WB_TX_DELAY is set to a microsecond
++                   SDL_HINT_DOS_AUDIO_WB_TX_DELAY is set to a microsecond
 +                   value (>0), pace each byte with a PIT busy-wait and issue NO
 +                   status read -- zero hot 0x331 reads. ~320 (the MIDI wire-byte
 +                   time) paces the SAM2695 so it cannot overrun (H20), with no
 +                   re-wedge surface at all.
 +                 - POLL (default, the fix): bit-6 DRR poll before each byte,
 +                   restoring the SDL/0080 contract (the v1.0.2 in-game WB win).
-+                 - BLIND (control): SDL_HINT_DOSKUTSU_AUDIO_WB_DRR_POLL=0 forces
++                 - BLIND (control): SDL_HINT_DOS_AUDIO_WB_DRR_POLL=0 forces
 +                   the iter-7-garbled baseline (no poll, no delay) to isolate the
 +                   variable.
 +               All scoped to the cold-init path; the non-cold-init paths'
 +               poll-default-OFF (where a hot init poll wedges) is untouched.
 +               The cold ENTRY above is poll-free regardless. */
 +            {
-+                const char *txd = SDL_GetHint("SDL_HINT_DOSKUTSU_AUDIO_WB_TX_DELAY");
-+                const char *drr = SDL_GetHint("SDL_HINT_DOSKUTSU_AUDIO_WB_DRR_POLL");
-+                const char *cap = SDL_GetHint("SDL_HINT_DOSKUTSU_AUDIO_WB_DRR_CAP");
++                const char *txd = SDL_GetHint("SDL_HINT_DOS_AUDIO_WB_TX_DELAY");
++                const char *drr = SDL_GetHint("SDL_HINT_DOS_AUDIO_WB_DRR_POLL");
++                const char *cap = SDL_GetHint("SDL_HINT_DOS_AUDIO_WB_DRR_CAP");
 +                s_mpu401_tx_delay_us = (txd && txd[0]) ? (uint32_t)SDL_atoi(txd) : 0;
 +                if (s_mpu401_tx_delay_us > MPU401_TX_DELAY_MAX_US) {
 +                    s_mpu401_tx_delay_us = MPU401_TX_DELAY_MAX_US;
@@ -181,7 +181,7 @@ index db7a81098..030965e31 100644
 +                   margin while bounding per-byte ISR latency to ~0.5-1 ms on the
 +                   DX2-66, vs the legacy 10000 = ~10 ms that would starve the
 +                   IRQ-5 ring on a persistently-busy chip). Tunable via
-+                   SDL_HINT_DOSKUTSU_AUDIO_WB_DRR_CAP for the iter sweep; clamped
++                   SDL_HINT_DOS_AUDIO_WB_DRR_CAP for the iter sweep; clamped
 +                   to [16,10000]. Exported as doskutsu_mpu_drr_cap so the engine's
 +                   dispatch line is self-describing (cap=N). */
 +                {
@@ -193,7 +193,7 @@ index db7a81098..030965e31 100644
 +            }
 +
              doskutsu_dbg_log("mpu401: cold-init at port_base=0x%04x "
-                              "(SDL_HINT_DOSKUTSU_AUDIO_WB_COLD_INIT=1; MPU UART "
+                              "(SDL_HINT_DOS_AUDIO_WB_COLD_INIT=1; MPU UART "
                               "entered on the COLD bus BEFORE the SB16 open -- "
                               "0xFF reset -> bounded ACK drain -> 0x3F UART entry; "
 -                             "per-byte PLAY writes stay BLIND, no hot 0x331 DRR "
@@ -293,7 +293,7 @@ index db7a81098..030965e31 100644
 +/* DOSKUTSU patch (SDL/0097): cold-init DRR-poll cost witnesses (T48 contract).
 +   doskutsu_mpu_drr_cap is the bounded cap in effect (default = the legacy
 +   10000 for the non-cold-init paths; the cold-init path overrides it from
-+   SDL_HINT_DOSKUTSU_AUDIO_WB_DRR_CAP, default 512). doskutsu_mpu_drr_cap_hits
++   SDL_HINT_DOS_AUDIO_WB_DRR_CAP, default 512). doskutsu_mpu_drr_cap_hits
 +   ++ in SDL_DOSMpu401WaitDRR each time the poll caps out without DRR-ready.
 +   Both atomic 32-bit; the engine reads them main-line. */
 +volatile uint32_t doskutsu_mpu_drr_cap_hits = 0;

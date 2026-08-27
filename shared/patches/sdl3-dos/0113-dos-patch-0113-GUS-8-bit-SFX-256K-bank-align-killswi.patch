@@ -19,7 +19,7 @@ gus_encode_addr 16-bit voice-read-pointer fix (#42), a DIFFERENT mechanism from
 allocator placement; 8-bit bank-straddle was never tested.
 
 This extends the existing 256K no-straddle bump to 8-bit allocations too, gated
-behind a NEW killswitch hint SDL_HINT_DOSKUTSU_GUS_SFX_BANKALIGN. Default OFF so
+behind a NEW killswitch hint SDL_HINT_DOS_GUS_SFX_BANKALIGN. Default OFF so
 the SAME binary reproduces the crash (fix-OFF cell) while =1 engages the guard
 (fix-ON cell) for the g2k A/B -- the single lever for iter-1. Emits an anchored
 boot banner "audio: SDL/0113 GUS SFX bank-align: ENGAGED ..." only when the
@@ -66,13 +66,13 @@ index 064773e28..362bd2ee1 100644
 @@ -914,6 +925,10 @@ bool SDL_DOSGusInit(void)
         latch-enable bit3 set DURING the IRQ/DMA latch writes. The catch-all g2k
         cell if the IRQ-bit alone isn't enough. */
-     g_gus_fullcanon = gus_hint_is_one("SDL_HINT_DOSKUTSU_GUS_FULLCANON");
+     g_gus_fullcanon = gus_hint_is_one("SDL_HINT_DOS_GUS_FULLCANON");
 +    /* gussfx-1 #38 killswitch (default OFF): extend the 256K no-straddle bump to
 +       8-bit allocs too (Pixtone SFX). OFF reproduces the crash; =1 engages the
 +       guard -- both from the SAME binary for the g2k A/B. */
-+    g_gus_sfx_bankalign = gus_hint_is_one("SDL_HINT_DOSKUTSU_GUS_SFX_BANKALIGN");
++    g_gus_sfx_bankalign = gus_hint_is_one("SDL_HINT_DOS_GUS_SFX_BANKALIGN");
      g_gus_dr_head = g_gus_dr_tail = 0; /* arm the IRQ-safe diag ring */
-     skip = gus_hint_is_one("SDL_HINT_DOSKUTSU_GUS_SKIP_DETECTION");
+     skip = gus_hint_is_one("SDL_HINT_DOS_GUS_SKIP_DETECTION");
  
 @@ -991,6 +1006,13 @@ bool SDL_DOSGusInit(void)
                       g_gus_pio_autoinc ? "+autoinc" : "",
@@ -86,7 +86,7 @@ index 064773e28..362bd2ee1 100644
 +    }
 +
      /* #39 diagnostic test-tone (gated, default OFF). */
-     if (gus_hint_is_one("SDL_HINT_DOSKUTSU_GUS_TESTTONE")) {
+     if (gus_hint_is_one("SDL_HINT_DOS_GUS_TESTTONE")) {
          gus_emit_test_tone();
 -- 
 2.47.3
