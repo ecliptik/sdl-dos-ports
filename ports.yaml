@@ -257,7 +257,7 @@ ports:
     original_sdl_version: "1.2"
     target_sdl_version: "3"
     graphics_api: software
-    dos_status: BOOTSTRAP
+    dos_status: PLAYABLE
     priority: 8
     difficulty: 1
     dos_minimum_target: 486DX2-50
@@ -300,6 +300,21 @@ ports:
       data) there is no legal blocker to shipping the assets in this repo
       -- LICENSE-REVIEW.md still documents this properly rather than
       skipping the paperwork because the answer is permissive.
+      2026-08-26: BOOTSTRAP -> PLAYABLE in one session. SDL 1.2 -> SDL3
+      migration (patches/passage/0001) plus DJGPP platform shims for
+      minorGems' Path/Time/Thread (patches/minorgems/0001) compiled and
+      linked clean on the first attempt after two small fixes (a DJGPP
+      branch for minorGems' endian.h, and defining
+      g_pixtone_active_count -- an engine-provided extern the shared
+      SDL3-DOS Sound Blaster backend requires regardless of engine).
+      Verified under DOSBox-X (build/stage, lfn=true pending an 8.3-
+      rename follow-up -- several of Passage's own asset filenames
+      exceed 8.3): title screen renders correctly and gameplay (maze
+      corridor, player sprite, treasure chests) is visibly correct and
+      responds to keyboard input. No real-hardware run yet -- that
+      still requires vcctrl and is unclaimed as a next step. Full
+      CPU/video/sound matrix sweep (doskutsu's own matrix) planned once
+      optimized, per operator direction.
 
   - name: supertux-0.1.x
     upstream_url: null
