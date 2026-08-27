@@ -22,7 +22,14 @@ There is no preemptive multitasking underneath any of this -- DOS has no
 threads in the modern sense, and the SDL3 DOS backend's audio, timing, and
 I/O all interleave cooperatively: a subsystem callback that doesn't yield
 back promptly can monopolize the scheduler and starve everything else
-sharing it, not just its own subsystem. This has a real, load-bearing
+sharing it, not just its own subsystem. Confirmed directly in upstream's
+own backend documentation
+([README-dos](https://wiki.libsdl.org/SDL3/README-dos)): the mechanism is
+a `setjmp`/`longjmp` mini-scheduler that switches only at explicit yield
+points (`SDL_Delay`, event pump calls) and never preempts mid-instruction
+-- `SDL_Delay(0)` is the documented way to yield without actually
+sleeping, worth knowing as a tool independent of the starvation hazard
+below. This has a real, load-bearing
 consequence for validation: **whether a cooperative-scheduler starvation
 bug actually manifests is gated by CPU speed, not by which physical
 machine it is.** A callback that reliably yields in time on a fast CPU can

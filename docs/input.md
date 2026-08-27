@@ -15,6 +15,16 @@ abstraction layer per port — the SDL3 DOS backend's keyboard/mouse/joystick
 surface is the target; wrap only as much as the game's existing input
 abstraction requires to compile.
 
+Per upstream's own backend documentation
+([README-dos](https://wiki.libsdl.org/SDL3/README-dos)): keyboard is
+IRQ1-driven with extended-scancode (`0xE0` prefix) support; mouse is the
+INT 33h driver, reporting relative motion via mickeys (not absolute
+screen coordinates — this is why native-resolution direct mapping,
+mentioned below, is the right default rather than something to second-
+guess); joystick reads axes via BIOS INT 15h and buttons via direct port
+`0x201` reads, matching the direct-port axis-read fix already in
+`shared/patches/sdl3-dos/0103`.
+
 ## Mouse-driven games (e.g. adventure engines)
 
 - Mouse movement, left/right button, and keyboard shortcuts are usually

@@ -63,6 +63,19 @@ verification than what's noted here. Organized architecture-wide first
   synthesis inside the audio callback needs to know this is an
   architectural ceiling of the cooperative-scheduler model on this
   platform, not something a code fix removes.
+- **Upstream's own numbers, and a real mitigation for anyone below
+  them.** SDL's own DOS backend documentation (upstream
+  [README-dos](https://wiki.libsdl.org/SDL3/README-dos), not a `shared/`
+  addition) states the ring buffer holds ~45ms of audio and that "games
+  running 22 fps or above require no intervention; below 20 fps, adding
+  `SDL_Delay(0)` mid-loop helps maintain buffer levels" — matching
+  `shared/patches/sdl3-dos/0023`'s own sizing comment ("4 chunks is
+  ~45ms at 44100Hz, enough headroom for 22fps frame times") and
+  consistent with the ~21-25fps empirical floor above. **Any port whose
+  target frame rate sits below ~20-22fps by design, not as a bug, should
+  add an `SDL_Delay(0)` call inside its main loop as a matter of course**
+  — this costs nothing on a fast machine (it's a yield, not a sleep) and
+  is upstream's own documented answer to exactly this class of port.
 - **A worse variant of the above can hang indefinitely, and it's
   CPU-tier-specific.** If the audio thread is in-band/non-silent and never
   yields back while the main thread parks at a per-flip yield, the ring

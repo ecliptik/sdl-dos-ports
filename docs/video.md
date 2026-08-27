@@ -32,6 +32,30 @@ filtering, integer pixels, direct blit, and dirty rectangles where the
 game's redraw pattern benefits from them (a mostly-static-screen game like
 an adventure engine benefits far more than a scrolling action game).
 
+Upstream's own backend documentation
+([README-dos](https://wiki.libsdl.org/SDL3/README-dos)) is explicit that
+**tear-free rendering depends on hardware page-flipping being available,
+and page-flipping is not universal** — it's an LFB-mode capability, not
+something banked mode gets. A card forced into banked mode by capability
+(no linear framebuffer at the mode in use — see the Mach64 case in
+"Real hardware can diverge..." below) may not have a tear-free path
+available at all under this backend's current design, independent of
+whatever vsync-wait code exists in the banked path itself. This
+reframes "why is there a stable tear on this card" from "something is
+broken" to "check whether page-flipping was ever an option here" before
+assuming a fixable bug.
+
+Separately, `SDL_HINT_DOS_ALLOW_DIRECT_FRAMEBUFFER` (a genuine **upstream**
+SDL3 hint, not something `shared/` introduced — confirmed present in
+unpatched SDL3's own `SDL_dosframebuffer.c`) trades away vsync entirely
+for speed: per its own documentation, setting it skips normal surface
+copying and "performs page flipping without vblank synchronization,"
+with "no vsync" and "potentially slow readback on real hardware" as its
+stated, accepted trade-offs. If a port's video hint configuration touches
+this one (directly or via `shared/patches/sdl3-dos/0010`'s
+`SDL_HINT_DOS_PREFER_LFB` interaction with it), tearing is expected
+behavior for that path, not a defect.
+
 ## What `shared/patches/sdl3-dos/` already handles
 
 The hard-won VESA/VGA chip-specific work — Cirrus CL-GD5430 banked-blit
