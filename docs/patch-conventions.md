@@ -56,9 +56,11 @@ or log-tag name it introduces must be project-agnostic. Use the
 `SDL_HINT_DOS_*` prefix (not a per-port name like the historical
 `SDL_HINT_DOSKUTSU_*`) for any new hint, and a similarly neutral log-file
 naming scheme (e.g. driven by an env var the port sets, rather than a
-hardcoded project name) for any new diagnostic logging. Existing patches
-carried over from doskutsu that still use `SDL_HINT_DOSKUTSU_*` should be
-renamed during extraction, not perpetuated.
+hardcoded project name) for any new diagnostic logging. Patches carried
+over from doskutsu that introduced `SDL_HINT_DOSKUTSU_*`-style names have
+been renamed to this scheme (see `shared/patches/sdl3-dos/README.md`'s
+"Naming debt (resolved)" section) -- don't reintroduce a per-port name for
+anything new.
 
 ## Two gotchas beyond the basics above
 
