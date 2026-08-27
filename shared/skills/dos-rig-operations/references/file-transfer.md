@@ -36,6 +36,63 @@ Before a build ever reaches the rig:
   keeps a manual real-hardware session low-friction for whoever's driving
   it interactively, rather than requiring a long checklist per transfer.
 
+## Bundling a multi-file payload into one zip
+
+Per-file staging costs a reboot pair (stage, then `send-file --return`)
+*per transfer*, and a payload with subdirectories that need to pre-exist
+on the target can force several such batches -- DOSSAGE's first
+real-hardware pass needed 4 batches for 16 files across a couple of
+subdirectories, on top of the reboot cost that's inherent to each batch.
+For a small payload that's tolerable; for a larger port (more assets,
+deeper directory tree) it stops being tolerable well before the payload
+itself gets big in absolute terms. This section is a **recommendation,
+not yet exercised on real hardware** -- the rig-infra prerequisite below
+doesn't exist yet, so treat this as the plan to follow once it does, not
+a proven path.
+
+**The shape:** package the whole payload into a single zip on the build
+host, transfer that one archive through vcctrl's *existing* single-file
+`stage-file`/`send-file` path unchanged, then unzip it in place on the
+target. This is not a new vcctrl capability -- it's the same two-reboot
+cycle as any other single-file transfer, just pointed at one archive
+instead of N files, so the reboot cost stops scaling with file count or
+directory depth.
+
+- **Give the zip itself a short, fixed, always-8.3-safe name** (e.g.
+  `PAYLOAD.ZIP`) so it trivially survives vcctrl's own 8.3-rename step
+  regardless of what's inside it -- the archive's own filename is not
+  where 8.3 risk lives here.
+- **8.3-safety for the *entries* inside the zip is enforced at zip-build
+  time on the build host, before staging** -- not something to lean on a
+  DOS-side unzip to fix on extract. A DOS unzip extracts whatever's
+  already in the archive's own directory; it doesn't rename intelligently
+  the way `stage-file` does for a single file. This isn't actually new
+  overhead specific to this technique, though: real DOS needs 8.3-safe
+  paths regardless of transfer mechanism, so a payload that isn't already
+  8.3-safe is already broken on real hardware, zip or not (see "DOS 8.3
+  filename mapping" above, and the doskutsu/DOSSAGE precedent below).
+- **Integrity is not a new problem to solve.** Once the zip is "the file"
+  being transferred, the existing sha256 round-trip (Stage -> send ->
+  verify, above) already covers the whole archive end to end, unchanged.
+  A DOS-side unzip (INFO-ZIP's `UNZIP.EXE` is the standard real-mode-DOS
+  choice) additionally verifies each entry's own CRC32 on extract and
+  fails loudly on a mismatch -- so this ends up with *two* independent
+  integrity checks (sha256 of the whole archive, CRC32 per extracted
+  file) rather than the one a per-file transfer has today.
+- **Prerequisite that doesn't exist yet:** there is currently no DOS-side
+  unzip utility anywhere in the rig's boot/NET environment. Adding one
+  (INFO-ZIP `UNZIP.EXE`, real-mode DOS native, light enough for a
+  486DX2-50) plus a `RUN.BAT` step that unzips before the actual test
+  runs is rig infrastructure -- coordinate with whoever's driving vcctrl
+  for the target rig before assuming this technique is available; a port
+  can't add this itself.
+- **Precedent for the packaging shape**: doskutsu's own `scripts/release.sh`
+  already produces almost exactly this artifact via `make dist` ->
+  `dist/doskutsu-<ver>.zip` -- a real CF-ready bundle (exe, CWSDPMI,
+  license texts, support data) that's already 8.3-safe since it ships to
+  real hardware today. Mirror or reuse that shape for a QA-staging zip
+  rather than inventing a separate packaging convention from scratch.
+
 ## Stage -> send -> verify
 
 1. **Stage** the local binary/package, identified unambiguously (a build
