@@ -84,6 +84,39 @@ verification than what's noted here. Organized architecture-wide first
   add an `SDL_Delay(0)` call inside its main loop as a matter of course**
   — this costs nothing on a fast machine (it's a yield, not a sleep) and
   is upstream's own documented answer to exactly this class of port.
+- **A port whose frame limiter never calls `SDL_Delay` anywhere gets
+  total, permanent silence — not degraded audio, not underruns, zero
+  `PlayDevice`/`WaitDevice` activity ever, regardless of what any audio
+  callback computes.** This is a stronger and more absolute trap than the
+  buffer-headroom guidance above: it's not about *how much* yield time the
+  audio pump gets, it's that the pump this backend's DOS audio devices use
+  is scheduled cooperatively at `SDL_Delay` call sites specifically (see
+  `SDL_dosaudio_sb.c`'s own `DOS_Yield` commentary) — a frame-pacing sleep
+  that bypasses `SDL_Delay` (e.g. an engine's own portable sleep
+  abstraction backed by a bare `usleep()` on its DOS target, as opposed to
+  routing through SDL) never reaches that scheduling point at all, so the
+  pump never runs, ever. Confirmed on dossage/Passage: minorGems'
+  `Thread::staticSleep()` on its DOS backend
+  (`ThreadDOS.cpp`) called plain `usleep()`, never touching SDL, so
+  `SDL_HINT_DOS_SILENCE_HISTO=1` showed zero `PlayDevice` emits across
+  ~1200 expected calls over 28 real seconds despite `OpenDevice`
+  succeeding cleanly — independent of two separate rewrites of the
+  callback's own audio-generation logic, since neither rewrite was ever
+  the problem. Fixed entirely in that port's own engine code (one call
+  site, `Thread::staticSleep` → `SDL_Delay`); no `shared/` change was
+  needed or appropriate, since routing a port's own sleep/frame-pacing
+  primitive through SDL is squarely that port's responsibility, not
+  something the shared backend can detect or fix from underneath an
+  engine's own threading abstraction. **Any port whose engine has its own
+  sleep/thread/frame-pacing primitive (a portability shim, a threading
+  library, a ported engine's own `Sleep()`/`usleep()` wrapper) must audit
+  that it ultimately calls `SDL_Delay` on this backend — not just a
+  platform-native sleep — or audio can be silently, totally dead for the
+  entire session with no error, warning, or partial-failure signal
+  anywhere.** doskutsu never hit this because NXEngine-evo's own main loop
+  already called `SDL_Delay` directly; the absence of a prior incident
+  here reflects that its engine happened to route through SDL already, not
+  that this hazard doesn't apply to it.
 - **A worse variant of the above can hang indefinitely, and it's
   CPU-tier-specific.** If the audio thread is in-band/non-silent and never
   yields back while the main thread parks at a per-flip yield, the ring
