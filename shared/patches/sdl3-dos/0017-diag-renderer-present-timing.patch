@@ -35,7 +35,7 @@ attribute the gap precisely:
 All three brackets log the first 5 calls in detail (warm-up
 visibility) and a per-100-call summary thereafter, formatted to match
 the existing fastpath-timing block style. All output routes through
-doskutsu_dbg_log, so lines interleave atomically with the existing
+dos_port_dbg_log, so lines interleave atomically with the existing
 [lifecycle] / DOSVESA-MODESET / fastpath-timing writers.
 
 DOSBox-X parity capture (build/stage/SDLDBG.LOG, 100-present block):
@@ -97,16 +97,16 @@ index 4d76a7405..d10379aeb 100644
 +// have a 10 ms fast-path bracket for, so the difference would be in the
 +// SDL_UpdateWindowSurface dispatch overhead itself).
 +//
-+// All output routes through doskutsu_dbg_log so the lines interleave
++// All output routes through dos_port_dbg_log so the lines interleave
 +// cleanly with the existing [lifecycle] / DOSVESA-MODESET / fastpath-
 +// timing writers. Per-call detail logged for the first 5 presents
 +// (warm-up); per-100-call summary thereafter to avoid log spam at the
 +// 30+ presents/sec rate the title scene approaches in DOSBox-X parity.
 +#ifdef SDL_VIDEO_DRIVER_DOSVESA
 +#include "../video/dos/SDL_dosdbg.h"
-+#define DOSKUTSU_PRESENT_LOG(...) doskutsu_dbg_log(__VA_ARGS__)
++#define DOS_PORT_PRESENT_LOG(...) dos_port_dbg_log(__VA_ARGS__)
 +#else
-+#define DOSKUTSU_PRESENT_LOG(...) ((void)0)
++#define DOS_PORT_PRESENT_LOG(...) ((void)0)
 +#endif
 +
  #ifdef SDL_PLATFORM_ANDROID
@@ -172,7 +172,7 @@ index 4d76a7405..d10379aeb 100644
 +        if (tot_us < _tot_min_us) _tot_min_us = tot_us;
 +
 +        if (_pn_total <= 5) {
-+            DOSKUTSU_PRESENT_LOG("sw-present-detail #%lu: queue_flush=%lu.%03lu ms "
++            DOS_PORT_PRESENT_LOG("sw-present-detail #%lu: queue_flush=%lu.%03lu ms "
 +                                 "render_present=%lu.%03lu ms total=%lu.%03lu ms",
 +                                 (unsigned long)_pn_total,
 +                                 (unsigned long)(qf_us  / 1000), (unsigned long)(qf_us  % 1000),
@@ -181,7 +181,7 @@ index 4d76a7405..d10379aeb 100644
 +        }
 +
 +        if (_pn >= 100) {
-+            DOSKUTSU_PRESENT_LOG("sw-present-timing block @present=%lu: "
++            DOS_PORT_PRESENT_LOG("sw-present-timing block @present=%lu: "
 +                                 "queue_flush_ms_avg=%lu.%03lu (min=%lu.%03lu max=%lu.%03lu) "
 +                                 "render_present_ms_avg=%lu.%03lu (min=%lu.%03lu max=%lu.%03lu) "
 +                                 "total_ms_avg=%lu.%03lu (min=%lu.%03lu max=%lu.%03lu) "
@@ -232,9 +232,9 @@ index 160e2a10b..0e3eefcf8 100644
 +// dispatch overhead in the SDL_UpdateWindowSurface entry path itself.
 +#ifdef SDL_VIDEO_DRIVER_DOSVESA
 +#include "../../video/dos/SDL_dosdbg.h"
-+#define DOSKUTSU_SWPRESENT_LOG(...) doskutsu_dbg_log(__VA_ARGS__)
++#define DOS_PORT_SWPRESENT_LOG(...) dos_port_dbg_log(__VA_ARGS__)
 +#else
-+#define DOSKUTSU_SWPRESENT_LOG(...) ((void)0)
++#define DOS_PORT_SWPRESENT_LOG(...) ((void)0)
 +#endif
 +
  #include "SDL_draw.h"
@@ -274,13 +274,13 @@ index 160e2a10b..0e3eefcf8 100644
 +        if (us < _min_us) _min_us = us;
 +
 +        if (_n_total <= 5) {
-+            DOSKUTSU_SWPRESENT_LOG("sw-renderpresent-detail #%lu: %lu.%03lu ms",
++            DOS_PORT_SWPRESENT_LOG("sw-renderpresent-detail #%lu: %lu.%03lu ms",
 +                                   (unsigned long)_n_total,
 +                                   (unsigned long)(us / 1000),
 +                                   (unsigned long)(us % 1000));
 +        }
 +        if (_n >= 100) {
-+            DOSKUTSU_SWPRESENT_LOG("sw-renderpresent-timing block @present=%lu: "
++            DOS_PORT_SWPRESENT_LOG("sw-renderpresent-timing block @present=%lu: "
 +                                   "ms_avg=%lu.%03lu (min=%lu.%03lu max=%lu.%03lu) [over %d]",
 +                                   (unsigned long)_n_total,
 +                                   (unsigned long)((_sum_us / _n) / 1000),
@@ -351,13 +351,13 @@ index e11ffe7ba..14cf0fb35 100644
 +        if (us < _min_us) _min_us = us;
 +
 +        if (_n_total <= 5) {
-+            doskutsu_dbg_log("sw-updatesurface-detail #%lu: %lu.%03lu ms",
++            dos_port_dbg_log("sw-updatesurface-detail #%lu: %lu.%03lu ms",
 +                             (unsigned long)_n_total,
 +                             (unsigned long)(us / 1000),
 +                             (unsigned long)(us % 1000));
 +        }
 +        if (_n >= 100) {
-+            doskutsu_dbg_log("sw-updatesurface-timing block @call=%lu: "
++            dos_port_dbg_log("sw-updatesurface-timing block @call=%lu: "
 +                             "ms_avg=%lu.%03lu (min=%lu.%03lu max=%lu.%03lu) [over %d]",
 +                             (unsigned long)_n_total,
 +                             (unsigned long)((_sum_us / _n) / 1000),

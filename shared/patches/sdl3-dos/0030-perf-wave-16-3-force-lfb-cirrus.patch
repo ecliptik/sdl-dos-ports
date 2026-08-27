@@ -47,8 +47,8 @@ One diagnostic line lands in SDLDBG.LOG at modeset time:
     lfb_addr=0x%08lx fb_size=%lu
 
 so each iter capture has one grep'able token confirming which path
-was taken. Routes through DOSKUTSU_MODES_LOG -> doskutsu_dbg_log ->
-SDLDBG.LOG (or <TAG>SDL.LOG when DOSKUTSU_LOG_TAG is set, per patch
+was taken. Routes through DOS_PORT_MODES_LOG -> dos_port_dbg_log ->
+SDLDBG.LOG (or <TAG>SDL.LOG when DOS_PORT_LOG_TAG is set, per patch
 0024).
 
 Why DOS needs this
@@ -201,12 +201,12 @@ index 20543df1b..861470cb3 100644
                         (int)hint_allow_direct, (int)hint_prefer_lfb);
  
 +    // DOSKUTSU patch 0030 (Phase 9 wave 16.3) -- single-line LFB-force diag.
-+    // Reports whether SDL_DOSKUTSU_FORCE_LFB was set this modeset and the
++    // Reports whether SDL_DOS_PORT_FORCE_LFB was set this modeset and the
 +    // resulting use_lfb / lfb_addr / fb_size, so each iter capture has one
 +    // grep'able token (`WAVE16-3-LFB-FORCE`) showing which path was taken.
 +    // The fb_size value is what the FB-state-populate layer will use for
 +    // size-based audits (matches padded_bytes_per_frame on the previous line).
-+    DOSKUTSU_MODES_LOG("WAVE16-3-LFB-FORCE: hint=%s use_lfb=%d lfb_addr=0x%08lX fb_size=%lu",
++    DOS_PORT_MODES_LOG("WAVE16-3-LFB-FORCE: hint=%s use_lfb=%d lfb_addr=0x%08lX fb_size=%lu",
 +                       hint_force_lfb ? "set" : "unset",
 +                       (int)use_lfb,
 +                       (unsigned long)modedata->physical_base_addr,

@@ -81,7 +81,7 @@ index 301e39438..080f6299c 100644
 +                ack = inportb((Uint16)port_base);
 +            }
 +
-+            doskutsu_dbg_log("mpu401: reset-init at port_base=0x%04x "
++            dos_port_dbg_log("mpu401: reset-init at port_base=0x%04x "
 +                             "(SDL_HINT_DOS_AUDIO_WB_RESET_INIT=1; DOOM/DMX "
 +                             "sequence: 0xFF reset -> bounded ACK drain -> 0x3F UART; "
 +                             "bit-6 DRR poll on writes). ack_drained=0x%02X via=%s. "
@@ -97,7 +97,7 @@ index 301e39438..080f6299c 100644
 +        }
 +
          if (s_mpu401_drr_poll_enabled) {
-             doskutsu_dbg_log("mpu401: direct-port init at port_base=0x%04x "
+             dos_port_dbg_log("mpu401: direct-port init at port_base=0x%04x "
                               "(DRR poll ON via SDL_HINT_DOS_AUDIO_WB_DRR_POLL=1; "
 -- 
 2.47.3

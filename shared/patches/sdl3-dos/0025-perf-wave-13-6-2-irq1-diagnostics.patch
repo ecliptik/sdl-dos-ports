@@ -21,30 +21,30 @@ Five new file-scope volatile uint32_t in SDL_dosevents.c, all
 DOS_LockVariable'd because they are read from IRQ context via the
 engine's phase-timing log:
 
-  - doskutsu_kbd_pump_pass_count  bumped at top of DOSVESA_PumpEvents
+  - dos_port_kbd_pump_pass_count  bumped at top of DOSVESA_PumpEvents
                                   (one per flip on engine's main
                                   loop). Acts as monotonic ordering
                                   source for first_irq_ticks.
 
-  - doskutsu_kbd_first_irq_ticks  set on first IRQ-1 entry to
+  - dos_port_kbd_first_irq_ticks  set on first IRQ-1 entry to
                                   pump_pass_count + 1 (gate +1 ensures
                                   the 0-sentinel "never fired" stays
                                   unambiguous). One-shot.
 
-  - doskutsu_kbd_irq_install_ticks pump_pass_count snapshot at end of
+  - dos_port_kbd_irq_install_ticks pump_pass_count snapshot at end of
                                    DOSVESA_InitKeyboard. Always 0 in
                                    practice (no pumps yet) but logged
                                    for completeness so first_irq_ticks
                                    vs install_ticks compare is
                                    well-defined.
 
-  - doskutsu_kbd_irq_vector_at_install  pm_offset of protected-mode
+  - dos_port_kbd_irq_vector_at_install  pm_offset of protected-mode
                                         IRQ-1 vector (int 0x09) read
                                         RIGHT AFTER DOS_HookInterrupt.
                                         Validates chain wrapper installed
                                         at expected address.
 
-  - doskutsu_kbd_pic1_mask_at_install  inportb(0x21) snapshot at end of
+  - dos_port_kbd_pic1_mask_at_install  inportb(0x21) snapshot at end of
                                        DOSVESA_InitKeyboard. Bit 1 (0x02)
                                        cleared = IRQ-1 unmasked at PIC.
 
@@ -77,8 +77,8 @@ index 912da585b..b29e07c6d 100644
 --- a/src/video/dos/SDL_dosevents.c
 +++ b/src/video/dos/SDL_dosevents.c
 @@ -270,6 +270,49 @@ static int keyevents_tail = 0;
- volatile uint32_t doskutsu_kbd_irq_count = 0;
- volatile uint32_t doskutsu_kbd_drain_count = 0;
+ volatile uint32_t dos_port_kbd_irq_count = 0;
+ volatile uint32_t dos_port_kbd_drain_count = 0;
  
 +/* DOSKUTSU patch (Phase 9 wave 13.6.2): IRQ-mask diagnostic snapshots
 +   to discriminate hypotheses 3a/3b/3c from architect's
@@ -117,11 +117,11 @@ index 912da585b..b29e07c6d 100644
 +
 +   All visible to engine via extern declarations in Renderer.cpp.
 +   All DOS_LockVariable'd to allow safe IRQ-context reads. */
-+volatile uint32_t doskutsu_kbd_pump_pass_count = 0;
-+volatile uint32_t doskutsu_kbd_first_irq_ticks = 0;
-+volatile uint32_t doskutsu_kbd_irq_install_ticks = 0;
-+volatile uint32_t doskutsu_kbd_irq_vector_at_install = 0;
-+volatile uint32_t doskutsu_kbd_pic1_mask_at_install = 0;
++volatile uint32_t dos_port_kbd_pump_pass_count = 0;
++volatile uint32_t dos_port_kbd_first_irq_ticks = 0;
++volatile uint32_t dos_port_kbd_irq_install_ticks = 0;
++volatile uint32_t dos_port_kbd_irq_vector_at_install = 0;
++volatile uint32_t dos_port_kbd_pic1_mask_at_install = 0;
 +
  void DOSVESA_PumpEvents(SDL_VideoDevice *device)
  {
@@ -134,7 +134,7 @@ index 912da585b..b29e07c6d 100644
 +       so the engine-side phase-timing log can correlate first_irq_ticks
 +       against current pump_pass_count and localize when the first IRQ-1
 +       fired in flip terms. ~1 pump per flip on the engine's main loop. */
-+    doskutsu_kbd_pump_pass_count++;
++    dos_port_kbd_pump_pass_count++;
 +
      static bool is_extended = false;
      static int pause_sequence_remaining = 0;
@@ -142,32 +142,32 @@ index 912da585b..b29e07c6d 100644
 @@ -390,6 +439,15 @@ static void KeyboardIRQHandler(void) // this is wrapped in a thing that handles
      /* DOSKUTSU patch (Phase 9 wave 13.6.1): IRQ-fire counter for
         keyboard-regression bisect. Read by engine's phase-timing log. */
-     doskutsu_kbd_irq_count++;
+     dos_port_kbd_irq_count++;
 +    /* DOSKUTSU patch (Phase 9 wave 13.6.2): record FIRST IRQ-1 fire
 +       ordinal so DEBUG.LOG can show whether the handler ever ran and,
 +       if so, roughly when in the run (in pump-pass terms ~ flips).
 +       One-shot: after the first non-zero write the gate stops further
 +       writes. +1 encoding so the value 0 unambiguously means "never
 +       fired" even if pump_pass_count is 0 at the moment of fire. */
-+    if (doskutsu_kbd_first_irq_ticks == 0) {
-+        doskutsu_kbd_first_irq_ticks = doskutsu_kbd_pump_pass_count + 1;
++    if (dos_port_kbd_first_irq_ticks == 0) {
++        dos_port_kbd_first_irq_ticks = dos_port_kbd_pump_pass_count + 1;
 +    }
      keyevents_ringbuffer[keyevents_head] = inportb(KBD_DATA_PORT);
      keyevents_head = (keyevents_head + 1) & (SDL_arraysize(keyevents_ringbuffer) - 1);
      DOS_EndOfInterrupt(1);
 @@ -408,8 +466,30 @@ void DOSVESA_InitKeyboard(SDL_VideoDevice *device)
      /* DOSKUTSU patch (Phase 9 wave 13.6.1): IRQ-bisect counters. */
-     DOS_LockVariable(doskutsu_kbd_irq_count);
-     DOS_LockVariable(doskutsu_kbd_drain_count);
+     DOS_LockVariable(dos_port_kbd_irq_count);
+     DOS_LockVariable(dos_port_kbd_drain_count);
 +    /* DOSKUTSU patch (Phase 9 wave 13.6.2): IRQ-mask diagnostic
 +       snapshots (see file-scope comment block above the variable
 +       definitions for the rationale). All read from IRQ context, so
 +       lock all of them. */
-+    DOS_LockVariable(doskutsu_kbd_pump_pass_count);
-+    DOS_LockVariable(doskutsu_kbd_first_irq_ticks);
-+    DOS_LockVariable(doskutsu_kbd_irq_install_ticks);
-+    DOS_LockVariable(doskutsu_kbd_irq_vector_at_install);
-+    DOS_LockVariable(doskutsu_kbd_pic1_mask_at_install);
++    DOS_LockVariable(dos_port_kbd_pump_pass_count);
++    DOS_LockVariable(dos_port_kbd_first_irq_ticks);
++    DOS_LockVariable(dos_port_kbd_irq_install_ticks);
++    DOS_LockVariable(dos_port_kbd_irq_vector_at_install);
++    DOS_LockVariable(dos_port_kbd_pic1_mask_at_install);
  
      DOS_HookInterrupt(1, KeyboardIRQHandler, &data->keyboard_interrupt_hook);
 +
@@ -179,10 +179,10 @@ index 912da585b..b29e07c6d 100644
 +    {
 +        _go32_dpmi_seginfo info = { 0 };
 +        _go32_dpmi_get_protected_mode_interrupt_vector(DOS_IRQToVector(1), &info);
-+        doskutsu_kbd_irq_vector_at_install = (uint32_t)info.pm_offset;
++        dos_port_kbd_irq_vector_at_install = (uint32_t)info.pm_offset;
 +    }
-+    doskutsu_kbd_pic1_mask_at_install = (uint32_t)inportb(PIC1_DATA);
-+    doskutsu_kbd_irq_install_ticks = doskutsu_kbd_pump_pass_count;
++    dos_port_kbd_pic1_mask_at_install = (uint32_t)inportb(PIC1_DATA);
++    dos_port_kbd_irq_install_ticks = dos_port_kbd_pump_pass_count;
  }
  
  void DOSVESA_QuitKeyboard(SDL_VideoDevice *device)

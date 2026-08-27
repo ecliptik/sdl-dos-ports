@@ -204,12 +204,12 @@ index 3d74628cc..04a1b266d 100644
 +        g_dos_audio_shutdown_park_disabled =
 +            (park_hint && park_hint[0] == '0' && park_hint[1] == 0);
 +        if (g_dos_audio_shutdown_park_disabled) {
-+            doskutsu_dbg_log("audio: SDL_HINT_DOS_DOS_AUDIO_SHUTDOWN_PARK=0 "
++            dos_port_dbg_log("audio: SDL_HINT_DOS_DOS_AUDIO_SHUTDOWN_PARK=0 "
 +                             "(SDL/0066 audio-thread hard-park DISABLED; "
 +                             "SDL_DOSAudioBeginShutdown will not park; A/B-only -- "
 +                             "reproduces pre-0066 quit hang on real DX2)");
 +        } else {
-+            doskutsu_dbg_log("audio: SDL/0066 audio-thread hard-park active "
++            dos_port_dbg_log("audio: SDL/0066 audio-thread hard-park active "
 +                             "(default; teardown lock-handoff guard; "
 +                             "SDL_DOSAudioBeginShutdown will park audio thread "
 +                             "in WaitDevice before MIX_DestroyMixer device close)");
@@ -220,7 +220,7 @@ index 3d74628cc..04a1b266d 100644
         instrumentation part-C gate once at OpenDevice time. Reuses the
         existing FINE_INSTR env var (SDL_HINT_DOS_FINE_INSTR,
 @@ -1417,6 +1528,29 @@ void SDL_DOSAudioBeginShutdown(void)
-         doskutsu_dbg_log("audio: SDL_DOSAudioBeginShutdown -- gate already "
+         dos_port_dbg_log("audio: SDL_DOSAudioBeginShutdown -- gate already "
                           "disabled (killswitch or repeat call); no-op");
      }
 +
@@ -240,7 +240,7 @@ index 3d74628cc..04a1b266d 100644
 +       audio thread's read. */
 +    if (!g_dos_audio_shutdown_park_disabled && !g_dos_audio_hard_park) {
 +        g_dos_audio_hard_park = true;
-+        doskutsu_dbg_log("audio: SDL/0066 hard-park ENGAGED -- "
++        dos_port_dbg_log("audio: SDL/0066 hard-park ENGAGED -- "
 +                         "DOSSOUNDBLASTER_WaitDevice will SDL_Delay-loop "
 +                         "outside device->lock until device->shutdown is set, "
 +                         "removing the audio-thread race with main's "

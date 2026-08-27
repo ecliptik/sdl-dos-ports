@@ -46,9 +46,9 @@ Three changes:
      entire class of "timer dies, loop spins forever" failures
      described in hypothesis (b).
 
-  3. doskutsu_dbg_log entry/exit observability. Engine's WB.LOG
+  3. dos_port_dbg_log entry/exit observability. Engine's WB.LOG
      only had "probing port..." with no SDL-side log of probe
-     entry/exit/result. Adding three doskutsu_dbg_log lines (entry,
+     entry/exit/result. Adding three dos_port_dbg_log lines (entry,
      early-exit-on-0xFF, no-ACK-after-N-iter, ok-after-N-iter)
      means the next real-HW iter has SDL-side log evidence to
      pinpoint exactly which step hangs if the defensive fix
@@ -74,7 +74,7 @@ index 2950355fc..e1bb0555a 100644
  
  bool SDL_DOSMpu401Init(uint16_t port_base)
  {
-+    doskutsu_dbg_log("mpu401: probe entry port_base=0x%04x", (unsigned)port_base);
++    dos_port_dbg_log("mpu401: probe entry port_base=0x%04x", (unsigned)port_base);
 +
 +    /* DOSKUTSU patch (Phase 10 patch 0042): open-bus early-exit. Read
 +       the status register BEFORE issuing the reset write. If it returns
@@ -87,7 +87,7 @@ index 2950355fc..e1bb0555a 100644
 +       outportb write itself appears to have hung). */
 +    const Uint8 initial_status = inportb((Uint16)(port_base + 1));
 +    if (initial_status == 0xFF) {
-+        doskutsu_dbg_log("mpu401: probe early-exit (status=0xFF; no chip at 0x%04x)",
++        dos_port_dbg_log("mpu401: probe early-exit (status=0xFF; no chip at 0x%04x)",
 +                         (unsigned)port_base);
 +        return false;
 +    }
@@ -137,7 +137,7 @@ index 2950355fc..e1bb0555a 100644
 -    return false;
 +
 +    if (!ack_ok) {
-+        doskutsu_dbg_log("mpu401: probe failed (no 0xFE ACK after %d iter; "
++        dos_port_dbg_log("mpu401: probe failed (no 0xFE ACK after %d iter; "
 +                         "port=0x%04x)", iter, (unsigned)port_base);
 +        return false;
 +    }
@@ -149,7 +149,7 @@ index 2950355fc..e1bb0555a 100644
 +       step 4; we don't require a second ACK. */
 +    outportb((Uint16)(port_base + 1), 0x3F);
 +    s_mpu401_port_base = (int)port_base;
-+    doskutsu_dbg_log("mpu401: probe ok (UART mode active at 0x%04x; "
++    dos_port_dbg_log("mpu401: probe ok (UART mode active at 0x%04x; "
 +                     "ack after %d iter)", (unsigned)port_base, iter);
 +    return true;
  }

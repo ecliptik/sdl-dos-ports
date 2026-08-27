@@ -149,14 +149,14 @@ index d94af1c42..d8a4a73dd 100644
 +            }
 +        }
 +        if (g_dos_audio_pump_timeout_ms == 0) {
-+            doskutsu_dbg_log("audio: SDL_HINT_DOS_DOS_AUDIO_PUMP_TIMEOUT=0 "
++            dos_port_dbg_log("audio: SDL_HINT_DOS_DOS_AUDIO_PUMP_TIMEOUT=0 "
 +                             "(SDL/0068 TryLock+timeout backstop DISABLED; "
 +                             "SDL_DOSAudioPump reverts to pre-0068 blocking "
 +                             "SDL_LockMutex behavior; A/B-only -- expect "
 +                             "cooperative-scheduler-starvation wedge under "
 +                             "DOSBox-X / 86Box / any equivalent regime)");
 +        } else {
-+            doskutsu_dbg_log("audio: SDL/0068 SDL_DOSAudioPump TryLock+timeout backstop "
++            dos_port_dbg_log("audio: SDL/0068 SDL_DOSAudioPump TryLock+timeout backstop "
 +                             "active (%lu ms cap; cooperative-scheduler starvation guard)",
 +                             (unsigned long)g_dos_audio_pump_timeout_ms);
 +        }

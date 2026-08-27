@@ -198,7 +198,7 @@ index c72d4cf1a..7b666b21f 100644
 +       otherwise). DOSBox-X (SB16) emits the S16-stereo variant; g2k PicoGUS-SB
 +       emits U8-mono -- the decisive witness for the SFX-distortion fix. */
 +    if (g_dos_pixtone_irq_mix_active) {
-+        doskutsu_dbg_log("audio: SDL/0108 pixtone IRQ-mix format: %s "
++        dos_port_dbg_log("audio: SDL/0108 pixtone IRQ-mix format: %s "
 +                         "(device is_16bit=%d channels=%d)%s",
 +                         isr_is_16bit ? "S16-stereo"
 +                                      : (isr_channels == 2 ? "U8-stereo" : "U8-mono"),

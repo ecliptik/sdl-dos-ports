@@ -11,20 +11,20 @@ into a number for the head-to-head pump iter, per flush-instr-2's contract
 (docs/internal/V108-PUMP-ITER-CONTRACT.md).
 
 Emits ONE buffered line at DOSSOUNDBLASTER_CloseDevice (teardown, non-IRQ
-context -- a single doskutsu_dbg_log fopen/fwrite/fsync, I/O-immune during
+context -- a single dos_port_dbg_log fopen/fwrite/fsync, I/O-immune during
 the run; the wave-38 -14fps per-line-fsync lesson):
   [audio-underrun] cell=<tag> total_irqs=N total_silent=S max_run=M silent_pct=P.PP
 
 total_irqs / total_silent reuse the existing exported counters
-(doskutsu_audio_irq_count / doskutsu_audio_silent_irq_count). The only new
+(dos_port_audio_irq_count / dos_port_audio_silent_irq_count). The only new
 state is isr_max_silent_run -- the high-water of the consecutive-silent-IRQ
 run, updated with one compare + conditional store in the IRQ underrun branch
 (IRQ-safe single-bus-cycle ops; DPMI-locked alongside the other isr_* state).
 silent_pct is rendered P.PP via integer basis-point math
 (total_silent*10000/total_irqs) -- no float in the DOS audio TU.
 
-GATE: the emit no-ops unless DOSKUTSU_LOG_TAG is set -- the metric's natural
-ship-suppressor (flush-instr-2's call). The iter cells set DOSKUTSU_LOG_TAG
+GATE: the emit no-ops unless DOS_PORT_LOG_TAG is set -- the metric's natural
+ship-suppressor (flush-instr-2's call). The iter cells set DOS_PORT_LOG_TAG
 for log routing anyway, so the metric appears in EVERY cell with no separate
 opt-in flag a cell could forget; in ship (LOG_TAG unset) the emit is a no-op
 (no log leak, no teardown fsync). cell=<tag> equals the LOG_TAG value (==
@@ -90,7 +90,7 @@ index e592ec3ab..2cf2c0a2f 100644
 +    /* DOSKUTSU patch (SDL/0091): objective coherence metric for the v1.0.8
 +       pump iter (flush-instr-2 contract, docs/internal/V108-PUMP-ITER-CONTRACT.md).
 +       Emit ONE buffered [audio-underrun] line at device teardown (non-IRQ
-+       context here, so the single doskutsu_dbg_log fopen/fwrite/fsync is safe +
++       context here, so the single dos_port_dbg_log fopen/fwrite/fsync is safe +
 +       I/O-immune during the run -- no per-IRQ I/O; the wave-38 -14fps per-line-
 +       fsync lesson). silent_pct = total_silent/total_irqs; a high pct (or a long
 +       max_run) IS the operator's "not coherent" (underruns -> clicks/pops + slow
@@ -99,9 +99,9 @@ index e592ec3ab..2cf2c0a2f 100644
 +       -- no float in the DOS audio TU (DJGPP %f hygiene). The reader also has the
 +       raw total_silent/total_irqs in the line for an exact pct.
 +
-+       GATE: the EMIT no-ops unless DOSKUTSU_LOG_TAG is set. This is the metric's
++       GATE: the EMIT no-ops unless DOS_PORT_LOG_TAG is set. This is the metric's
 +       natural ship-suppressor (flush-instr-2's call): the iter cells set
-+       DOSKUTSU_LOG_TAG for log routing anyway, so the metric appears in EVERY
++       DOS_PORT_LOG_TAG for log routing anyway, so the metric appears in EVERY
 +       cell WITHOUT a separate opt-in flag a cell could forget -- yet in ship
 +       (LOG_TAG unset) the emit is a no-op, so no [audio-underrun] line leaks into
 +       a shipped binary's logs and there is no teardown fsync in ship. The cell=
@@ -112,14 +112,14 @@ index e592ec3ab..2cf2c0a2f 100644
 +       teardown read reports the full run. CloseDevice runs once per device-open,
 +       so this is one line per run. */
 +    {
-+        const char *_un_tag = SDL_getenv("DOSKUTSU_LOG_TAG");
++        const char *_un_tag = SDL_getenv("DOS_PORT_LOG_TAG");
 +        if (_un_tag && _un_tag[0]) {
-+            const Uint32 _un_irqs   = doskutsu_audio_irq_count;
-+            const Uint32 _un_silent = doskutsu_audio_silent_irq_count;
++            const Uint32 _un_irqs   = dos_port_audio_irq_count;
++            const Uint32 _un_silent = dos_port_audio_silent_irq_count;
 +            const Uint32 _un_maxrun = isr_max_silent_run;
 +            const Uint32 _un_bp = (_un_irqs > 0)
 +                ? (Uint32)(((Uint64)_un_silent * 10000ULL) / _un_irqs) : 0;
-+            doskutsu_dbg_log("[audio-underrun] cell=%s total_irqs=%lu total_silent=%lu "
++            dos_port_dbg_log("[audio-underrun] cell=%s total_irqs=%lu total_silent=%lu "
 +                             "max_run=%lu silent_pct=%lu.%02lu",
 +                             _un_tag,
 +                             (unsigned long)_un_irqs,

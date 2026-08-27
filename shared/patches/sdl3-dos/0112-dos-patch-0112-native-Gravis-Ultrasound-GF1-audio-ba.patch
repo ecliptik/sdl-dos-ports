@@ -125,7 +125,7 @@ a stopped ramp with non-zero static 0x09 IS audible -- ramp does not gate output
 So the silence needs RUNTIME values, but H5 blocked the diag. This bundle gets the
 data:
 - IRQ-SAFE voice-diag ring (the H5 fix): SetVoiceFreq/Vol + StartVoice run in the
-  note_on PIT-IRQ, where doskutsu_dbg_log (fprintf+fsync) deadlocks via libc
+  note_on PIT-IRQ, where dos_port_dbg_log (fprintf+fsync) deadlocks via libc
   reentrancy (confirmed H5 -- GUS_DIAG=1 hung). The ops now ENQUEUE fixed records
   (FREQ hz/fc, VOL in/reg, START addr/ctrl) into a static ring INSIDE their
   existing cli (memory-only, no I/O); a MAIN-LOOP-only flush (GetState per-frame
@@ -507,7 +507,7 @@ index 000000000..064773e28
 +#if defined(SDL_PLATFORM_DOS)
 +
 +#include "../../core/dos/SDL_dos.h"
-+#include "../../video/dos/SDL_dosdbg.h" /* doskutsu_dbg_log routing (patch 0041) */
++#include "../../video/dos/SDL_dosdbg.h" /* dos_port_dbg_log routing (patch 0041) */
 +#include <SDL3/SDL_dosgus.h>            /* the engine-facing export prototypes */
 +
 +/* ------------------------------------------------------------------------- */
@@ -638,7 +638,7 @@ index 000000000..064773e28
 +
 +/* gus-7 #39: IRQ-SAFE voice-diagnostic ring (the H5 fix). The voice ops
 +   (SetVoiceFreq/Vol, StartVoice) run in the PIT-pump IRQ (note_on), where file
-+   I/O -- doskutsu_dbg_log = fprintf + per-line fsync (patch 0036) -- DEADLOCKS
++   I/O -- dos_port_dbg_log = fprintf + per-line fsync (patch 0036) -- DEADLOCKS
 +   via libc reentrancy if the IRQ fires mid main-loop fprintf (this is the
 +   confirmed H5: GUS_DIAG=1 hung). So the ops now ENQUEUE fixed records into
 +   this static ring (memory-only, done INSIDE their existing cli/sti so it is
@@ -714,23 +714,23 @@ index 000000000..064773e28
 +        DOS_EnableInterrupts();
 +        switch (r.kind) {
 +        case GUS_DR_FREQ:
-+            doskutsu_dbg_log("audio: SDL/0112 GUS #%u v%d FREQ hz=%u -> fc=0x%04X",
++            dos_port_dbg_log("audio: SDL/0112 GUS #%u v%d FREQ hz=%u -> fc=0x%04X",
 +                             (unsigned)r.seq, r.voice, (unsigned)r.a, (unsigned)r.b);
 +            break;
 +        case GUS_DR_VOL:
-+            doskutsu_dbg_log("audio: SDL/0112 GUS #%u v%d VOL in=%d -> reg=0x%04X",
++            dos_port_dbg_log("audio: SDL/0112 GUS #%u v%d VOL in=%d -> reg=0x%04X",
 +                             (unsigned)r.seq, r.voice, (int)r.a, (unsigned)r.b);
 +            break;
 +        case GUS_DR_START:
-+            doskutsu_dbg_log("audio: SDL/0112 GUS #%u v%d START addr=0x%X ctrl=0x%02X",
++            dos_port_dbg_log("audio: SDL/0112 GUS #%u v%d START addr=0x%X ctrl=0x%02X",
 +                             (unsigned)r.seq, r.voice, (unsigned)r.a, (unsigned)r.b);
 +            break;
 +        case GUS_DR_STOP:
-+            doskutsu_dbg_log("audio: SDL/0112 GUS #%u v%d STOP",
++            dos_port_dbg_log("audio: SDL/0112 GUS #%u v%d STOP",
 +                             (unsigned)r.seq, r.voice);
 +            break;
 +        case GUS_DR_MASK:
-+            doskutsu_dbg_log("audio: SDL/0112 GUS #%u MASK active=0x%X busy=%d",
++            dos_port_dbg_log("audio: SDL/0112 GUS #%u MASK active=0x%X busy=%d",
 +                             (unsigned)r.seq, (unsigned)r.a, (int)r.voice);
 +            break;
 +        default:
@@ -1122,7 +1122,7 @@ index 000000000..064773e28
 +           ON (dbg_log does file I/O). The LAST line before a freeze pins where
 +           in the upload the ISA bus wedged. GUS_DIAG-gated, default OFF. */
 +        if (g_gus_diag && (i & 0x3FF) < GUS_PIO_BURST) {
-+            doskutsu_dbg_log("audio: SDL/0112 GUS upload progress: %u/%u bytes "
++            dos_port_dbg_log("audio: SDL/0112 GUS upload progress: %u/%u bytes "
 +                             "(dram=0x%X autoinc=%d)", (unsigned)i, (unsigned)len,
 +                             (unsigned)(dram_addr + i), autoinc ? 1 : 0);
 +        }
@@ -1235,12 +1235,12 @@ index 000000000..064773e28
 +    }
 +    addr = SDL_DOSGusUploadSample(wave, sizeof(wave), 0);
 +    if (addr == SDL_DOSGUS_BAD_ADDR) {
-+        doskutsu_dbg_log("audio: SDL/0112 GUS TEST-TONE: DRAM upload FAILED");
++        dos_port_dbg_log("audio: SDL/0112 GUS TEST-TONE: DRAM upload FAILED");
 +        return;
 +    }
 +    v = SDL_DOSGusAllocVoice();
 +    if (v < 0) {
-+        doskutsu_dbg_log("audio: SDL/0112 GUS TEST-TONE: no free voice");
++        dos_port_dbg_log("audio: SDL/0112 GUS TEST-TONE: no free voice");
 +        return;
 +    }
 +    /* ONE-SHOT, NOT looping (#39 cell-A hang fix): a forever-looping voice keeps
@@ -1255,7 +1255,7 @@ index 000000000..064773e28
 +    SDL_DOSGusSetVoiceVol(v, 255);
 +    SDL_DOSGusSetVoicePan(v, 128);
 +    SDL_DOSGusStartVoice(v, addr, addr + GUS_TESTTONE_LEN - 1, addr, 0); /* flags=0: one-shot, no loop */
-+    doskutsu_dbg_log("audio: SDL/0112 GUS TEST-TONE: voice=%d addr=0x%X playing "
++    dos_port_dbg_log("audio: SDL/0112 GUS TEST-TONE: voice=%d addr=0x%X playing "
 +                     "~0.36s 440Hz square (max vol). AUDIBLE => voice primitives "
 +                     "+ output path OK (bug is note-mapping); SILENT => "
 +                     "primitives/output are the bug.", v, (unsigned)addr);
@@ -1268,7 +1268,7 @@ index 000000000..064773e28
 +       in the TESTTONE=1 diagnostic cell only. */
 +    SDL_DelayPrecise(SDL_MS_TO_NS(450));
 +    SDL_DOSGusStopVoice(v);
-+    doskutsu_dbg_log("audio: SDL/0112 GUS TEST-TONE: voice %d explicitly stopped "
++    dos_port_dbg_log("audio: SDL/0112 GUS TEST-TONE: voice %d explicitly stopped "
 +                     "+ freed after play (no lingering voice into gameplay; "
 +                     "#40 quiesce probe).", v);
 +}
@@ -1299,12 +1299,12 @@ index 000000000..064773e28
 +    /* is16bit=1: UploadSample takes a BYTE length (GUS_TESTTONE_LEN samples * 2). */
 +    addr = SDL_DOSGusUploadSample(wave16, (Uint32)sizeof(wave16), 1);
 +    if (addr == SDL_DOSGUS_BAD_ADDR) {
-+        doskutsu_dbg_log("audio: SDL/0112 GUS TEST-TONE16: DRAM upload FAILED");
++        dos_port_dbg_log("audio: SDL/0112 GUS TEST-TONE16: DRAM upload FAILED");
 +        return;
 +    }
 +    v = SDL_DOSGusAllocVoice();
 +    if (v < 0) {
-+        doskutsu_dbg_log("audio: SDL/0112 GUS TEST-TONE16: no free voice");
++        dos_port_dbg_log("audio: SDL/0112 GUS TEST-TONE16: no free voice");
 +        return;
 +    }
 +    /* BYTE addresses (StartVoice does the 16-bit >>1 encode). end = byte addr of
@@ -1315,13 +1315,13 @@ index 000000000..064773e28
 +    SDL_DOSGusSetVoiceVol(v, 255);
 +    SDL_DOSGusSetVoicePan(v, 128);
 +    SDL_DOSGusStartVoice(v, addr, end_byte, addr, SDL_DOSGUS_16BIT);
-+    doskutsu_dbg_log("audio: SDL/0112 GUS TEST-TONE16: voice=%d addr=0x%X end=0x%X "
++    dos_port_dbg_log("audio: SDL/0112 GUS TEST-TONE16: voice=%d addr=0x%X end=0x%X "
 +                     "playing ~0.36s 16-bit square (max vol). AUDIBLE => 16-bit GF1 "
 +                     "playback OK; SILENT (with 8-bit TESTTONE audible) => 16-bit "
 +                     "path is the #39 silence.", v, (unsigned)addr, (unsigned)end_byte);
 +    SDL_DelayPrecise(SDL_MS_TO_NS(450));
 +    SDL_DOSGusStopVoice(v);
-+    doskutsu_dbg_log("audio: SDL/0112 GUS TEST-TONE16: voice %d stopped + freed.", v);
++    dos_port_dbg_log("audio: SDL/0112 GUS TEST-TONE16: voice %d stopped + freed.", v);
 +}
 +
 +/* ------------------------------------------------------------------------- */
@@ -1339,7 +1339,7 @@ index 000000000..064773e28
 +    }
 +
 +    if (!gus_parse_ultrasnd()) {
-+        doskutsu_dbg_log("audio: SDL/0112 GUS GF1 detect: present=0 base=0x0 "
++        dos_port_dbg_log("audio: SDL/0112 GUS GF1 detect: present=0 base=0x0 "
 +                         "irq=-1 dma=-1 dram=0KB voices=0 rate=0Hz "
 +                         "(no ULTRASND hint)");
 +        return false;
@@ -1389,7 +1389,7 @@ index 000000000..064773e28
 +
 +    /* REQUIRED smoke banner -- anchored format "SDL/0112 GUS GF1 detect:
 +       present=". Mirrors the SDL/0106 always-on decision-banner pattern. */
-+    doskutsu_dbg_log("audio: SDL/0112 GUS GF1 detect: present=%d base=0x%X "
++    dos_port_dbg_log("audio: SDL/0112 GUS GF1 detect: present=%d base=0x%X "
 +                     "irq=%d dma=%d dram=%dKB voices=%d rate=%dHz%s",
 +                     present ? 1 : 0, g_gus_base, g_gus_irq, g_gus_play_dma,
 +                     (int)(g_gus_dram_size / 1024), g_gus_voices,
@@ -1438,7 +1438,7 @@ index 000000000..064773e28
 +
 +    g_gus_active = true;
 +
-+    doskutsu_dbg_log("audio: SDL/0112 GUS device up: base=0x%X irq=%d dma=%d "
++    dos_port_dbg_log("audio: SDL/0112 GUS device up: base=0x%X irq=%d dma=%d "
 +                     "voices=%d rate=%dHz dram=%dKB upload=%s%s%s",
 +                     g_gus_base, g_gus_irq, g_gus_play_dma, g_gus_voices,
 +                     (int)g_gus_rate, (int)(g_gus_dram_size / 1024),
@@ -1601,7 +1601,7 @@ index 000000000..064773e28
 +               PicoGUS wedges on ANY diag-added GF1 read. The live mask still
 +               reaches the log via the GUS_DR_MASK ring record (sourced from the
 +               core, non-diag GetState 0x80 read that already runs in the reap). */
-+            doskutsu_dbg_log("audio: SDL/0112 GUS upload #%u (start): src=%p len=%u "
++            dos_port_dbg_log("audio: SDL/0112 GUS upload #%u (start): src=%p len=%u "
 +                             "dram=0x%X %s via=%s used=%uKB/%uKB",
 +                             g_gus_n_upload, data, (unsigned)len, (unsigned)dram_addr,
 +                             is16bit ? "16b" : "8b", want_dma ? "dma" : "pio",
@@ -1635,7 +1635,7 @@ index 000000000..064773e28
 +       have already stopped any voice reading the region being freed. */
 +    g_gus_dram_used = keep_bytes;
 +    if (g_gus_diag) {
-+        doskutsu_dbg_log("audio: SDL/0112 GUS DRAM rewind: keep=%uKB (used now "
++        dos_port_dbg_log("audio: SDL/0112 GUS DRAM rewind: keep=%uKB (used now "
 +                         "%uKB/%uKB)",
 +                         (unsigned)(keep_bytes / 1024),
 +                         (unsigned)(g_gus_dram_used / 1024),
@@ -1804,7 +1804,7 @@ index 000000000..064773e28
 +    }
 +    DOS_EnableInterrupts();
 +    if (g_gus_diag) {
-+        doskutsu_dbg_log("audio: SDL/0112 GUS StopAllVoices: %d voices stopped + "
++        dos_port_dbg_log("audio: SDL/0112 GUS StopAllVoices: %d voices stopped + "
 +                         "freed (song-boundary quiesce, #40).", g_gus_voices);
 +    }
 +}

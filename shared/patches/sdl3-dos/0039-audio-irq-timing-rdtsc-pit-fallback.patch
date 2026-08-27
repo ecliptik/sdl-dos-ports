@@ -11,7 +11,7 @@ Bug: patch 0038 used BIOS tick at 0040:006C for IRQ entry/exit timing.
 That was wrong: BIOS tick advances via IRQ-0 (timer interrupt), and
 our audio IRQ-5 handler runs with CLI held by DPMI -- IRQ-0 cannot
 fire during our handler invocation. Result: entry_tick == exit_tick
-ALWAYS, cumulative `doskutsu_audio_irq_wall_us` stayed 0 forever.
+ALWAYS, cumulative `dos_port_audio_irq_wall_us` stayed 0 forever.
 Iter 1 surfaced this; flush-instr's review accepted "cumulative-mean
 converges" without sanity-checking the resolution-vs-rate ratio.
 
@@ -101,7 +101,7 @@ index 7f44cbfc6..dabeddb34 100644
      // Acknowledge hardware first.
      inportb(isr_irq_ack_port);
 @@ -292,14 +300,12 @@ static void SoundBlasterIRQHandler(void)
-         doskutsu_audio_sfx_active_count++;
+         dos_port_audio_sfx_active_count++;
      }
  
 -    /* DOSKUTSU patch (Phase 10): wall-clock accumulate via BIOS tick
@@ -110,21 +110,21 @@ index 7f44cbfc6..dabeddb34 100644
 -    const uint32_t exit_tick = (uint32_t)_farpeekl(_dos_ds, 0x46Cul);
 -    const uint32_t delta_ticks = exit_tick - entry_tick; /* modular */
 -    if (delta_ticks > 0) {
--        doskutsu_audio_irq_wall_us += delta_ticks * 54925u;
+-        dos_port_audio_irq_wall_us += delta_ticks * 54925u;
 -    }
 +    /* DOSKUTSU patch (Phase 10 patch 0039): wall-clock accumulate via
 +       IRQ-safe timer delta. SDL_DOSAudioTimerDeltaUs handles mode
 +       dispatch (RDTSC / PIT / BIOS tick) + modular wrap arithmetic. */
 +    const Uint64 exit_timer = SDL_DOSAudioReadTimer();
 +    const uint32_t delta_us = SDL_DOSAudioTimerDeltaUs(entry_timer, exit_timer);
-+    doskutsu_audio_irq_wall_us += delta_us;
++    dos_port_audio_irq_wall_us += delta_us;
  }
  static void SoundBlasterIRQHandler_End(void) {}
  
 @@ -576,6 +582,20 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
-     DOS_LockVariable(doskutsu_audio_irq_count);
-     DOS_LockVariable(doskutsu_audio_irq_wall_us);
-     DOS_LockVariable(doskutsu_audio_sfx_active_count);
+     DOS_LockVariable(dos_port_audio_irq_count);
+     DOS_LockVariable(dos_port_audio_irq_wall_us);
+     DOS_LockVariable(dos_port_audio_sfx_active_count);
 +    /* DOSKUTSU patch (Phase 10 patch 0039): lock timer-mode + TSC mhz
 +       so IRQ-context reads in SDL_DOSAudioReadTimer / DeltaUs (inlined
 +       at the IRQ handler call site) don't page-fault. Both are written

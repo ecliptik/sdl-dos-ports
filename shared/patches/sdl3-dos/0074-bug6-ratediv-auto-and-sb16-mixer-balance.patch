@@ -204,7 +204,7 @@ index 3cb332d8d..2f73af135 100644
 +        while ((p << 1) <= d) { p <<= 1; ++e; }
 +        if ((d - p) > ((p << 1) - d)) ++e; /* round toward the larger pow2 */
 +        g_dos_pixtone_irq_ratediv_shift = (Uint8)e;
-+        doskutsu_dbg_log("audio: SDL/0074 RATEDIV auto: WARNING non-power-of-2 "
++        dos_port_dbg_log("audio: SDL/0074 RATEDIV auto: WARNING non-power-of-2 "
 +                         "divider=%d (dev_freq=%d master_rate=%d) -> nearest "
 +                         "shift_div=%d", d, devf, master, e);
 +    }
@@ -259,7 +259,7 @@ index 3cb332d8d..2f73af135 100644
 -                }
 -                g_dos_pixtone_irq_ratediv_shift = rd_shift;
 -                if (rd_shift != 0) {
--                    doskutsu_dbg_log("audio: SDL/0073 pixtone IRQ rate-divider: "
+-                    dos_port_dbg_log("audio: SDL/0073 pixtone IRQ rate-divider: "
 -                                     "ENGAGED RATEDIV=%d (shift_div=%d; each "
 -                                     "Pixtone source sample held for %d output "
 -                                     "stereo pairs; ISR consumption slowed %dx "
@@ -270,7 +270,7 @@ index 3cb332d8d..2f73af135 100644
 -                                     (1 << rd_shift), (1 << rd_shift),
 -                                     (int)rd_shift);
 -                } else {
--                    doskutsu_dbg_log("audio: SDL/0073 pixtone IRQ rate-divider: "
+-                    dos_port_dbg_log("audio: SDL/0073 pixtone IRQ rate-divider: "
 -                                     "RATEDIV=1 (default; ISR consumption "
 -                                     "byte-identical to pre-0073; set "
 -                                     "SDL_HINT_DOS_PIXTONE_IRQ_RATEDIV=2 "
@@ -322,7 +322,7 @@ index 3cb332d8d..2f73af135 100644
 +            SDL_snprintf(rd_envdesc, sizeof(rd_envdesc), "RATEDIV=%d", 1 << rd_env_shift);
 +        else
 +            SDL_strlcpy(rd_envdesc, "none", sizeof(rd_envdesc));
-+        doskutsu_dbg_log("audio: SDL/0074 RATEDIV auto: dev_freq=%d "
++        dos_port_dbg_log("audio: SDL/0074 RATEDIV auto: dev_freq=%d "
 +                         "master_rate=%d divider=%d shift_div=%d "
 +                         "(env override=%s)",
 +                         device->spec.freq, rd_master, rd_divider,
@@ -335,7 +335,7 @@ index 3cb332d8d..2f73af135 100644
 +           high again. Make that loud in the log instead of leaving it to a
 +           reader noticing master_rate=0. */
 +        if (rd_master == 0 && rd_env_shift < 0) {
-+            doskutsu_dbg_log("audio: SDL/0074 RATEDIV auto: WARNING master_rate=0 "
++            dos_port_dbg_log("audio: SDL/0074 RATEDIV auto: WARNING master_rate=0 "
 +                             "+ no env override -- engine SDL_DOSPixtoneSetMasterRate "
 +                             "(nxengine-evo/0169) did not run before device open; "
 +                             "shift_div fell back to 0 (RATEDIV=1), so Tier-2 SFX "
@@ -396,12 +396,12 @@ index 3cb332d8d..2f73af135 100644
 +                outportb(mixer_addr, 0x33); outportb(mixer_data, (Uint8)(voice_vol << 3)); // Voice (PCM) R
 +                outportb(mixer_addr, 0x34); outportb(mixer_data, (Uint8)(fm_vol << 3));    // FM L
 +                outportb(mixer_addr, 0x35); outportb(mixer_data, (Uint8)(fm_vol << 3));    // FM R
-+                doskutsu_dbg_log("audio: SDL/0074 SB16 mixer balance: master=31 "
++                dos_port_dbg_log("audio: SDL/0074 SB16 mixer balance: master=31 "
 +                                 "voice=%d fm=%d (CT1745 0x30/32/34; tune "
 +                                 "SDL_HINT_DOS_SB16_FM_VOL=0..31)",
 +                                 voice_vol, fm_vol);
 +            } else {
-+                doskutsu_dbg_log("audio: SDL/0074 SB16 mixer balance: DISABLED "
++                dos_port_dbg_log("audio: SDL/0074 SB16 mixer balance: DISABLED "
 +                                 "(SDL_HINT_DOS_SB16_MIXER_PROGRAM=0; CT1745 "
 +                                 "left at card default; byte-identical to pre-0074)");
 +            }

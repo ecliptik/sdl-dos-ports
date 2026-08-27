@@ -171,7 +171,7 @@ index 842d14040..c72d4cf1a 100644
 +           line bracket exactly where the chip was last touched. SDL/0107: the
 +           stereo-bit suffix now keys on the actual channel count (channels==2)
 +           rather than DSP>=3, since the 8-bit path defaults to MONO. */
-         doskutsu_dbg_log("audio: SDL/0106 DSP start seq (8-bit): 0xD1(spkr-on) "
+         dos_port_dbg_log("audio: SDL/0106 DSP start seq (8-bit): 0xD1(spkr-on) "
                           "0x40 tc=%d (rate=%d effective=%d) 0x48 block_size=%d "
                           "(bytes-1) 0x1C(8-bit autoinit)%s",
                           (int)time_constant, device->spec.freq, effective_rate,
@@ -186,7 +186,7 @@ index 842d14040..c72d4cf1a 100644
 +           Emits only on the 8-bit path (DOSBox-X emulates SB16 so it will not
 +           fire under the default smoke -- optional banner; g2k PicoGUS-SB is
 +           where it appears). Names the killswitch for the operator. */
-+        doskutsu_dbg_log("audio: SDL/0107 8-bit channel mode: ch=%d (%s) tc=%d "
++        dos_port_dbg_log("audio: SDL/0107 8-bit channel mode: ch=%d (%s) tc=%d "
 +                         "effective=%d Hz stereo_bit=%s ring_silence_primed=yes "
 +                         "(killswitch SDL_HINT_DOS_AUDIO_SB_8BIT_STEREO=1 "
 +                         "restores SB-Pro stereo)",

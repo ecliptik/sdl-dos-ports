@@ -186,7 +186,7 @@ index 60437aa29..966f7ef2d 100644
 +                g_dos_audio_coop_yield_every = (Uint32)v;
 +            }
 +        }
-+        doskutsu_dbg_log("audio: SDL/0086 in-band COOP_YIELD %s -- Bug-5 organya "
++        dos_port_dbg_log("audio: SDL/0086 in-band COOP_YIELD %s -- Bug-5 organya "
 +                         "cooperative-scheduler monopoly fix (WaitDevice room-path "
 +                         "DOS_Yield every=%lu chunks; %s)",
 +                         g_dos_audio_coop_yield_enabled ? "ENABLED (default-ON)" : "DISABLED",
@@ -200,7 +200,7 @@ index 60437aa29..966f7ef2d 100644
         silent-IRQ counter export. Pure-data instrumentation -- no
         killswitch, no env var; the counter (defined in
 @@ -3065,7 +3169,7 @@ static bool DOSSOUNDBLASTER_PlayDevice(SDL_AudioDevice *device, const Uint8 *buf
-                 doskutsu_dbg_log(
+                 dos_port_dbg_log(
                      "audio: starve-diag/snd: t=%lu avail=%d chunk=%d "
                      "consec_silent=%lu silent_total=%lu cb_fills=%lu "
 -                    "room_returns=%lu yield_full=%lu "
@@ -209,7 +209,7 @@ index 60437aa29..966f7ef2d 100644
                      (unsigned long)SDL_GetTicks(),
                      sd_avail, isr_chunk_size,
 @@ -3073,9 +3177,12 @@ static bool DOSSOUNDBLASTER_PlayDevice(SDL_AudioDevice *device, const Uint8 *buf
-                     (unsigned long)doskutsu_audio_silent_irq_count,
+                     (unsigned long)dos_port_audio_silent_irq_count,
                      (unsigned long)s_sd_calls,
                      /* SDL/0085 S2 yield-asymmetry: room climbs / yield_full
 -                       FROZEN under organya == audio thread never yields back. */

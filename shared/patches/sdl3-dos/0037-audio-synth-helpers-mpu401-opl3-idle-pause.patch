@@ -23,7 +23,7 @@ New files:
   * Idle-pause: RegisterIdlePauseCallback/SetIdlePauseEnabled/
     ForcePause/ForceResume + SDL_DOSIdlePauseCallback typedef
   * Per-block extern counters (uint32_t us/count, atomic on x86):
-    doskutsu_audio_irq_wall_us / _irq_count / _sfx_active_count
+    dos_port_audio_irq_wall_us / _irq_count / _sfx_active_count
 
 - src/core/dos/SDL_dos_audio_synth.c -- implementations:
   * MPU-401: reset+ACK probe at Init (10 ms timeout); UART-mode entry
@@ -462,9 +462,9 @@ index 000000000..e6adfb38f
 +   (in this synth helper TU) and incremented from SB16 backend code
 +   (patch 0038's modifications to SoundBlasterIRQHandler etc.). The
 +   declarations in the header allow engine-side reads. */
-+volatile uint32_t doskutsu_audio_irq_wall_us = 0;
-+volatile uint32_t doskutsu_audio_irq_count = 0;
-+volatile uint32_t doskutsu_audio_sfx_active_count = 0;
++volatile uint32_t dos_port_audio_irq_wall_us = 0;
++volatile uint32_t dos_port_audio_irq_count = 0;
++volatile uint32_t dos_port_audio_sfx_active_count = 0;
 +
 +/* Force-pause / force-resume request flags. Set by ForcePause/Resume;
 +   serviced by the SB16 backend's audio writer / WaitDevice loop in
@@ -719,9 +719,9 @@ index 000000000..a6faebeca
 + * for atomic readability. Wraps at uint32_t max ~ 71.6 min cumulative
 + * IRQ wall-clock; iter sessions are well under this.
 + */
-+extern volatile uint32_t doskutsu_audio_irq_wall_us;
-+extern volatile uint32_t doskutsu_audio_irq_count;
-+extern volatile uint32_t doskutsu_audio_sfx_active_count;
++extern volatile uint32_t dos_port_audio_irq_wall_us;
++extern volatile uint32_t dos_port_audio_irq_count;
++extern volatile uint32_t dos_port_audio_sfx_active_count;
 +
 +#ifdef __cplusplus
 +}

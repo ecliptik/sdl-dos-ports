@@ -105,7 +105,7 @@ index 36c280e15..53a828396 100644
 +        const char *cy_hint = SDL_GetHint("SDL_HINT_DOS_DOS_AUDIO_COOP_YIELD");
 +        const bool cy_disabled = (cy_hint && cy_hint[0] == '0' && cy_hint[1] == 0);
 +        g_dos_audio_coop_yield_enabled = !cy_disabled;
-+        doskutsu_dbg_log("audio: SDL/0086 in-band COOP_YIELD %s -- Bug-5 organya "
++        dos_port_dbg_log("audio: SDL/0086 in-band COOP_YIELD %s -- Bug-5 organya "
 +                         "cooperative-scheduler monopoly fix (WaitDevice room-path "
 +                         "DOS_Yield; %s)",
 +                         g_dos_audio_coop_yield_enabled ? "ENABLED (default-ON)" : "DISABLED",

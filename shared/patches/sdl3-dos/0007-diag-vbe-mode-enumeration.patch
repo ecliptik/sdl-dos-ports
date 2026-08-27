@@ -64,16 +64,16 @@ index 1ef2878bd..20051a983 100644
 +        static int dumped = 0;
 +        if (!dumped && vinfo) {
 +            dumped = 1;
-+            _doskutsu_modes_dbg_open();
-+            if (_doskutsu_modes_dbg_log) {
-+                fprintf(_doskutsu_modes_dbg_log,
++            _dos_port_modes_dbg_open();
++            if (_dos_port_modes_dbg_log) {
++                fprintf(_dos_port_modes_dbg_log,
 +                        "DOSVESA-MODELIST: enumerating %d BIOS-reported modes (lever 0b diagnostic)\n",
 +                        vinfo->num_modes);
 +                for (int mi = 0; mi < vinfo->num_modes; mi++) {
 +                    const Uint16 modeid = vinfo->mode_list[mi];
 +                    SDL_DisplayModeData info;
 +                    if (!GetVESAModeInfo(modeid, &info)) {
-+                        fprintf(_doskutsu_modes_dbg_log,
++                        fprintf(_dos_port_modes_dbg_log,
 +                                "  mode 0x%04X: GetVESAModeInfo FAILED\n",
 +                                modeid);
 +                        continue;
@@ -81,7 +81,7 @@ index 1ef2878bd..20051a983 100644
 +                    const bool sup = (info.attributes & VBE_MODEATTR_SUPPORTED) != 0;
 +                    const bool gfx = (info.attributes & VBE_MODEATTR_GRAPHICS) != 0;
 +                    const bool color = (info.attributes & VBE_MODEATTR_COLOR) != 0;
-+                    fprintf(_doskutsu_modes_dbg_log,
++                    fprintf(_dos_port_modes_dbg_log,
 +                            "  mode 0x%04X: %4dx%-4d bpp=%-2d planes=%d "
 +                            "model=%d attrs=0x%04X lfb=%d sup=%d gfx=%d color=%d "
 +                            "pitch=%d pages=%d win_seg=0x%04X win_size=%uKB win_gran=%uKB win_attr=0x%02X "
@@ -94,10 +94,10 @@ index 1ef2878bd..20051a983 100644
 +                            (unsigned)info.win_granularity, info.win_a_attributes,
 +                            (unsigned long)info.physical_base_addr);
 +                }
-+                fprintf(_doskutsu_modes_dbg_log,
++                fprintf(_dos_port_modes_dbg_log,
 +                        "DOSVESA-MODELIST: end of BIOS-reported mode dump\n");
-+                fflush(_doskutsu_modes_dbg_log);
-+                fsync(fileno(_doskutsu_modes_dbg_log));
++                fflush(_dos_port_modes_dbg_log);
++                fsync(fileno(_dos_port_modes_dbg_log));
 +            }
 +        }
 +    }

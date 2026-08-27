@@ -81,7 +81,7 @@ index 064773e28..362bd2ee1 100644
 +    /* gussfx-1 #38 ENGAGE banner (only when the guard is on) -- anchored format
 +       "SDL/0113 GUS SFX bank-align: ENGAGED" for the smoke two-witness. */
 +    if (g_gus_sfx_bankalign) {
-+        doskutsu_dbg_log("audio: SDL/0113 GUS SFX bank-align: ENGAGED "
++        dos_port_dbg_log("audio: SDL/0113 GUS SFX bank-align: ENGAGED "
 +                         "(8-bit no-straddle 256K guard)");
 +    }
 +

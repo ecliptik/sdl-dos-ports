@@ -98,7 +98,7 @@ Patch shape:
     new `PixtoneISRMix` function (DPMI-locked via DOS_LockCode) +
     new ISR insertion point between the avail-vs-silence branch end
     and the counter-increment block, BEFORE the timer-exit measure so
-    the mix wall-clock folds into `doskutsu_audio_irq_wall_us`. The
+    the mix wall-clock folds into `dos_port_audio_irq_wall_us`. The
     mix is pure int32 add + clamp on int16 samples; gain is fixed-
     point int16 x256. v5 mix-headroom shift via cached uint8 volatile.
     Per L3 sec.1.
@@ -873,7 +873,7 @@ index d37139cfa..91bfcea6f 100644
 +       machine. See LEVER3-PIXTONE-IRQ-MIX-DESIGN.md sec.1.1 + sec.7.1.
 +
 +       NOTE the mix happens BEFORE the timer-exit measure (sb.c:828)
-+       so the new wall-clock cost folds into doskutsu_audio_irq_wall_us
++       so the new wall-clock cost folds into dos_port_audio_irq_wall_us
 +       and is visible to flush-instr instrumentation. */
 +    if (g_dos_pixtone_irq_mix_active) {
 +        PixtoneISRMix(dma_dst, isr_chunk_size);
@@ -914,7 +914,7 @@ index d37139cfa..91bfcea6f 100644
 +
 +        if (hint_set && backend_organya) {
 +            g_dos_pixtone_irq_mix_active = false;
-+            doskutsu_dbg_log("audio: SDL/0071 pixtone IRQ-mix: REQUESTED but "
++            dos_port_dbg_log("audio: SDL/0071 pixtone IRQ-mix: REQUESTED but "
 +                             "Organya backend active; skipping (Lever 3 "
 +                             "requires OPL3/WB/midi-stub backend for clean "
 +                             "SFX-vs-music separation; SDL_HINT_DOS_"
@@ -965,7 +965,7 @@ index d37139cfa..91bfcea6f 100644
 +                const unsigned hr_bits = (unsigned)(g_dos_pixtone_irq_mix_shift - 8u);
 +                const unsigned hr_db = hr_bits * 6u;
 +                const unsigned hr_concurrent = 2u << hr_bits; /* 2^(N+1) */
-+                doskutsu_dbg_log("audio: SDL/0071 pixtone IRQ-mix: ENABLED "
++                dos_port_dbg_log("audio: SDL/0071 pixtone IRQ-mix: ENABLED "
 +                                 "(opt-in via SDL_HINT_DOS_PIXTONE_IRQ_MIX=1; "
 +                                 "Pixtone PCM mixed directly in IRQ-5 ISR; "
 +                                 "cooperative-scheduler bypassed for SFX path; "
@@ -979,7 +979,7 @@ index d37139cfa..91bfcea6f 100644
 +            }
 +        } else {
 +            g_dos_pixtone_irq_mix_active = false;
-+            doskutsu_dbg_log("audio: SDL/0071 pixtone IRQ-mix: DISABLED "
++            dos_port_dbg_log("audio: SDL/0071 pixtone IRQ-mix: DISABLED "
 +                             "(default; set SDL_HINT_DOS_PIXTONE_IRQ_MIX"
 +                             "=1 to engage; off-path cost is one cached-bool "
 +                             "test per IRQ-5; SDL3_mixer SFX path unchanged)");
@@ -992,7 +992,7 @@ index d37139cfa..91bfcea6f 100644
 @@ -1522,6 +1955,23 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
         so its storage must be DPMI-locked alongside the other audio
         extern counters; otherwise the increment can page-fault. */
-     DOS_LockVariable(doskutsu_audio_silent_irq_count);
+     DOS_LockVariable(dos_port_audio_silent_irq_count);
 +    /* DOSKUTSU patch (Phase 11 patch 0071): Lever 3 lock primitives.
 +       The PixtoneISRMix code body must be DPMI-locked since it executes
 +       in IRQ-5 context (per LEVER3 sec.7.1). The channel-pool data
@@ -1017,9 +1017,9 @@ diff --git a/src/core/dos/SDL_dos_audio_synth.c b/src/core/dos/SDL_dos_audio_syn
 index 211e3cdac..f181de11f 100644
 --- a/src/core/dos/SDL_dos_audio_synth.c
 +++ b/src/core/dos/SDL_dos_audio_synth.c
-@@ -608,6 +608,22 @@ volatile uint32_t doskutsu_audio_sfx_active_count = 0;
+@@ -608,6 +608,22 @@ volatile uint32_t dos_port_audio_sfx_active_count = 0;
     Per docs/internal/PIXTONE-MULTISOURCE-DESIGN.md sec.2.1 #2. */
- volatile uint32_t doskutsu_audio_silent_irq_count = 0;
+ volatile uint32_t dos_port_audio_silent_irq_count = 0;
  
 +/* DOSKUTSU patch (Phase 11 patch 0071): Lever 3 ISR-channel-pool
 +   active counter. Dual-writer (engine ++ in SDL_DOSPixtoneStart, ISR
@@ -1044,9 +1044,9 @@ diff --git a/src/core/dos/SDL_dos_audio_synth.h b/src/core/dos/SDL_dos_audio_syn
 index f602051df..dbd727b0c 100644
 --- a/src/core/dos/SDL_dos_audio_synth.h
 +++ b/src/core/dos/SDL_dos_audio_synth.h
-@@ -364,6 +364,75 @@ extern volatile uint32_t doskutsu_audio_sfx_active_count;
+@@ -364,6 +364,75 @@ extern volatile uint32_t dos_port_audio_sfx_active_count;
     probe contract. */
- extern volatile uint32_t doskutsu_audio_silent_irq_count;
+ extern volatile uint32_t dos_port_audio_silent_irq_count;
  
 +/* ------------------------------------------------------------------------
 + * Phase 11 patch 0071 -- SDL_DOSPixtone* channel-pool API for Lever 3

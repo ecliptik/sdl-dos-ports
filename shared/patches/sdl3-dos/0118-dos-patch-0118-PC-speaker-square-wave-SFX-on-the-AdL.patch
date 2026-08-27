@@ -347,7 +347,7 @@ index 285180bb0..29751d626 100644
                       (unsigned)(65536u / div),
                       s_pump_tick_cb ? "registered"
                                      : "NULL(no MidiScheduler tick registered!)");
-+    doskutsu_dbg_log("audio: SDL/0118 [pcspk] square-wave SFX %s (PIT ch2 mode-3; "
++    dos_port_dbg_log("audio: SDL/0118 [pcspk] square-wave SFX %s (PIT ch2 mode-3; "
 +                     "ch0 pump %u Hz gates note duration; ring depth %d; killswitch "
 +                     "SDL_HINT_DOS_PCSPK_SFX=0 -> v1.5.0 music-only byte-identical)",
 +                     s_pcspk_sfx_enabled ? "ENABLED" : "disabled (killswitch=0)",
@@ -380,7 +380,7 @@ index 285180bb0..29751d626 100644
 @@ -1410,7 +1583,9 @@ void SDL_DOSOplTimerPumpStop(void)
      DOS_UnhookInterrupt(&s_opl_pit_hook, false);
  
-     doskutsu_dbg_log("audio: SDL/0110 OPL timer pump STOPPED (PIT ch0 restored "
+     dos_port_dbg_log("audio: SDL/0110 OPL timer pump STOPPED (PIT ch0 restored "
 -                     "to 18.2065 Hz; IRQ-0 unhooked; timer left unmasked)");
 +                     "to 18.2065 Hz; IRQ-0 unhooked; timer left unmasked)%s",
 +                     s_pcspk_sfx_enabled ? "; SDL/0118 PC-speaker restored (ch2+0x61)"

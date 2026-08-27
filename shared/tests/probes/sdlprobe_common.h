@@ -63,9 +63,9 @@
 extern void SDL_DOSAudioInitTimer(void);
 extern volatile uint32_t g_dos_audio_timer_mode;
 extern volatile uint32_t g_dos_audio_timer_tsc_mhz;
-extern volatile uint32_t doskutsu_audio_irq_count;
-extern volatile uint32_t doskutsu_audio_irq_wall_us;
-extern volatile uint32_t doskutsu_audio_sfx_active_count;
+extern volatile uint32_t dos_port_audio_irq_count;
+extern volatile uint32_t dos_port_audio_irq_wall_us;
+extern volatile uint32_t dos_port_audio_sfx_active_count;
 
 #include <dpmi.h>     /* _go32_dpmi_meminfo + _go32_dpmi_get_free_memory_information */
 #include <go32.h>

@@ -160,7 +160,7 @@ index 33a7e7bd7..3d74628cc 100644
 +
 +    if (++g_c_audiocb_invocations >= 100) {
 +        g_c_audiocb_block++;
-+        doskutsu_dbg_log("[sdl-audiocb block~%lu invocations=%lu "
++        dos_port_dbg_log("[sdl-audiocb block~%lu invocations=%lu "
 +                         "total_ms=%lu max_ms=%lu]",
 +                         (unsigned long)g_c_audiocb_block,
 +                         (unsigned long)g_c_audiocb_invocations,

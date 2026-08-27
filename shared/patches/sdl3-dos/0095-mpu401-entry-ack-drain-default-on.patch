@@ -86,7 +86,7 @@ index 080f6299c..02d33076d 100644
 +static void mpu401_drain_entry_ack(uint16_t port_base, const char *path_label)
 +{
 +    if (!s_mpu401_entry_ack_drain_enabled) {
-+        doskutsu_dbg_log("mpu401: entry-ack drain SKIPPED at port_base=0x%04x "
++        dos_port_dbg_log("mpu401: entry-ack drain SKIPPED at port_base=0x%04x "
 +                         "(%s; SDL_HINT_DOS_AUDIO_WB_ENTRY_ACK_DRAIN=0 -- "
 +                         "undrained 0x3F ACK baseline; IRQ-5 starvation risk on "
 +                         "live SB16)",
@@ -107,7 +107,7 @@ index 080f6299c..02d33076d 100644
 +        if (!via_dsr) {
 +            ack = inportb((Uint16)port_base); /* unconditional drain (bit-7 lie) */
 +        }
-+        doskutsu_dbg_log("mpu401: entry-ack drain at port_base=0x%04x "
++        dos_port_dbg_log("mpu401: entry-ack drain at port_base=0x%04x "
 +                         "(%s; drain=1 ack=0x%02X via=%s; SDL/0095 "
 +                         "mandatory-for-IRQ-5-health; killswitch "
 +                         "SDL_HINT_DOS_AUDIO_WB_ENTRY_ACK_DRAIN=0)",

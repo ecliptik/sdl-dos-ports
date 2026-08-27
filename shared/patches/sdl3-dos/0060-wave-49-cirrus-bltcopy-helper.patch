@@ -61,7 +61,7 @@ Engine must handle false return by falling back to its existing
 software _blit_indexed primitive. The chip state is left in a clean
 (post-reset) state on the timeout path so the next call starts fresh.
 
-doskutsu_dbg_log banners (smoke-gate two-witness pattern):
+dos_port_dbg_log banners (smoke-gate two-witness pattern):
 
   - "sdl: wave-49 Cirrus BLTCopy: ENABLED (Cirrus 5434 detected; ...)"
     on successful chip detection.
@@ -165,7 +165,7 @@ index 034bedf74..528f1e7f0 100644
 + *
 + * On first call: probes CRTC[0x27] for chip rev 0xA8 (Cirrus 5434),
 + * clears the screen-to-screen BLT constraints in GR[0x0B], and caches
-+ * the result. Also emits a one-time `doskutsu_dbg_log` banner narrating
++ * the result. Also emits a one-time `dos_port_dbg_log` banner narrating
 + * either ENABLED (chip detected) or DISABLED (with reason: chip not
 + * Cirrus 5434, or killswitch SDL_HINT_DOS_CIRRUS_BLT=0). On
 + * subsequent calls returns the cached result without re-probing.
@@ -205,7 +205,7 @@ index 034bedf74..528f1e7f0 100644
 + * false (with no chip state mutation) for out-of-range or non-positive
 + * dimensions.
 + *
-+ * On the FIRST successful BLT, emits a one-time `doskutsu_dbg_log`
++ * On the FIRST successful BLT, emits a one-time `dos_port_dbg_log`
 + * banner narrating the src/dst offsets and rect size so the smoke
 + * gate can verify the path is actually exercised (two-witness pattern
 + * per CLAUDE.md sec. Build verification).
@@ -298,7 +298,7 @@ index 1ee59c1e5..8fdc0fa00 100644
 +
 +// Probe + cache chip availability. Called lazily from
 +// SDL_DOSVesaDirect_IsCirrusBLTAvailable and SDL_DOSVesaDirect_BLTCopy.
-+// Emits a one-time doskutsu_dbg_log banner narrating the verdict.
++// Emits a one-time dos_port_dbg_log banner narrating the verdict.
 +static int _cirrus_blt_check_availability(void)
 +{
 +    if (_cirrus_blt_available >= 0) {
@@ -311,7 +311,7 @@ index 1ee59c1e5..8fdc0fa00 100644
 +    // default-ON behavior.
 +    const char *env = SDL_getenv("SDL_HINT_DOS_CIRRUS_BLT");
 +    if (env && env[0] == '0' && env[1] == 0) {
-+        doskutsu_dbg_log("sdl: wave-49 Cirrus BLTCopy: DISABLED "
++        dos_port_dbg_log("sdl: wave-49 Cirrus BLTCopy: DISABLED "
 +                         "(killswitch SDL_HINT_DOS_CIRRUS_BLT=0)");
 +        _cirrus_blt_available = 0;
 +        return 0;
@@ -332,7 +332,7 @@ index 1ee59c1e5..8fdc0fa00 100644
 +        // Strict 5434-only detection per the patch contract.
 +        // Other Cirrus variants (5430=0xA0 / 5436=0xAC / 5446=0xB8)
 +        // fall through to availability=false. Non-Cirrus also lands here.
-+        doskutsu_dbg_log("sdl: wave-49 Cirrus BLTCopy: DISABLED "
++        dos_port_dbg_log("sdl: wave-49 Cirrus BLTCopy: DISABLED "
 +                         "(chip not Cirrus 5434; CRTC[0x27]=0x%02X "
 +                         "sr06_rd=0x%02X; engine uses sysmem fallback)",
 +                         (unsigned)crtc27, (unsigned)sr06_rd);
@@ -348,7 +348,7 @@ index 1ee59c1e5..8fdc0fa00 100644
 +    outportb(CIRRUS_GR_INDEX, 0x0B);
 +    outportb(CIRRUS_GR_DATA, gr0b);
 +
-+    doskutsu_dbg_log("sdl: wave-49 Cirrus BLTCopy: ENABLED "
++    dos_port_dbg_log("sdl: wave-49 Cirrus BLTCopy: ENABLED "
 +                     "(Cirrus 5434 detected; CRTC[0x27]=0xA8; "
 +                     "GR[0x0B] screen-to-screen constraints cleared; "
 +                     "engine may call SDL_DOSVesaDirect_BLTCopy)");
@@ -464,7 +464,7 @@ index 1ee59c1e5..8fdc0fa00 100644
 +    // (no per-call log spam in the hot path).
 +    if (!_cirrus_blt_first_success_logged) {
 +        _cirrus_blt_first_success_logged = 1;
-+        doskutsu_dbg_log("sdl: wave-49 Cirrus BLTCopy: first BLT success "
++        dos_port_dbg_log("sdl: wave-49 Cirrus BLTCopy: first BLT success "
 +                         "(src_off=0x%06lx dst_off=0x%06lx %dx%d "
 +                         "src_pitch=%d dst_pitch=%d)",
 +                         (unsigned long)src_vram_off,

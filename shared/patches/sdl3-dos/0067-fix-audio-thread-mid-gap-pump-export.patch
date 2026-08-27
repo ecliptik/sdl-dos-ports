@@ -344,7 +344,7 @@ index 04a1b266d..d94af1c42 100644
 --- a/src/audio/dos/SDL_dosaudio_sb.c
 +++ b/src/audio/dos/SDL_dosaudio_sb.c
 @@ -28,6 +28,7 @@
- #include "../../video/dos/SDL_dosdbg.h" /* DOSKUTSU patch 0041: doskutsu_dbg_log routing */
+ #include "../../video/dos/SDL_dosdbg.h" /* DOSKUTSU patch 0041: dos_port_dbg_log routing */
  #include "SDL_dosaudio_sb.h"
  #include <SDL3/SDL_dosaudio_shutdown.h> /* DOSKUTSU patch 0053: engine-callable SDL_DOSAudioBeginShutdown export */
 +#include <SDL3/SDL_dosaudio_pump.h>     /* DOSKUTSU patch 0067: engine-callable SDL_DOSAudioPump export (audio mid-gap-service) */
@@ -384,7 +384,7 @@ index 04a1b266d..d94af1c42 100644
 +       SDL3/SDL_dosaudio_pump.h) knows which device to iterate. Cleared
 +       at the end of DOSSOUNDBLASTER_CloseDevice. */
 +    g_dos_audio_device = device;
-+    doskutsu_dbg_log("audio: SDL/0067 SDL_DOSAudioPump export available "
++    dos_port_dbg_log("audio: SDL/0067 SDL_DOSAudioPump export available "
 +                     "(engine may call from main thread to mid-gap-service "
 +                     "the audio ring; safety: no renderer / no SDL_PumpEvents / "
 +                     "engine-callback re-entry bounded to scalar slot bookkeeping)");
@@ -499,7 +499,7 @@ index 04a1b266d..d94af1c42 100644
 +       reset counter, return false (caller's loop exits; next
 +       call-sequence starts fresh). */
 +    if (calls_since_false_return >= 32) {
-+        doskutsu_dbg_log("audio: SDL/0067 SDL_DOSAudioPump cap tripped "
++        dos_port_dbg_log("audio: SDL/0067 SDL_DOSAudioPump cap tripped "
 +                         "(>32 calls in one sequence; possible runaway "
 +                         "caller); forcing false-return");
 +        calls_since_false_return = 0;

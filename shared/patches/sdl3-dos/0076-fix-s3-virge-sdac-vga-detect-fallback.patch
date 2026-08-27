@@ -89,7 +89,7 @@ index c734f8964..904e0984e 100644
 +            const Uint8 readback = inportb(VGA_DAC_PIXEL_MASK);
 +            outportb(VGA_DAC_PIXEL_MASK, original);
 +            if (readback == 0xA5) {
-+                DOSKUTSU_MODES_LOG("s3-vga-detect: 0x3C6 round-trip passed after "
++                DOS_PORT_MODES_LOG("s3-vga-detect: 0x3C6 round-trip passed after "
 +                                   "SDAC read-index reset (0x3C8 touch) -> usable VGA");
 +                (void)GetVESAInfo(); // cache VESA info (matches success path)
 +                return true;
@@ -103,7 +103,7 @@ index c734f8964..904e0984e 100644
 +        // case. Treating it as usable lets DOSVESA_GetDisplayModes
 +        // enumerate its VBE LFB modes and the engine run normally.
 +        if (GetVESAInfo() != NULL) {
-+            DOSKUTSU_MODES_LOG("s3-vga-detect: 0x3C6 round-trip failed (incl. after "
++            DOS_PORT_MODES_LOG("s3-vga-detect: 0x3C6 round-trip failed (incl. after "
 +                               "SDAC reset) but VBE 0x4F00 returned VESA signature "
 +                               "-> treating as usable graphics device (VBE fallback)");
 +            return true;
@@ -111,7 +111,7 @@ index c734f8964..904e0984e 100644
 +
 +        // Neither path proved a usable device: genuinely no VGA/VESA
 +        // (e.g. EGA/CGA with no VESA BIOS). Preserve upstream behavior.
-+        DOSKUTSU_MODES_LOG("s3-vga-detect: 0x3C6 round-trip failed AND no VBE "
++        DOS_PORT_MODES_LOG("s3-vga-detect: 0x3C6 round-trip failed AND no VBE "
 +                           "controller info -> no usable video device");
          return SDL_SetError("No VGA card detected");
 +        // === end patch SDL/0076 fallback ===========================

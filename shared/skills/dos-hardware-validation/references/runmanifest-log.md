@@ -49,7 +49,7 @@ are:
 
 This hub's `shared/tools/dosbox-launch.sh` sets `DOS_PORT_ENVIRONMENT` as
 its neutral default. A port whose engine reads its own differently-named
-var for this (doskutsu's engine patches read `DOSKUTSU_ENVIRONMENT`
+var for this (doskutsu's engine patches read `DOS_PORT_ENVIRONMENT`
 specifically -- see `shared/patches/sdl3-dos/README.md`'s "Known naming
 debt" section for why that wasn't renamed) should pass
 `LAUNCH_EXTRA_SET="<PORT>_ENVIRONMENT=dosbox-x"` (or the real-hardware

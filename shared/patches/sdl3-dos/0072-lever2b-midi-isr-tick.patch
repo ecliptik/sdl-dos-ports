@@ -55,9 +55,9 @@ Patch shape:
       on x86; no cli/sti needed); accessor returns the cached bool.
     - **ISR insertion** at sb.c:1183-area (AFTER counter increments
       including SDL/0071's g_dos_pixtone_active_count and the existing
-      doskutsu_audio_sfx_active_count, BEFORE exit_timer read at
+      dos_port_audio_sfx_active_count, BEFORE exit_timer read at
       sb.c:1191) so the MIDI tick wall-clock cost folds into the
-      existing doskutsu_audio_irq_wall_us instrumentation per
+      existing dos_port_audio_irq_wall_us instrumentation per
       LEVER2B sec.8 Q4 + sec.10.
     - **First-IRQ-baseline-seed**: the inter-IRQ delta math is
       well-defined from the second IRQ onward; the first IRQ-post-
@@ -260,7 +260,7 @@ index 000000000..8e52a114d
 + * ## Wall-clock measurement
 + *
 + * The MIDI tick cost folds into the existing
-+ * `doskutsu_audio_irq_wall_us` counter (the ISR insertion sits AFTER
++ * `dos_port_audio_irq_wall_us` counter (the ISR insertion sits AFTER
 + * the existing counter increments but BEFORE the exit_timer read per
 + * LEVER2B sec.8 Q4). flush-instr's existing instrumentation sees the
 + * combined cost; per-lever attribution requires separate
@@ -459,7 +459,7 @@ index 8592684e8..cf65f8e9f 100644
 +
 +       NOTE this hook sits AFTER the existing counter increments and
 +       BEFORE the exit_timer read at line 1191 so the MIDI tick cost
-+       folds into doskutsu_audio_irq_wall_us per LEVER2B-MIDI-ISR-
++       folds into dos_port_audio_irq_wall_us per LEVER2B-MIDI-ISR-
 +       TICK-DESIGN.md sec.8 Q4 + sec.10. */
 +    if (g_dos_midi_isr_tick_active && g_dos_midi_tick_cb) {
 +        if (!g_dos_midi_baseline_seeded) {
@@ -496,7 +496,7 @@ index 8592684e8..cf65f8e9f 100644
 +        g_dos_midi_baseline_seeded = false;
 +        if (hint_set) {
 +            g_dos_midi_isr_tick_active = true;
-+            doskutsu_dbg_log("audio: SDL/0072 midi tick from ISR: ENABLED "
++            dos_port_dbg_log("audio: SDL/0072 midi tick from ISR: ENABLED "
 +                             "(opt-in via SDL_HINT_DOS_MIDI_ISR_TICK=1; "
 +                             "MidiScheduler::tick piggybacks the SB16 IRQ-5 "
 +                             "at ~43 Hz Tier-2; render-rate decoupling for "
@@ -505,7 +505,7 @@ index 8592684e8..cf65f8e9f 100644
 +                             "registers callback via SDL_DOSMidiTickRegister)");
 +        } else {
 +            g_dos_midi_isr_tick_active = false;
-+            doskutsu_dbg_log("audio: SDL/0072 midi tick from ISR: DISABLED "
++            dos_port_dbg_log("audio: SDL/0072 midi tick from ISR: DISABLED "
 +                             "(default; set SDL_HINT_DOS_MIDI_ISR_TICK=1 "
 +                             "to engage; off-path cost is two cached reads + "
 +                             "early branch per IRQ-5; engine main-loop "

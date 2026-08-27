@@ -132,11 +132,11 @@ index b6cd35b3d..e41b4d79a 100644
 +        g_dos_audio_quiescence_gate_disabled =
 +            (gate_hint && gate_hint[0] == '0' && gate_hint[1] == 0);
 +        if (g_dos_audio_quiescence_gate_disabled) {
-+            doskutsu_dbg_log("audio: SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE=0 "
++            dos_port_dbg_log("audio: SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE=0 "
 +                             "(SDL/0050 quiescence gate DISABLED; pre-0050 always-"
 +                             "fill-ring behavior; auto-engage idle-pause cannot fire)");
 +        } else {
-+            doskutsu_dbg_log("audio: SDL/0050 quiescence gate active (default); "
++            dos_port_dbg_log("audio: SDL/0050 quiescence gate active (default); "
 +                             "GetDeviceBuf returns *buffer_size=0 when no streams "
 +                             "have data -> auto-engage path can fire on silent gameplay");
 +        }

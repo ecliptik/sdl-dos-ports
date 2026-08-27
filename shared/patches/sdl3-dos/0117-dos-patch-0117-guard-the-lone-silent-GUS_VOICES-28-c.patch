@@ -45,7 +45,7 @@ index 1447fb233..b4a634734 100644
 +       operator sees why. The resulting count flows into the SDL/0112 detect
 +       banner (voices=%d rate=%dHz), so the nudge is visible there too. */
 +    if (v == 28) {
-+        doskutsu_dbg_log("audio: SDL/0117 GUS-VOICES-GUARD: requested 28 voices "
++        dos_port_dbg_log("audio: SDL/0117 GUS-VOICES-GUARD: requested 28 voices "
 +                         "== the PicoGUS 22050Hz/SCALE_22K_TO_44K dead-silence "
 +                         "special-case; nudged to 27 (nearest audible count)");
 +        v = 27;

@@ -104,7 +104,7 @@ index f181de11f..066f78b2b 100644
 +    /* Two-witness banner for build-qa smoke per [[smoke_gate_discipline]]:
 +       string in binary (".rodata" via this literal) + runtime emit in
 +       <TAG>SDL.LOG when the shutdown path runs. */
-+    doskutsu_dbg_log("audio: SDL/0079 TL=0x3F sweep applied (18 voices "
++    dos_port_dbg_log("audio: SDL/0079 TL=0x3F sweep applied (18 voices "
 +                     "x 2 ops, max attenuation -48 dB) on OPL3 chip-"
 +                     "state teardown -- wub-wub fix part B engaged");
 +

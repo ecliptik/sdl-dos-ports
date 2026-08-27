@@ -36,7 +36,7 @@ wiring (single increment per silent IRQ; engine-side delta arithmetic
 correct), leaving the IRQ rate hypothesis: real DX2-66 SB16 may fire
 IRQ-5 at a higher rate than the design assumption.
 
-This patch folds the existing doskutsu_audio_irq_count delta into the
+This patch folds the existing dos_port_audio_irq_count delta into the
 same [sdl-audiocb] block emit as `irq_delta=N`. The existing counter
 already increments unconditionally per IRQ at sb.c:778; no new symbol
 needed (per #117 STOP-and-ack Q2 narrowing -- pre-flight grep caught
@@ -125,10 +125,10 @@ index 0d11dafec..d37139cfa 100644
 +static Uint32 g_c_pix_hist[6] = {0, 0, 0, 0, 0, 0};
 +
 +/* DOSKUTSU patch (Phase 11 patch 0070): irq_count delta fold-in.
-+   Snapshot of doskutsu_audio_irq_count at the previous block emit;
++   Snapshot of dos_port_audio_irq_count at the previous block emit;
 +   current block's delta `irq_delta` exposes the real-HW SB16 IRQ-5
 +   firing rate as a per-block witness. Sibling of silent_irq delta
-+   (engine reads doskutsu_audio_silent_irq_count via patch 0069). The
++   (engine reads dos_port_audio_silent_irq_count via patch 0069). The
 +   ratio silent_irq / irq_delta gives the silent fraction; irq_delta
 +   per wall-second gives the actual IRQ rate. Resolves the v1 sec.21.4.1
 +   anomaly (silent_irq ~750/block vs design-assumed 43 Hz IRQ predicting
@@ -148,7 +148,7 @@ index 0d11dafec..d37139cfa 100644
 +       0165's organyaStreamCallback sampler missed the OPL3 default
 +       since wave-46). Pure-data instrumentation; no behavior change.
 +       Per docs/internal/PIXTONE-PROBE-V2-DESIGN.md sec.2 + sec.5. */
-+    doskutsu_dbg_log("audio: SDL/0070 v2 Pixtone probe pix_active histogram "
++    dos_port_dbg_log("audio: SDL/0070 v2 Pixtone probe pix_active histogram "
 +                     "+ irq_delta fold-in: rides on FINE_INSTR=1 (extends "
 +                     "[sdl-audiocb] block emit; no new env var)");
 +
@@ -213,11 +213,11 @@ index 0d11dafec..d37139cfa 100644
 +           previous block-emit snapshot. The witness for real-HW IRQ
 +           rate (sec.21.4.1 anomaly resolver). Modular wrap-safe per
 +           C99 unsigned overflow semantics. */
-+        const Uint32 _now_irq = doskutsu_audio_irq_count;
++        const Uint32 _now_irq = dos_port_audio_irq_count;
 +        const Uint32 _d_irq = _now_irq - g_c_audiocb_last_irq_count;
 +        g_c_audiocb_last_irq_count = _now_irq;
 +
-         doskutsu_dbg_log("[sdl-audiocb block~%lu invocations=%lu "
+         dos_port_dbg_log("[sdl-audiocb block~%lu invocations=%lu "
 -                         "total_ms=%lu max_ms=%lu]",
 +                         "total_ms=%lu max_ms=%lu "
 +                         "pix_active min=%lu med=%lu p90=%lu max=%lu "

@@ -83,7 +83,7 @@ byte offset is LEGITIMATELY 0 when the visible page is page 1
 "engaged" plus an out-pointer for the offset, so callers cannot
 mistakenly disengage the divert based on offset==0.
 
-doskutsu_dbg_log banners (smoke-gate two-witness pattern):
+dos_port_dbg_log banners (smoke-gate two-witness pattern):
 
   - "sdl: wave-50 VRAM-resident page-flip ENABLED (back-page=0x012C00;
     CRTC encoding=BYTE verified via probe; CRTC[0x14]=0xXX CRTC[0x17]=
@@ -454,7 +454,7 @@ index 8fdc0fa00..18d02e062 100644
 +
 +// Probe + cache VRAM-resident availability. Called lazily from the
 +// PresentFull divert and from SDL_DOSVesaPagePresent. Emits a one-time
-+// doskutsu_dbg_log banner narrating either ENABLED + sanity-check
++// dos_port_dbg_log banner narrating either ENABLED + sanity-check
 +// register values, or DISABLED + reason.
 +static int _vram_resident_check_enabled(void)
 +{
@@ -476,7 +476,7 @@ index 8fdc0fa00..18d02e062 100644
 +    // The probe-verified CRTC encoding is specific to Cirrus 5434 + UniVBE
 +    // 6.7; we refuse engagement on other chips/firmware combinations.
 +    if (!SDL_DOSVesaDirect_IsCirrusBLTAvailable()) {
-+        doskutsu_dbg_log("sdl: wave-50 VRAM-resident page-flip DISABLED "
++        dos_port_dbg_log("sdl: wave-50 VRAM-resident page-flip DISABLED "
 +                         "(chip not Cirrus 5434 OR SDL_HINT_DOS_CIRRUS_BLT=0; "
 +                         "engine uses sysmem fallback)");
 +        _vram_resident_state = 0;
@@ -493,7 +493,7 @@ index 8fdc0fa00..18d02e062 100644
 +        // Clearly disqualifying: dword addressing is active; the probe
 +        // verified only the byte-units encoding. Fall back rather than
 +        // risk programming the wrong display-start.
-+        doskutsu_dbg_log("sdl: wave-50 VRAM-resident page-flip DISABLED "
++        dos_port_dbg_log("sdl: wave-50 VRAM-resident page-flip DISABLED "
 +                         "(chip configured for non-byte encoding: "
 +                         "CRTC[0x14]=0x%02X bit6=1 (dword); CRTC[0x17]=0x%02X "
 +                         "SR[0x07]=0x%02X; falling back to dosmemput; "
@@ -503,7 +503,7 @@ index 8fdc0fa00..18d02e062 100644
 +        return 0;
 +    }
 +
-+    doskutsu_dbg_log("sdl: wave-50 VRAM-resident page-flip ENABLED "
++    dos_port_dbg_log("sdl: wave-50 VRAM-resident page-flip ENABLED "
 +                     "(back-page=0x012C00; CRTC encoding=BYTE verified "
 +                     "via probe; CRTC[0x14]=0x%02X CRTC[0x17]=0x%02X "
 +                     "SR[0x07]=0x%02X)",
@@ -589,7 +589,7 @@ index 8fdc0fa00..18d02e062 100644
 +
 +    if (!_vram_resident_engage_banner_logged) {
 +        _vram_resident_engage_banner_logged = 1;
-+        doskutsu_dbg_log("sdl: wave-50 VRAM-resident page-flip first swap "
++        dos_port_dbg_log("sdl: wave-50 VRAM-resident page-flip first swap "
 +                         "(back_page_byte_offset=0x%06lX; visible_page now=%d)",
 +                         (unsigned long)back_page_byte_offset,
 +                         _vram_resident_visible_page);

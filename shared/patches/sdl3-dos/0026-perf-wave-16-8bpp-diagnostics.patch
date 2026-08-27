@@ -14,8 +14,8 @@ patch adds the matching diagnostic lines in SDLDBG.LOG so we can confirm
 the cap propagated through SDL3-DOS's mode-enumeration filter and
 through the framebuffer flush path.
 
-Two new log lines, both gated by the existing doskutsu_dbg_log /
-DOSKUTSU_LOG_TAG infrastructure (patches/SDL/0009 + 0024):
+Two new log lines, both gated by the existing dos_port_dbg_log /
+DOS_PORT_LOG_TAG infrastructure (patches/SDL/0009 + 0024):
 
   1. WAVE16-MODESET in DOSVESA_SetDisplayMode logs the requested
      SDL_HINT_DOS_MAX_BPP value, the actual bpp/mode-id picked, the
@@ -63,7 +63,7 @@ index d19ae2844..4005c1d5d 100644
 +        // is BYTES per pixel (SDL_BYTESPERPIXEL on the mode format), so 1 at
 +        // INDEX8 and 2 at RGB565. A sanity check in the logback: the value
 +        // should be close to (W * H * bpp), allowing for VBE pitch padding.
-+        doskutsu_dbg_log(
++        dos_port_dbg_log(
 +                "WAVE16-FB-FIRSTFLUSH: bytes_per_pixel=%d fb_size_bytes=%lu "
 +                "src_pitch=%d vram_pitch=%d pitches_match=%d use_dosmemput=%d "
 +                "(expected ~half of wave-15 16bpp baseline at 8bpp)",
@@ -95,7 +95,7 @@ index c7cc9eb04..20543df1b 100644
 +        const char *max_bpp_hint = SDL_GetHint(SDL_HINT_DOS_MAX_BPP);
 +        const Uint32 raw_bytes = (Uint32)modedata->w * (Uint32)modedata->h * (Uint32)((modedata->bpp + 7) / 8);
 +        const Uint32 padded_bytes = (Uint32)modedata->h * (Uint32)modedata->pitch;
-+        DOSKUTSU_MODES_LOG("WAVE16-MODESET: requested_max_bpp=%s actual_bpp=%d mode=0x%04X "
++        DOS_PORT_MODES_LOG("WAVE16-MODESET: requested_max_bpp=%s actual_bpp=%d mode=0x%04X "
 +                           "%dx%d pitch=%d raw_bytes_per_frame=%lu padded_bytes_per_frame=%lu "
 +                           "fb_base=%s",
 +                           max_bpp_hint ? max_bpp_hint : "(unset)",

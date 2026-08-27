@@ -29,7 +29,7 @@ instrumentation to pin it.
 
 It narrates the SDL_DestroyAudioStream -> SDL_CloseAudioDevice ->
 ClosePhysicalAudioDevice sub-steps to the SDL3-DOS debug log
-(<TAG>SDL.LOG via doskutsu_dbg_log, per-line fsync'd), so the LAST
+(<TAG>SDL.LOG via dos_port_dbg_log, per-line fsync'd), so the LAST
 marker in a hung DX2-66 log pins the wedge to one call:
 
   adstream-destroy[1]  pre-SDL_DestroyProperties
@@ -53,7 +53,7 @@ SDL_CloseAudioDevice + ClosePhysicalAudioDevice markers ([4]-[10]) are
 ungated; those functions are teardown-frequency in doskutsu (the
 engine never closes an audio device mid-game).
 
-doskutsu_dbg_log is defined in the SDL3-DOS backend
+dos_port_dbg_log is defined in the SDL3-DOS backend
 (vendor/SDL/src/video/dos/SDL_dosdbg.c) and is already in the link
 image; the markers are guarded on SDL_PLATFORM_DOS so a non-DOS build
 compiles them out. Two TUs touched: src/audio/SDL_audiocvt.c +
@@ -85,12 +85,12 @@ index d64201654..b37258cf0 100644
 +   output_stream; these markers narrate SDL_CloseAudioDevice +
 +   ClosePhysicalAudioDevice so the last marker in a hung DX2-66 log pins
 +   the wedged call. Always-on, per-line fsync'd, no env-var gate, no
-+   logic change -- the SDL_mixer/0002 pattern. doskutsu_dbg_log is the
++   logic change -- the SDL_mixer/0002 pattern. dos_port_dbg_log is the
 +   SDL3-DOS debug-log sink; guarded on SDL_PLATFORM_DOS so non-DOS builds
 +   compile the markers out. Workspace-local; never upstreamed. */
 +#ifdef SDL_PLATFORM_DOS
-+extern void doskutsu_dbg_log(const char *fmt, ...);
-+#define ADSTREAM_MARK(s) doskutsu_dbg_log(s)
++extern void dos_port_dbg_log(const char *fmt, ...);
++#define ADSTREAM_MARK(s) dos_port_dbg_log(s)
 +#else
 +#define ADSTREAM_MARK(s) ((void)0)
 +#endif
@@ -161,13 +161,13 @@ index 1fc517ea7..aff50dbc5 100644
 +   env-var gate, no logic change. The SDL_DestroyAudioStream markers fire
 +   only when destroying a SIMPLIFIED stream (`stream->simplified`) -- the
 +   mixer output_stream -- so non-simplified stream destroys during
-+   gameplay emit nothing. doskutsu_dbg_log is defined in the SDL3-DOS
++   gameplay emit nothing. dos_port_dbg_log is defined in the SDL3-DOS
 +   backend (vendor/SDL/src/video/dos/SDL_dosdbg.c); guarded on
 +   SDL_PLATFORM_DOS so non-DOS builds compile the markers out.
 +   Workspace-local per memory/sdl_ai_policy.md; never upstreamed. */
 +#ifdef SDL_PLATFORM_DOS
-+extern void doskutsu_dbg_log(const char *fmt, ...);
-+#define ADSTREAM_MARK(s) doskutsu_dbg_log(s)
++extern void dos_port_dbg_log(const char *fmt, ...);
++#define ADSTREAM_MARK(s) dos_port_dbg_log(s)
 +#else
 +#define ADSTREAM_MARK(s) ((void)0)
 +#endif

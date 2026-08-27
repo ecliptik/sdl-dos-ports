@@ -170,9 +170,9 @@ index 22a5f5864..3d9b511fe 100644
 +            (sd_hint && sd_hint[0] == '0' && sd_hint[1] == 0);
 +        g_dos_silence_detect_enabled = !sd_disabled;
 +        if (g_dos_silence_detect_enabled) {
-+            doskutsu_dbg_log("audio: SDL/0054 silence-detect ACTIVE (default; SFX-correct)");
++            dos_port_dbg_log("audio: SDL/0054 silence-detect ACTIVE (default; SFX-correct)");
 +        } else {
-+            doskutsu_dbg_log("audio: SDL/0054 silence-detect DISABLED (env-var; perf-experiment)");
++            dos_port_dbg_log("audio: SDL/0054 silence-detect DISABLED (env-var; perf-experiment)");
 +        }
 +    }
 +

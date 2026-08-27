@@ -56,7 +56,7 @@ cap) -- readable diff as a single conditional block rather than
 new function. Engine-side calls don't change; the SDL hint
 controls behavior internally.
 
-doskutsu_dbg_log lines:
+dos_port_dbg_log lines:
   - blind init path: "mpu401: blind init at port_base=0x%04x ..."
   - probe path: existing 4 lines from 0042 (entry/early-exit/
     fail/ok) preserved.
@@ -83,7 +83,7 @@ index e1bb0555a..a5509d3cd 100644
  
  bool SDL_DOSMpu401Init(uint16_t port_base)
  {
--    doskutsu_dbg_log("mpu401: probe entry port_base=0x%04x", (unsigned)port_base);
+-    dos_port_dbg_log("mpu401: probe entry port_base=0x%04x", (unsigned)port_base);
 -
 -    /* DOSKUTSU patch (Phase 10 patch 0042): open-bus early-exit. Read
 -       the status register BEFORE issuing the reset write. If it returns
@@ -131,7 +131,7 @@ index e1bb0555a..a5509d3cd 100644
 +    const bool do_probe = (probe_env && probe_env[0] == '1' && probe_env[1] == 0);
 +
 +    if (!do_probe) {
-+        doskutsu_dbg_log("mpu401: blind init at port_base=0x%04x "
++        dos_port_dbg_log("mpu401: blind init at port_base=0x%04x "
 +                         "(probe disabled -- patch 0044 default; set "
 +                         "SDL_HINT_DOS_AUDIO_PROBE_MPU401=1 to enable "
 +                         "probe path with LOCKUP RISK on real Vibra16S+S2)",
@@ -151,7 +151,7 @@ index e1bb0555a..a5509d3cd 100644
 +       Retained for diagnosis on emulated MPU-401 hardware (DOSBox-X)
 +       or future chips known-safe to probe. Logic preserved from
 +       patch 0042 (open-bus early-exit + iteration-cap). */
-+    doskutsu_dbg_log("mpu401: probe entry port_base=0x%04x "
++    dos_port_dbg_log("mpu401: probe entry port_base=0x%04x "
 +                     "(SDL_HINT_DOS_AUDIO_PROBE_MPU401=1; LOCKUP RISK)",
 +                     (unsigned)port_base);
 +
@@ -162,7 +162,7 @@ index e1bb0555a..a5509d3cd 100644
 +       handles the no-chip-decoding-port case cleanly. */
      const Uint8 initial_status = inportb((Uint16)(port_base + 1));
      if (initial_status == 0xFF) {
-         doskutsu_dbg_log("mpu401: probe early-exit (status=0xFF; no chip at 0x%04x)",
+         dos_port_dbg_log("mpu401: probe early-exit (status=0xFF; no chip at 0x%04x)",
 @@ -83,20 +138,7 @@ bool SDL_DOSMpu401Init(uint16_t port_base)
      /* Reset MPU-401: write 0xFF to command port (data + 1). */
      outportb((Uint16)(port_base + 1), 0xFF);
@@ -197,7 +197,7 @@ index e1bb0555a..a5509d3cd 100644
 +    /* Enter UART mode. */
      outportb((Uint16)(port_base + 1), 0x3F);
      s_mpu401_port_base = (int)port_base;
-     doskutsu_dbg_log("mpu401: probe ok (UART mode active at 0x%04x; "
+     dos_port_dbg_log("mpu401: probe ok (UART mode active at 0x%04x; "
 -- 
 2.47.3
 

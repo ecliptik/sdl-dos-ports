@@ -93,7 +93,7 @@ satisfies "audio backend open" but not necessarily ">=1 frame
 serviced". If real-HW W22-WB-G iter still hangs at WB init, the
 engine-side init order needs further sequencing (nx-engine's lane).
 
-doskutsu_dbg_log lines:
+dos_port_dbg_log lines:
   - DSP-mediated init success: "mpu401: DSP-mediated init at
     port_base=0x%04x (default since patch 0047; DSP cmd 0x34 UART
     entry; set SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=1 to use
@@ -253,13 +253,13 @@ index a5509d3cd..3693d0961 100644
 +    if (!use_direct) {
 +        /* === Default path: DSP-mediated MIDI (Option B) === */
 +        if (!SDL_DOSAudioSB_IsInitialized()) {
-+            doskutsu_dbg_log("mpu401: DSP-mediated init aborted -- SB16 backend "
++            dos_port_dbg_log("mpu401: DSP-mediated init aborted -- SB16 backend "
 +                             "not initialized (engine init order bug). Engine "
 +                             "must SDL_AudioBackend_Init before calling "
 +                             "SDL_DOSMpu401Init.");
 +            return false;
 +        }
-+        doskutsu_dbg_log("mpu401: DSP-mediated init at port_base=0x%04x "
++        dos_port_dbg_log("mpu401: DSP-mediated init at port_base=0x%04x "
 +                         "(default since patch 0047; DSP cmd 0x34 UART entry; "
 +                         "set SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=1 to use "
 +                         "direct-port path instead)",

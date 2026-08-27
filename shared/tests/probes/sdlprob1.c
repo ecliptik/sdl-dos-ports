@@ -249,7 +249,7 @@ static void body_delay_1ms(void *ud)
 /*                                                                */
 /* Cannot measure per-call entry+exit from probe context (the    */
 /* IRQ fires on its own schedule; we don't drive it). Instead we */
-/* sample the doskutsu_audio_irq_count + irq_wall_us pair over   */
+/* sample the dos_port_audio_irq_count + irq_wall_us pair over   */
 /* a fixed wall-clock window and compute mean per-IRQ cost.      */
 /* Single derived sample emitted via emit_done_stats.             */
 /* ============================================================ */
@@ -281,8 +281,8 @@ static void scenario_audio_callback_entry(void)
     /* Wait a short settling period so IRQ-5 fires steadily. */
     SDL_Delay(200);
 
-    uint32_t irq0     = doskutsu_audio_irq_count;
-    uint32_t wall_us0 = doskutsu_audio_irq_wall_us;
+    uint32_t irq0     = dos_port_audio_irq_count;
+    uint32_t wall_us0 = dos_port_audio_irq_wall_us;
     double   t0       = sdlprobe_now_secs();
 
     /* Sample window = 3 sec (43 Hz IRQ rate at default 22050 stereo,
@@ -290,8 +290,8 @@ static void scenario_audio_callback_entry(void)
      * plenty for a meaningful mean). */
     SDL_Delay(3000);
 
-    uint32_t irq1     = doskutsu_audio_irq_count;
-    uint32_t wall_us1 = doskutsu_audio_irq_wall_us;
+    uint32_t irq1     = dos_port_audio_irq_count;
+    uint32_t wall_us1 = dos_port_audio_irq_wall_us;
     double   t1       = sdlprobe_now_secs();
 
     SDL_DestroyAudioStream(as);
@@ -323,7 +323,7 @@ static void scenario_audio_callback_entry(void)
 }
 
 /* ============================================================ */
-/* Scenario 10: doskutsu_audio_irq_count++ baseline              */
+/* Scenario 10: dos_port_audio_irq_count++ baseline              */
 /*                                                                */
 /* The IRQ handler's actual increment instruction sequence cost. */
 /* Use a probe-local volatile counter to avoid interfering with  */
@@ -487,7 +487,7 @@ int main(int argc, char **argv)
     /* ---- Scenario 9: audio callback entry overhead (custom-shape) ---- */
     scenario_audio_callback_entry();
 
-    /* ---- Scenario 10: doskutsu_audio_irq_count++ baseline ---- */
+    /* ---- Scenario 10: dos_port_audio_irq_count++ baseline ---- */
     sdlprobe_run_body_scenario("irq_count_increment_baseline",
                                SDLPROBE_WARMUP_CHEAP, SDLPROBE_DEFAULT_N,
                                body_irq_count_increment, NULL);

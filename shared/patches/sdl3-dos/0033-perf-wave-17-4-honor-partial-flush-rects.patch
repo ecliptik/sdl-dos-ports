@@ -42,7 +42,7 @@ This patch fixes the three pitches_match branches to:
 3. Otherwise (pitches don't match OR rect is sub-row width) fall
    back to per-row dosmemput as before.
 
-Helper added: _doskutsu_is_full_fb_rect_list -- single-rect
+Helper added: _dos_port_is_full_fb_rect_list -- single-rect
 full-screen-coverage check, called once per dispatch.
 
 No behavioral change in the !pitches_match branches.
@@ -76,7 +76,7 @@ index 3486258c1..0f078e230 100644
 +// window). When that's what we got, the existing full-fb fast path is
 +// optimal. When numrects > 1 OR the rect is sub-screen, switch to the
 +// per-rect path with a row-contiguous optimization for pitches_match.
-+static bool _doskutsu_is_full_fb_rect_list(const SDL_Rect *rects,
++static bool _dos_port_is_full_fb_rect_list(const SDL_Rect *rects,
 +                                            int numrects,
 +                                            int vw, int vh)
 +{
@@ -103,7 +103,7 @@ index 3486258c1..0f078e230 100644
 +                // a row-contiguous optimization that bulk-copies a full-
 +                // width rect band as one dosmemput when pitches match.
 +                if (fb_state.pitches_match &&
-+                    _doskutsu_is_full_fb_rect_list(rects, numrects,
++                    _dos_port_is_full_fb_rect_list(rects, numrects,
 +                                                   fb_state.vram_w,
 +                                                   fb_state.vram_h)) {
                      dosmemput(pixels, fb_state.fb_size, fb_state.vram_phys);
@@ -134,7 +134,7 @@ index 3486258c1..0f078e230 100644
 +                // DOS-PORT (patch 0033, wave 17.4): partial-flush dispatch
 +                // for multi-bank, mirroring the single-bank branch above.
 +                if (fb_state.pitches_match &&
-+                    _doskutsu_is_full_fb_rect_list(rects, numrects,
++                    _dos_port_is_full_fb_rect_list(rects, numrects,
 +                                                   fb_state.vram_w,
 +                                                   fb_state.vram_h)) {
                      // Contiguous: stream the entire framebuffer through banks.
@@ -168,7 +168,7 @@ index 3486258c1..0f078e230 100644
 +            // DOS-PORT (patch 0033, wave 17.4): partial-flush dispatch
 +            // for the nearptr LFB path, mirroring the dosmemput branches.
 +            if (fb_state.pitches_match &&
-+                _doskutsu_is_full_fb_rect_list(rects, numrects,
++                _dos_port_is_full_fb_rect_list(rects, numrects,
 +                                                fb_state.vram_w,
 +                                                fb_state.vram_h)) {
                  SDL_memcpy(fb_state.vram_ptr, fb_state.pixels, fb_state.fb_size);

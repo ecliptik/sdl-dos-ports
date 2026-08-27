@@ -231,7 +231,7 @@ index 9d4092049..ef73f955e 100644
 +               rate (e.g. 11025 Tier-2) instead of the 44100 floor, with no env var. */
 +            const int dr_prev = device->spec.freq;
 +            device->spec.freq = g_dos_audio_device_rate_setter;
-+            doskutsu_dbg_log("audio: SDL/0090 device-rate setter default: %d -> %d Hz "
++            dos_port_dbg_log("audio: SDL/0090 device-rate setter default: %d -> %d Hz "
 +                             "(SDL_DOSAudioSetDeviceFrameRate from SoundManager; SB16 DSP "
 +                             "0x41 will program %d; resampler collapses to channel-dup; "
 +                             "set SDL_HINT_DOS_DOS_AUDIO_DEVICE_RATE_DEFAULT=0 to "

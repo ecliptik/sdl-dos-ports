@@ -29,7 +29,7 @@ SDL-side -- it must be measured.
 Two parts in one patch (Part A always-on, Part B killswitch'd default-OFF
 byte-identical):
 
-  PART A -- rate instrumentation (always-on; doskutsu_dbg_log ->
+  PART A -- rate instrumentation (always-on; dos_port_dbg_log ->
   SDLDBG.LOG; read-only at init; no env var):
 
   - rate-diag static snapshot at OpenDevice (right after the existing
@@ -41,9 +41,9 @@ byte-identical):
     the canonical sites at sb.c chunk_size / DSP-block).
 
   - rate-meas periodic emit in DOSSOUNDBLASTER_PlayDevice (non-IRQ
-    context -- doskutsu_dbg_log's fopen/fwrite/fsync is illegal in the
+    context -- dos_port_dbg_log's fopen/fwrite/fsync is illegal in the
     ISR): derives the TRUE IRQ Hz from the EXISTING per-IRQ counter
-    doskutsu_audio_irq_count over a real SDL_GetTicksNS wall-clock
+    dos_port_audio_irq_count over a real SDL_GetTicksNS wall-clock
     window (NO second counter; three statics are delta-snapshot
     holders), then irq_hz * sample_frames = hw_frame_rate. If
     hw_frame_rate ~= 2 * dev_freq, the 2x over-drain is confirmed
@@ -224,7 +224,7 @@ index e16692e58..3cb332d8d 100644
 +                }
 +                g_dos_pixtone_irq_ratediv_shift = rd_shift;
 +                if (rd_shift != 0) {
-+                    doskutsu_dbg_log("audio: SDL/0073 pixtone IRQ rate-divider: "
++                    dos_port_dbg_log("audio: SDL/0073 pixtone IRQ rate-divider: "
 +                                     "ENGAGED RATEDIV=%d (shift_div=%d; each "
 +                                     "Pixtone source sample held for %d output "
 +                                     "stereo pairs; ISR consumption slowed %dx "
@@ -235,7 +235,7 @@ index e16692e58..3cb332d8d 100644
 +                                     (1 << rd_shift), (1 << rd_shift),
 +                                     (int)rd_shift);
 +                } else {
-+                    doskutsu_dbg_log("audio: SDL/0073 pixtone IRQ rate-divider: "
++                    dos_port_dbg_log("audio: SDL/0073 pixtone IRQ rate-divider: "
 +                                     "RATEDIV=1 (default; ISR consumption "
 +                                     "byte-identical to pre-0073; set "
 +                                     "SDL_HINT_DOS_PIXTONE_IRQ_RATEDIV=2 "
@@ -270,7 +270,7 @@ index e16692e58..3cb332d8d 100644
  
 +    /* DOSKUTSU patch (Phase 11 patch 0073): Bug 6 rate-diag static snapshot.
 +       The SDL_Log above routes to stdout (invisible in iter logs); this
-+       mirrors the resolved rate into SDLDBG.LOG via doskutsu_dbg_log so the
++       mirrors the resolved rate into SDLDBG.LOG via dos_port_dbg_log so the
 +       confirm-iter can read the TRUE device rate. Always-on (read-only at
 +       init; no killswitch). dsp0x41_hz == device->spec.freq for SB16 (the
 +       value written to DSP cmd 0x41 at sb.c:~2150, unmutated from here).
@@ -283,7 +283,7 @@ index e16692e58..3cb332d8d 100644
 +        const int dos_rd_dma_buflen = (int)device->buffer_size * 2;
 +        const int dos_rd_isr_chunk  = dos_rd_dma_buflen / 2;
 +        const int dos_rd_block_size = (dos_rd_dma_buflen / 2) / (int)sizeof(Sint16) - 1;
-+        doskutsu_dbg_log("audio: SDL/0073 rate-diag: req_freq=%d req_ch=%d "
++        dos_port_dbg_log("audio: SDL/0073 rate-diag: req_freq=%d req_ch=%d "
 +                         "dev_freq=%d dev_ch=%d sample_frames=%d buffer_size=%d "
 +                         "dsp0x41_hz=%d block_size=%d isr_chunk=%d",
 +                         dos_rd_req_freq, dos_rd_req_ch,
@@ -311,7 +311,7 @@ index e16692e58..3cb332d8d 100644
  
 +    /* DOSKUTSU patch (Phase 11 patch 0073): Bug 6 rate-meas. The decisive
 +       measurement -- derive the TRUE SB16 IRQ frequency from the EXISTING
-+       per-IRQ counter (doskutsu_audio_irq_count, ++ once per IRQ at the
++       per-IRQ counter (dos_port_audio_irq_count, ++ once per IRQ at the
 +       handler, sb.c:~1215) over a real wall-clock window, then x
 +       sample_frames = hardware frame-drain rate. If hw_frame_rate ~= 2x the
 +       resolved dev_freq, the Tier-2 octave-high SFX is confirmed as a 2x
@@ -319,7 +319,7 @@ index e16692e58..3cb332d8d 100644
 +       SB16 0x41 path). Always-on; emits to SDLDBG.LOG every 100 PlayDevice
 +       calls (~2.3 s at Tier-2). NO second IRQ counter -- the three statics
 +       are delta-snapshot holders. PlayDevice is non-IRQ context so
-+       doskutsu_dbg_log (fopen/fwrite/fsync) is safe here (the ISR is not).
++       dos_port_dbg_log (fopen/fwrite/fsync) is safe here (the ISR is not).
 +       Per BUG6-RATE-CONFIRMED-INSTR-AND-FIX-DESIGN.md Part A2. */
 +    {
 +        static bool   s_rm_seeded   = false;
@@ -332,12 +332,12 @@ index e16692e58..3cb332d8d 100644
 +             * the second -- no skipped warmup window. IRQs run
 +             * continuously from the DMA auto-init regardless of SFX, so
 +             * the reading is valid from the start (flush-instr ask). */
-+            s_rm_last_irq = doskutsu_audio_irq_count;
++            s_rm_last_irq = dos_port_audio_irq_count;
 +            s_rm_last_ns  = SDL_GetTicksNS();
 +            s_rm_seeded   = true;
 +        }
 +        if (++s_rm_calls >= 100) {
-+            const Uint32 rm_now_irq = doskutsu_audio_irq_count;
++            const Uint32 rm_now_irq = dos_port_audio_irq_count;
 +            const Uint64 rm_now_ns  = SDL_GetTicksNS();
 +            const Uint32 rm_d_irq   = rm_now_irq - s_rm_last_irq;
 +            const Uint64 rm_d_ns    = rm_now_ns - s_rm_last_ns;
@@ -345,7 +345,7 @@ index e16692e58..3cb332d8d 100644
 +            const int rm_irq_hz     = (rm_d_ns > 0)
 +                ? (int)(((Uint64)rm_d_irq * 1000000000ULL) / rm_d_ns) : 0;
 +            const int rm_frame_rate = rm_irq_hz * (int)device->sample_frames;
-+            doskutsu_dbg_log("audio: SDL/0073 rate-meas: irqs=%u "
++            dos_port_dbg_log("audio: SDL/0073 rate-meas: irqs=%u "
 +                             "elapsed_ms=%u irq_hz=%d hw_frame_rate=%d",
 +                             rm_d_irq, rm_ms, rm_irq_hz, rm_frame_rate);
 +            s_rm_last_irq = rm_now_irq;

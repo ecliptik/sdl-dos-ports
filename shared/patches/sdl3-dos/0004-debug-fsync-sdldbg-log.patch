@@ -46,34 +46,34 @@ index 616ed3de1..e8bc847b4 100644
 @@ -532,6 +533,7 @@ bool DOSVESA_UpdateWindowFramebuffer(SDL_VideoDevice *device, SDL_Window *window
                  (unsigned long)fb_state.win_size_bytes,
                  (unsigned long)(uintptr_t)fb_state.pixels);
-         fflush(_doskutsu_dbg_log);
-+        fsync(fileno(_doskutsu_dbg_log)); // crash-survive on DOS (patch 0004)
+         fflush(_dos_port_dbg_log);
++        fsync(fileno(_dos_port_dbg_log)); // crash-survive on DOS (patch 0004)
      }
      {
          bool guard = (fb_state.direct_fb && (fb_state.vram_ptr || fb_state.vram_phys));
 @@ -546,6 +548,8 @@ bool DOSVESA_UpdateWindowFramebuffer(SDL_VideoDevice *device, SDL_Window *window
-                 fprintf(_doskutsu_dbg_log, "src=NULL\n");
+                 fprintf(_dos_port_dbg_log, "src=NULL\n");
              }
-             fflush(_doskutsu_dbg_log);
-+            fsync(fileno(_doskutsu_dbg_log)); // crash-survive on DOS (patch 0004)
-+        fsync(fileno(_doskutsu_dbg_log)); // crash-survive on DOS (patch 0004)
+             fflush(_dos_port_dbg_log);
++            fsync(fileno(_dos_port_dbg_log)); // crash-survive on DOS (patch 0004)
++        fsync(fileno(_dos_port_dbg_log)); // crash-survive on DOS (patch 0004)
          }
      }
  
 @@ -717,6 +721,8 @@ bool DOSVESA_UpdateWindowFramebuffer(SDL_VideoDevice *device, SDL_Window *window
              }
-             _doskutsu_dbg_dump_first16("DOSVESA-FB-VRAM ", vram_first, 16);
-             fflush(_doskutsu_dbg_log);
-+            fsync(fileno(_doskutsu_dbg_log)); // crash-survive on DOS (patch 0004)
-+        fsync(fileno(_doskutsu_dbg_log)); // crash-survive on DOS (patch 0004)
+             _dos_port_dbg_dump_first16("DOSVESA-FB-VRAM ", vram_first, 16);
+             fflush(_dos_port_dbg_log);
++            fsync(fileno(_dos_port_dbg_log)); // crash-survive on DOS (patch 0004)
++        fsync(fileno(_dos_port_dbg_log)); // crash-survive on DOS (patch 0004)
          }
  
          // Page flipping is only used with the nearptr LFB path. The banked
 @@ -756,6 +762,7 @@ bool DOSVESA_UpdateWindowFramebuffer(SDL_VideoDevice *device, SDL_Window *window
                  "DOSVESA-FB-NORMAL #%d: entered normal-path (fast-path guard failed)\n",
-                 _doskutsu_dbg_call_total);
-         fflush(_doskutsu_dbg_log);
-+        fsync(fileno(_doskutsu_dbg_log)); // crash-survive on DOS (patch 0004)
+                 _dos_port_dbg_call_total);
+         fflush(_dos_port_dbg_log);
++        fsync(fileno(_dos_port_dbg_log)); // crash-survive on DOS (patch 0004)
      }
  
      SDL_Surface *src = fb_state.surface;
@@ -91,9 +91,9 @@ index 116872307..02abd46a3 100644
  // 0002 traces the per-flush framebuffer write path; 0003 dumps controller
 @@ -262,6 +263,7 @@ static const SDL_VESAInfo *GetVESAInfo(void)
              }
-             fprintf(_doskutsu_modes_dbg_log, "\n");
-             fflush(_doskutsu_modes_dbg_log);
-+            fsync(fileno(_doskutsu_modes_dbg_log)); // crash-survive on DOS (patch 0004)
+             fprintf(_dos_port_modes_dbg_log, "\n");
+             fflush(_dos_port_modes_dbg_log);
++            fsync(fileno(_dos_port_modes_dbg_log)); // crash-survive on DOS (patch 0004)
          }
      }
  

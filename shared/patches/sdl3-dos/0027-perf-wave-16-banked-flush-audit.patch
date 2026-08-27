@@ -121,7 +121,7 @@ index 4005c1d5d..c0ec89709 100644
 @@ -997,6 +1025,92 @@ bool DOSVESA_UpdateWindowFramebuffer(SDL_VideoDevice *device, SDL_Window *window
                  SDL_memcpy(vram_first, fb_state.vram_ptr, 16);
              }
-             _doskutsu_dbg_dump_first16("DOSVESA-FB-VRAM ", vram_first, 16);
+             _dos_port_dbg_dump_first16("DOSVESA-FB-VRAM ", vram_first, 16);
 +
 +            // DOSKUTSU patch 0027 (wave 16 banked-flush audit) -- bank-1
 +            // VRAM readback. After the flush has completed, switch to bank
@@ -142,7 +142,7 @@ index 4005c1d5d..c0ec89709 100644
 +                int probe_bank = (int)(fb_state.win_size_bytes / fb_state.win_gran_bytes);
 +                SwitchBank(probe_bank, &probe_bank_dummy, fb_state.win_func_ptr);
 +                dosmemget(fb_state.win_base, 16, vram_bank1);
-+                _doskutsu_dbg_dump_first16("DOSVESA-FB-VRAM-BANK1 ", vram_bank1, 16);
++                _dos_port_dbg_dump_first16("DOSVESA-FB-VRAM-BANK1 ", vram_bank1, 16);
 +                // Switch back to bank 0 to leave VRAM aperture in the
 +                // expected start state for the next flush.
 +                int reset_bank_dummy = -1;
@@ -186,13 +186,13 @@ index 4005c1d5d..c0ec89709 100644
 +            if (by_delta > _au_by_max) _au_by_max = by_delta;
 +
 +            if (_au_n >= 100) {
-+                doskutsu_dbg_log(
++                dos_port_dbg_log(
 +                    "WAVE16-FB-FLUSH-AUDIT @flush=%d: "
 +                    "switches/flush avg=%lu.%02lu (min=%lu max=%lu) "
 +                    "bytes/flush avg=%lu (min=%lu max=%lu) "
 +                    "fb_size=%lu win_size=%lu win_gran=%lu multibank=%d "
 +                    "[over %d flushes]",
-+                    _doskutsu_dbg_call_total,
++                    _dos_port_dbg_call_total,
 +                    (unsigned long)(_au_sw_sum / _au_n),
 +                    (unsigned long)(((_au_sw_sum * 100) / _au_n) % 100),
 +                    (unsigned long)_au_sw_min, (unsigned long)_au_sw_max,

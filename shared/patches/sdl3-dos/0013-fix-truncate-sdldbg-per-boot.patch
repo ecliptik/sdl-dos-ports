@@ -37,7 +37,7 @@ index f70fdc8a6..eaf34399d 100644
  // docs/PHASE9-15FPS-PLAN.md sec.3 Lever 1 wave 2 plan).
  static FILE *g_dbg_log = NULL;
 @@ -42,7 +46,7 @@ static FILE *g_dbg_log = NULL;
- void doskutsu_dbg_open(void)
+ void dos_port_dbg_open(void)
  {
      if (!g_dbg_log) {
 -        g_dbg_log = fopen("/sdldbg.log", "ab");

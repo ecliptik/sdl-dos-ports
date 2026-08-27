@@ -58,7 +58,7 @@ index 741bd4a4f..a95b41218 100644
 +            _vb_resolved = true;
 +            const char *h = SDL_GetHint("SDL_HINT_DOS_VBLANK_BOUND");
 +            g_vblank_bound = (h && SDL_strcmp(h, "0") == 0) ? 0 : 1;
-+            doskutsu_dbg_log("sdl: SDL/0116 VBLANK-BOUND %s "
++            dos_port_dbg_log("sdl: SDL/0116 VBLANK-BOUND %s "
 +                             "(mainline WaitForVBlank spins are guard-capped; a mode "
 +                             "whose retrace bit never toggles yields a finite stall + "
 +                             "fall-through instead of an infinite HW-IO hang; "

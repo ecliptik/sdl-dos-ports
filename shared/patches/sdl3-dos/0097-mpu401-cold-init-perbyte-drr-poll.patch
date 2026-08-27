@@ -30,8 +30,8 @@ SMALL -- default 512, tunable via SDL_HINT_DOS_AUDIO_WB_DRR_CAP, clamped
 [16,10000] -- vs the legacy 10000 (~10 ms/byte) that would starve the IRQ-5 ISR
 on a persistently-busy chip. 512 covers the ~238-iter POD-83 max DRR wait with
 margin while bounding per-byte ISR latency to ~0.5-1 ms on the DX2-66. Exports
-doskutsu_mpu_drr_cap_hits (++ on each cap-without-DRR-ready, fail-soft) +
-doskutsu_mpu_drr_cap (the cap in effect, so the engine dispatch line is
+dos_port_mpu_drr_cap_hits (++ on each cap-without-DRR-ready, fail-soft) +
+dos_port_mpu_drr_cap (the cap in effect, so the engine dispatch line is
 self-describing). cap_hits ~0 = the poll is cheap (shippable default-on); high =
 persistent-busy latency-drag -> prefer the freeze-proof timed-delay default.
 The non-cold-init paths keep the legacy 10000 cap (untouched).
@@ -59,14 +59,14 @@ index db7a81098..030965e31 100644
 -    for (int iter = 0; iter < 10000; iter++) {
 -        if ((inportb(status_port) & 0x40) == 0) {
 -            return true;
-+    /* SDL/0097: bounded by doskutsu_mpu_drr_cap (the cold-init path sets it
++    /* SDL/0097: bounded by dos_port_mpu_drr_cap (the cold-init path sets it
 +       small -- default 512 -- so a persistently-busy chip cannot spin the
 +       IRQ-5 ISR for ~10 ms per byte; the non-cold-init paths keep the legacy
 +       10000). A cap-hit is fail-soft (blind write follows) and is COUNTED so
 +       the engine can characterize the poll cost (drr_cap_hits). */
 +    {
 +        uint32_t iter;
-+        const uint32_t cap = doskutsu_mpu_drr_cap;
++        const uint32_t cap = dos_port_mpu_drr_cap;
 +        for (iter = 0; iter < cap; iter++) {
 +            if ((inportb(status_port) & 0x40) == 0) {
 +                return true;
@@ -74,9 +74,9 @@ index db7a81098..030965e31 100644
          }
      }
 +    /* Capped without DRR-ready: count it (T48 poll-cost witness) + fail-soft. */
-+    doskutsu_mpu_drr_cap_hits++;
++    dos_port_mpu_drr_cap_hits++;
      if (!s_mpu401_drr_cap_warned) {
-         doskutsu_dbg_log("mpu401: DRR poll cap hit at port_base=0x%04x "
+         dos_port_dbg_log("mpu401: DRR poll cap hit at port_base=0x%04x "
 -                         "(bit 6 stuck high after 10000 iter ~= 10 ms; "
 -                         "chip variant may have stuck DRR; fail-soft "
 -                         "blind write follows -- direct-port path may be "
@@ -90,7 +90,7 @@ index db7a81098..030965e31 100644
 +                         "latency-drag, prefer the timed-delay pace mode; set "
 +                         "SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=0 for the "
 +                         "DSP-mediated path)",
-+                         (unsigned)port_base, (unsigned)doskutsu_mpu_drr_cap);
++                         (unsigned)port_base, (unsigned)dos_port_mpu_drr_cap);
          s_mpu401_drr_cap_warned = true;
      }
      return false;
@@ -182,17 +182,17 @@ index db7a81098..030965e31 100644
 +                   DX2-66, vs the legacy 10000 = ~10 ms that would starve the
 +                   IRQ-5 ring on a persistently-busy chip). Tunable via
 +                   SDL_HINT_DOS_AUDIO_WB_DRR_CAP for the iter sweep; clamped
-+                   to [16,10000]. Exported as doskutsu_mpu_drr_cap so the engine's
++                   to [16,10000]. Exported as dos_port_mpu_drr_cap so the engine's
 +                   dispatch line is self-describing (cap=N). */
 +                {
 +                    uint32_t c = (cap && cap[0]) ? (uint32_t)SDL_atoi(cap) : 512u;
 +                    if (c < 16u)    c = 16u;
 +                    if (c > 10000u) c = 10000u;
-+                    doskutsu_mpu_drr_cap = c;
++                    dos_port_mpu_drr_cap = c;
 +                }
 +            }
 +
-             doskutsu_dbg_log("mpu401: cold-init at port_base=0x%04x "
+             dos_port_dbg_log("mpu401: cold-init at port_base=0x%04x "
                               "(SDL_HINT_DOS_AUDIO_WB_COLD_INIT=1; MPU UART "
                               "entered on the COLD bus BEFORE the SB16 open -- "
                               "0xFF reset -> bounded ACK drain -> 0x3F UART entry; "
@@ -208,7 +208,7 @@ index db7a81098..030965e31 100644
 +                             (s_mpu401_tx_delay_us > 0) ? "TIMED-DELAY(freeze-proof,no 0x331 read)"
 +                                 : (s_mpu401_drr_poll_enabled ? "DRR-POLL(ON)" : "BLIND(off)"),
 +                             (unsigned)s_mpu401_tx_delay_us,
-+                             (unsigned)doskutsu_mpu_drr_cap,
++                             (unsigned)dos_port_mpu_drr_cap,
 +                             (unsigned)(ack & 0xFF),
                               via_dsr ? "DSR" : "uncond");
  
@@ -286,18 +286,18 @@ index db7a81098..030965e31 100644
      outportb(base, byte);
  }
  
-@@ -1003,6 +1135,15 @@ volatile uint32_t doskutsu_audio_sfx_active_count = 0;
+@@ -1003,6 +1135,15 @@ volatile uint32_t dos_port_audio_sfx_active_count = 0;
     Declared extern in SDL_dos_audio_synth.h. */
- volatile uint32_t doskutsu_mpu_write_count = 0;
+ volatile uint32_t dos_port_mpu_write_count = 0;
  
 +/* DOSKUTSU patch (SDL/0097): cold-init DRR-poll cost witnesses (T48 contract).
-+   doskutsu_mpu_drr_cap is the bounded cap in effect (default = the legacy
++   dos_port_mpu_drr_cap is the bounded cap in effect (default = the legacy
 +   10000 for the non-cold-init paths; the cold-init path overrides it from
-+   SDL_HINT_DOS_AUDIO_WB_DRR_CAP, default 512). doskutsu_mpu_drr_cap_hits
++   SDL_HINT_DOS_AUDIO_WB_DRR_CAP, default 512). dos_port_mpu_drr_cap_hits
 +   ++ in SDL_DOSMpu401WaitDRR each time the poll caps out without DRR-ready.
 +   Both atomic 32-bit; the engine reads them main-line. */
-+volatile uint32_t doskutsu_mpu_drr_cap_hits = 0;
-+volatile uint32_t doskutsu_mpu_drr_cap = 10000;
++volatile uint32_t dos_port_mpu_drr_cap_hits = 0;
++volatile uint32_t dos_port_mpu_drr_cap = 10000;
 +
  /* DOSKUTSU patch (Phase 11 patch 0069): cumulative silent-IRQ counter
     for the Pixtone multi-source probe (hypothesis C: cooperative-
@@ -306,21 +306,21 @@ diff --git a/src/core/dos/SDL_dos_audio_synth.h b/src/core/dos/SDL_dos_audio_syn
 index 4a4b4818a..c34669240 100644
 --- a/src/core/dos/SDL_dos_audio_synth.h
 +++ b/src/core/dos/SDL_dos_audio_synth.h
-@@ -378,6 +378,18 @@ extern volatile uint32_t doskutsu_audio_silent_irq_count;
+@@ -378,6 +378,18 @@ extern volatile uint32_t dos_port_audio_silent_irq_count;
     fallback). Per the T48 cold-init witness contract (flush-instr). */
- extern volatile uint32_t doskutsu_mpu_write_count;
+ extern volatile uint32_t dos_port_mpu_write_count;
  
 +/* DOSKUTSU patch (SDL/0097): WaveBlaster cold-init per-byte DRR-poll cost
-+   witnesses (flush-instr T48 contract). doskutsu_mpu_drr_cap_hits ++ each time
++   witnesses (flush-instr T48 contract). dos_port_mpu_drr_cap_hits ++ each time
 +   the bounded bit-6 DRR poll caps out WITHOUT DRR-ready (fail-soft blind write
-+   follows); doskutsu_mpu_drr_cap holds the cap value in effect. The engine
++   follows); dos_port_mpu_drr_cap holds the cap value in effect. The engine
 +   reads both main-line and appends to the dispatch line:
 +   "drr_cap_hits=<C> (<pct>%, cap=<B>)". cap_hits ~0 = the poll is cheap
 +   (shippable default-on); cap_hits high = the chip is persistently busy
 +   (latency-drag) -> prefer the freeze-proof timed-delay mode. Same atomic
-+   32-bit export pattern as doskutsu_mpu_write_count. */
-+extern volatile uint32_t doskutsu_mpu_drr_cap_hits;
-+extern volatile uint32_t doskutsu_mpu_drr_cap;
++   32-bit export pattern as dos_port_mpu_write_count. */
++extern volatile uint32_t dos_port_mpu_drr_cap_hits;
++extern volatile uint32_t dos_port_mpu_drr_cap;
 +
  /* ------------------------------------------------------------------------
   * Phase 11 patch 0071 -- SDL_DOSPixtone* channel-pool API for Lever 3

@@ -20,7 +20,7 @@ producer writes nothing, so the avail trajectory across silence-skips IS the
 starvation signal. (An after-the-ring-write placement misses them, and on a
 fully-silent DOSBox title never runs at all -- caught by the DOSBox
 correctness cell before the operator round.) PlayDevice is non-IRQ context so
-doskutsu_dbg_log is safe here; the ISR is not (it only bumps the memory-locked
+dos_port_dbg_log is safe here; the ISR is not (it only bumps the memory-locked
 counters this reads). When the main thread wedges, PlayDevice stops and the
 snd: lines stop -- the last line's avail/consec_silent/cb_fills trajectory
 names the mechanism alongside nxengine 0192's "starve-diag/eng:" bracket.
@@ -55,7 +55,7 @@ index 36c280e15..58fd29ec2 100644
 +       When SDL_HINT_DOS_STARVE_DIAG=1 (strict-1, default OFF) emit the SB16
 +       ring + silent-IRQ state on a coarse cadence (every 100 PlayDevice calls)
 +       PLUS an edge-triggered line the first call the ring drops below one chunk
-+       (underflow onset). PlayDevice is non-IRQ context so doskutsu_dbg_log
++       (underflow onset). PlayDevice is non-IRQ context so dos_port_dbg_log
 +       (fopen/fwrite/fsync) is safe here -- the ISR is not (it only bumps the
 +       memory-locked counters this reads). avail is sampled at entry (ring level
 +       as the producer arrives, before this call's potential write). When the
@@ -80,7 +80,7 @@ index 36c280e15..58fd29ec2 100644
 +            const char *sd = SDL_GetHint("SDL_HINT_DOS_STARVE_DIAG");
 +            s_sd_enabled = (sd && sd[0] == '1' && sd[1] == '\0') ? 1 : 0;
 +            if (s_sd_enabled) {
-+                doskutsu_dbg_log("audio: SDL/0082 STARVE_DIAG=1 -- Bug-5 ring/"
++                dos_port_dbg_log("audio: SDL/0082 STARVE_DIAG=1 -- Bug-5 ring/"
 +                                 "silent-IRQ starve markers ENABLED (snd: layer)");
 +            }
 +        }
@@ -93,14 +93,14 @@ index 36c280e15..58fd29ec2 100644
 +            if (sd_low && !s_sd_low) { sd_emit = true; } /* underflow-onset edge */
 +            s_sd_low = sd_low;
 +            if (sd_emit) {
-+                doskutsu_dbg_log(
++                dos_port_dbg_log(
 +                    "audio: starve-diag/snd: t=%lu avail=%d chunk=%d "
 +                    "consec_silent=%lu silent_total=%lu cb_fills=%lu "
 +                    "paused=%d pause_req=%d%s",
 +                    (unsigned long)SDL_GetTicks(),
 +                    sd_avail, isr_chunk_size,
 +                    (unsigned long)isr_consecutive_silent_irqs,
-+                    (unsigned long)doskutsu_audio_silent_irq_count,
++                    (unsigned long)dos_port_audio_silent_irq_count,
 +                    (unsigned long)s_sd_calls,
 +                    (int)isr_dsp_paused, (int)g_dos_audio_pause_request,
 +                    sd_low ? " LOW" : "");
@@ -110,7 +110,7 @@ index 36c280e15..58fd29ec2 100644
 +
      /* DOSKUTSU patch (Phase 11 patch 0073): Bug 6 rate-meas. The decisive
         measurement -- derive the TRUE SB16 IRQ frequency from the EXISTING
-        per-IRQ counter (doskutsu_audio_irq_count, ++ once per IRQ at the
+        per-IRQ counter (dos_port_audio_irq_count, ++ once per IRQ at the
 -- 
 2.47.3
 

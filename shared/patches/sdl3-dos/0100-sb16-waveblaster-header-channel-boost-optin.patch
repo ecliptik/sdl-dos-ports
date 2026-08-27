@@ -55,19 +55,19 @@ index ba8929843..7cc422c06 100644
 +                        int lv = SDL_atoi(li); lv = (lv < 0) ? 0 : (lv > 31) ? 31 : lv;
 +                        outportb(mixer_addr, 0x38); outportb(mixer_data, (Uint8)(lv << 3)); // Line-In L
 +                        outportb(mixer_addr, 0x39); outportb(mixer_data, (Uint8)(lv << 3)); // Line-In R
-+                        doskutsu_dbg_log("audio: SDL/0100 SB16 line-in vol=%d "
++                        dos_port_dbg_log("audio: SDL/0100 SB16 line-in vol=%d "
 +                                         "(CT1745 0x38/0x39; WB-header channel-pin A/B)", lv);
 +                    }
 +                    if (cd && cd[0] != '\0') {
 +                        int cv = SDL_atoi(cd); cv = (cv < 0) ? 0 : (cv > 31) ? 31 : cv;
 +                        outportb(mixer_addr, 0x36); outportb(mixer_data, (Uint8)(cv << 3)); // CD L
 +                        outportb(mixer_addr, 0x37); outportb(mixer_data, (Uint8)(cv << 3)); // CD R
-+                        doskutsu_dbg_log("audio: SDL/0100 SB16 cd vol=%d "
++                        dos_port_dbg_log("audio: SDL/0100 SB16 cd vol=%d "
 +                                         "(CT1745 0x36/0x37; WB-header channel-pin A/B)", cv);
 +                    }
 +                }
              } else {
-                 doskutsu_dbg_log("audio: SDL/0074 SB16 mixer balance: DISABLED "
+                 dos_port_dbg_log("audio: SDL/0074 SB16 mixer balance: DISABLED "
                                   "(SDL_HINT_DOS_SB16_MIXER_PROGRAM=0; CT1745 "
 -- 
 2.47.3

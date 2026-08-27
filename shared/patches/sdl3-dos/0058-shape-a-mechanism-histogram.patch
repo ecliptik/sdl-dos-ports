@@ -268,7 +268,7 @@ index 6c040d7a1..0aeebfef7 100644
 +        g_p58_silence_histo_active =
 +            (histo_hint && histo_hint[0] == '1' && histo_hint[1] == 0);
 +        if (g_p58_silence_histo_active) {
-+            doskutsu_dbg_log("audio: SDL/0058 Shape A mechanism histogram ACTIVE "
++            dos_port_dbg_log("audio: SDL/0058 Shape A mechanism histogram ACTIVE "
 +                             "(HISTO=1; emits [silence-histo n=100 silent_n=N "
 +                             "silent_us_total=N noisy_n=N noisy_us_total=N] "
 +                             "per 100 PlayDevice calls; rides Shape A only)");
@@ -279,7 +279,7 @@ index 6c040d7a1..0aeebfef7 100644
 +            g_p58_noisy_us_total = 0;
 +            g_p58_pd_call_count = 0;
 +        } else {
-+            doskutsu_dbg_log("audio: SDL/0058 Shape A mechanism histogram OFF "
++            dos_port_dbg_log("audio: SDL/0058 Shape A mechanism histogram OFF "
 +                             "(set SDL_HINT_DOS_SILENCE_HISTO=1 to engage)");
 +        }
 +    }
@@ -289,7 +289,7 @@ index 6c040d7a1..0aeebfef7 100644
         AND P12_AUDIO_INSTR must be set to "1" (strict-"1" match) for
 @@ -1394,6 +1468,11 @@ static bool DOSSOUNDBLASTER_PlayDevice(SDL_AudioDevice *device, const Uint8 *buf
          if (g_dos_silence_shape_d_active) {
-             all_silence = (doskutsu_mixer_actual_mixed_bytes == 0);
+             all_silence = (dos_port_mixer_actual_mixed_bytes == 0);
          } else {
 +            /* Shape A bytewise scan. SDL/0058 brackets the scan with
 +               SDL_GetTicksNS when HISTO=1 to attribute scan-loop
@@ -344,7 +344,7 @@ index 6c040d7a1..0aeebfef7 100644
 +           HISTO engaged + Shape A scan path didn't fire). */
 +        if (g_p58_silence_histo_active) {
 +            if (++g_p58_pd_call_count >= 100) {
-+                doskutsu_dbg_log(
++                dos_port_dbg_log(
 +                    "[silence-histo n=100 silent_n=%u silent_us_total=%lu "
 +                    "noisy_n=%u noisy_us_total=%lu]",
 +                    g_p58_silent_count,

@@ -29,7 +29,7 @@ analysis. Alternative candidates (c1 = analog crosstalk independent
 of DSP state; c3 = DMA buffer not zeroed) would require additional
 work; this patch addresses the most-likely candidate first.
 
-Doskutsu-banner update: doskutsu_dbg_log line now narrates "(0xD5/
+Doskutsu-banner update: dos_port_dbg_log line now narrates "(0xD5/
 0xD9/0xD3/RESET)" so the smoke gate's log audit can verify the new
 RESET step fires. Both branches updated.
 
@@ -54,7 +54,7 @@ index 0aeebfef7..cac185c3b 100644
 @@ -1773,14 +1773,38 @@ static void DOSSOUNDBLASTER_CloseDevice(SDL_AudioDevice *device)
                     docs/PHASE11-WAVE-28-FINDINGS-N-PLUS-1.md sec. 4 is the
                     root-cause analysis. */
-                 doskutsu_dbg_log("audio close: 16-bit DSP halt-then-exit "
+                 dos_port_dbg_log("audio close: 16-bit DSP halt-then-exit "
 -                                 "(0xD5/0xD9/0xD3)");
 +                                 "(0xD5/0xD9/0xD3/RESET)");
                  WriteSoundBlasterDSP(0xD5); // halt 16-bit DAC

@@ -113,7 +113,7 @@ index 7b666b21f..52ac07f20 100644
 -           8-bit D-channel path that the pre-patch code would have hard-errored
 -           on. Names the force-8bit hint for the operator. */
 -        if ((soundblaster_version >= 4) && !have_highdma && !force_8bit) {
--            doskutsu_dbg_log("audio: SDL/0106 DSP %d.%d reports SB16 but BLASTER "
+-            dos_port_dbg_log("audio: SDL/0106 DSP %d.%d reports SB16 but BLASTER "
 -                             "has no H (high/16-bit DMA) channel -- GRACEFUL "
 -                             "fall back to the 8-bit low-DMA D-channel path "
 -                             "(D=%d) instead of erroring; this is the "
@@ -125,7 +125,7 @@ index 7b666b21f..52ac07f20 100644
 +           the SDL/0106 (>=0) guard would have HUNG on (highdma 0..4). Names the
 +           offending highdma + the force-8bit hint for the operator. */
 +        if ((soundblaster_version >= 4) && !have_valid_highdma && !force_8bit) {
-+            doskutsu_dbg_log("audio: SDL/0109 DSP %d.%d reports SB16 but BLASTER "
++            dos_port_dbg_log("audio: SDL/0109 DSP %d.%d reports SB16 but BLASTER "
 +                             "has no VALID 16-bit DMA channel (highdma=%d; valid "
 +                             "= 5/6/7) -- GRACEFUL fall back to the 8-bit low-DMA "
 +                             "D-channel path (D=%d) instead of programming 16-bit "

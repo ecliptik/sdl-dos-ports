@@ -55,7 +55,7 @@ after the reset. Avoids the post-reset MaybeServiceIdlePauseRequests
 service path from observing stale paused-state signals if any
 subsequent code reaches it (it shouldn't, but defensive).
 
-Per-step diagnostic bracketing via doskutsu_dbg_log:
+Per-step diagnostic bracketing via dos_port_dbg_log:
   - "audio close: force-pause active, issuing DSP hard reset" /
     "audio close: DSP hard reset complete" (force-pause branch only)
   - "audio close: pre-disable-pcm (was_force_paused=N)" / "post-disable-pcm"
@@ -156,7 +156,7 @@ index ee73723fb..4d4eb510f 100644
 +           Real-HW operator iter required for confirmation. */
 +        const bool was_force_paused = g_dos_audio_force_dsp_pause;
 +        if (was_force_paused) {
-+            doskutsu_dbg_log("audio close: force-pause active, issuing DSP "
++            dos_port_dbg_log("audio close: force-pause active, issuing DSP "
 +                             "hard reset (skips 0xDA/0xD3 graceful exit)");
              g_dos_audio_force_dsp_pause = false;
 -            g_dos_audio_resume_request = true;
@@ -165,7 +165,7 @@ index ee73723fb..4d4eb510f 100644
 +            g_dos_audio_pause_request = false;
 +            isr_dsp_paused = false; /* DSP is now reset; not in pause state */
 +            ResetSoundBlasterDSP();
-+            doskutsu_dbg_log("audio close: DSP hard reset complete");
++            dos_port_dbg_log("audio close: DSP hard reset complete");
          }
  
 -        // Disable PCM.
@@ -190,7 +190,7 @@ index ee73723fb..4d4eb510f 100644
 +           complete". Logs run on EVERY close (not just force-pause)
 +           so the regular path is also instrumented, giving us a
 +           known-good trace to A/B against. */
-+        doskutsu_dbg_log("audio close: pre-disable-pcm "
++        dos_port_dbg_log("audio close: pre-disable-pcm "
 +                         "(was_force_paused=%d)", was_force_paused ? 1 : 0);
 +
 +        if (!was_force_paused) {
@@ -214,12 +214,12 @@ index ee73723fb..4d4eb510f 100644
              }
          }
  
-+        doskutsu_dbg_log("audio close: post-disable-pcm");
-+        doskutsu_dbg_log("audio close: pre-irq-unhook");
++        dos_port_dbg_log("audio close: post-disable-pcm");
++        dos_port_dbg_log("audio close: pre-irq-unhook");
          DOS_UnhookInterrupt(&hidden->interrupt_hook, true);
-+        doskutsu_dbg_log("audio close: post-irq-unhook");
++        dos_port_dbg_log("audio close: post-irq-unhook");
  
-+        doskutsu_dbg_log("audio close: pre-dma-mask");
++        dos_port_dbg_log("audio close: pre-dma-mask");
          // disable DMA — mask the appropriate DMA channel.
          if (hidden->dma_buffer) {
              if (hidden->is_16bit) {
@@ -227,7 +227,7 @@ index ee73723fb..4d4eb510f 100644
              }
              DOS_FreeConventionalMemory(&hidden->dma_seginfo);
          }
-+        doskutsu_dbg_log("audio close: post-dma-mask");
++        dos_port_dbg_log("audio close: post-dma-mask");
  
          // Free ring buffer resources.
          if (hidden->ring_buffer) {

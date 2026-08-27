@@ -58,7 +58,7 @@ with wave-29's next iter per maximum_payload_per_iter.md; no dedicated
 CF-swap window.
 
 One TU touched (src/audio/dos/SDL_dosaudio_sb.c). ~32 lines added (mostly
-the inline reasoning comment + one doskutsu_dbg_log marker); 3 lines of
+the inline reasoning comment + one dos_port_dbg_log marker); 3 lines of
 actual logic change (1 command swap + 2 new commands inserted).
 ---
  src/audio/dos/SDL_dosaudio_sb.c | 34 ++++++++++++++++++++++++++++++++-
@@ -102,7 +102,7 @@ index 296c43253..e39bba163 100644
 +                   trace; flush-instr's
 +                   docs/PHASE11-WAVE-28-FINDINGS-N-PLUS-1.md sec. 4 is the
 +                   root-cause analysis. */
-+                doskutsu_dbg_log("audio close: 16-bit DSP halt-then-exit "
++                dos_port_dbg_log("audio close: 16-bit DSP halt-then-exit "
 +                                 "(0xD5/0xD9/0xD3)");
 +                WriteSoundBlasterDSP(0xD5); // halt 16-bit DAC
 +                WriteSoundBlasterDSP(0xD9); // exit 16-bit auto-init DMA

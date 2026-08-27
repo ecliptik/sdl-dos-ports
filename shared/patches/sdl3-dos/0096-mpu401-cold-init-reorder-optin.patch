@@ -34,7 +34,7 @@ byte = the exact wedge class. Cold clean entry + blind hot data writes is
 the correct composition. Default OFF -> byte-identical to today; flips
 ON-for-wb only after the g2k play-through gate.
 
-Also export doskutsu_mpu_write_count (incremented per byte in
+Also export dos_port_mpu_write_count (incremented per byte in
 SDL_DOSMpu401WriteByte, atomic 32-bit, ISR + main-line safe): the engine
 logs it main-line every N frames as the cold-init play-vs-silent-wedge
 witness (climbing = a song is dispatching through the WB; flat after
@@ -106,7 +106,7 @@ index 02d33076d..db7a81098 100644
 +                ack = inportb((Uint16)port_base);
 +            }
 +
-+            doskutsu_dbg_log("mpu401: cold-init at port_base=0x%04x "
++            dos_port_dbg_log("mpu401: cold-init at port_base=0x%04x "
 +                             "(SDL_HINT_DOS_AUDIO_WB_COLD_INIT=1; MPU UART "
 +                             "entered on the COLD bus BEFORE the SB16 open -- "
 +                             "0xFF reset -> bounded ACK drain -> 0x3F UART entry; "
@@ -138,14 +138,14 @@ index 02d33076d..db7a81098 100644
 +       32-bit increment per dispatched byte (any transport). Read main-line by
 +       the engine every N frames -- a climbing count proves a song is actually
 +       reaching the WaveBlaster (the cold-init play-vs-silent-wedge witness). */
-+    doskutsu_mpu_write_count++;
++    dos_port_mpu_write_count++;
 +
      /* DOSKUTSU patch (Phase 10 patch 0047): dispatch via DSP-mediated
         path when default; via direct-port when SDL_HINT_DOS_AUDIO_
         WB_DIRECT_PORT=1 was set at init time. */
-@@ -916,6 +995,14 @@ volatile uint32_t doskutsu_audio_irq_wall_us = 0;
- volatile uint32_t doskutsu_audio_irq_count = 0;
- volatile uint32_t doskutsu_audio_sfx_active_count = 0;
+@@ -916,6 +995,14 @@ volatile uint32_t dos_port_audio_irq_wall_us = 0;
+ volatile uint32_t dos_port_audio_irq_count = 0;
+ volatile uint32_t dos_port_audio_sfx_active_count = 0;
  
 +/* DOSKUTSU patch (SDL/0096): cumulative WaveBlaster MIDI byte-dispatch
 +   counter (T48 cold-init play-vs-silent-wedge witness). Incremented once per
@@ -153,7 +153,7 @@ index 02d33076d..db7a81098 100644
 +   the single 32-bit volatile increment is atomic on x86 so no cli/sti is
 +   needed. The engine reads it from the MAIN LOOP and logs it every N frames.
 +   Declared extern in SDL_dos_audio_synth.h. */
-+volatile uint32_t doskutsu_mpu_write_count = 0;
++volatile uint32_t dos_port_mpu_write_count = 0;
 +
  /* DOSKUTSU patch (Phase 11 patch 0069): cumulative silent-IRQ counter
     for the Pixtone multi-source probe (hypothesis C: cooperative-
@@ -162,9 +162,9 @@ diff --git a/src/core/dos/SDL_dos_audio_synth.h b/src/core/dos/SDL_dos_audio_syn
 index c0e92b3b8..4a4b4818a 100644
 --- a/src/core/dos/SDL_dos_audio_synth.h
 +++ b/src/core/dos/SDL_dos_audio_synth.h
-@@ -364,6 +364,20 @@ extern volatile uint32_t doskutsu_audio_sfx_active_count;
+@@ -364,6 +364,20 @@ extern volatile uint32_t dos_port_audio_sfx_active_count;
     probe contract. */
- extern volatile uint32_t doskutsu_audio_silent_irq_count;
+ extern volatile uint32_t dos_port_audio_silent_irq_count;
  
 +/* DOSKUTSU patch (SDL/0096): cumulative WaveBlaster MIDI byte-dispatch
 +   counter. Incremented once per SDL_DOSMpu401WriteByte (every MIDI byte
@@ -178,7 +178,7 @@ index c0e92b3b8..4a4b4818a 100644
 +   the cold-init banners = cold-init established clean state but dispatch is
 +   blocked/silent (a re-wedge at the first hot ISR note, or a silent
 +   fallback). Per the T48 cold-init witness contract (flush-instr). */
-+extern volatile uint32_t doskutsu_mpu_write_count;
++extern volatile uint32_t dos_port_mpu_write_count;
 +
  /* ------------------------------------------------------------------------
   * Phase 11 patch 0071 -- SDL_DOSPixtone* channel-pool API for Lever 3

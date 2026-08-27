@@ -89,14 +89,14 @@ index 53a828396..cde248f53 100644
 +            if (dr >= 5000 && dr <= 44100) {
 +                const int dr_prev = device->spec.freq;
 +                device->spec.freq = dr;
-+                doskutsu_dbg_log("audio: SDL/0087 device-rate override: %d -> %d Hz "
++                dos_port_dbg_log("audio: SDL/0087 device-rate override: %d -> %d Hz "
 +                                 "(SDL_HINT_DOS_DOS_AUDIO_DEVICE_RATE; SB16 DSP "
 +                                 "0x41 will program %d; logical->physical resample "
 +                                 "collapses toward content rate; Bug6 RATEDIV "
 +                                 "auto-recomputes from the new dev_freq)",
 +                                 dr_prev, dr, dr);
 +            } else {
-+                doskutsu_dbg_log("audio: SDL/0087 device-rate override IGNORED: "
++                dos_port_dbg_log("audio: SDL/0087 device-rate override IGNORED: "
 +                                 "%d Hz out of SB16 range [5000,44100] -- staying "
 +                                 "at %d Hz", dr, device->spec.freq);
 +            }

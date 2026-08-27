@@ -58,14 +58,14 @@ index 03dad68f4..3fa996d84 100644
 +           Markers-only. */
 +        extern volatile bool g_title_diag_armed; /* nxengine 0194, extern "C", C-linkage */
 +        if (g_title_diag_armed) {
-+            doskutsu_dbg_log("present-diag/simvsync: pre-delay interval_ns=%lu elapsed_ns=%lu duration_ns=%lu t=%lu",
++            dos_port_dbg_log("present-diag/simvsync: pre-delay interval_ns=%lu elapsed_ns=%lu duration_ns=%lu t=%lu",
 +                             (unsigned long)interval, (unsigned long)elapsed,
 +                             (unsigned long)duration, (unsigned long)SDL_GetTicks());
 +        }
          SDL_DelayPrecise(duration);
          now = SDL_GetTicksNS();
 +        if (g_title_diag_armed) {
-+            doskutsu_dbg_log("present-diag/simvsync: post-delay t=%lu", (unsigned long)SDL_GetTicks());
++            dos_port_dbg_log("present-diag/simvsync: post-delay t=%lu", (unsigned long)SDL_GetTicks());
 +        }
      }
  
@@ -78,7 +78,7 @@ index 5fc4573d3..cd37d8242 100644
  
  #include "SDL_timer_c.h"
  #include "../thread/SDL_systhread.h"
-+#include "../video/dos/SDL_dosdbg.h" /* DOSKUTSU patch 0084: doskutsu_dbg_log (no-op macro off-DOS) */
++#include "../video/dos/SDL_dosdbg.h" /* DOSKUTSU patch 0084: dos_port_dbg_log (no-op macro off-DOS) */
  
  // #define DEBUG_TIMERS
  
@@ -109,7 +109,7 @@ index 5fc4573d3..cd37d8242 100644
          }
          current_value = now;
 +        if (g_title_diag_armed && ((++_dp_iter % 256) == 0)) {
-+            doskutsu_dbg_log("present-diag/delayprecise: iter=%lu now_ns=%lu target_ns=%lu t=%lu",
++            dos_port_dbg_log("present-diag/delayprecise: iter=%lu now_ns=%lu target_ns=%lu t=%lu",
 +                             (unsigned long)_dp_iter, (unsigned long)now,
 +                             (unsigned long)target_value, (unsigned long)SDL_GetTicks());
 +        }

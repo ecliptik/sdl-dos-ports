@@ -232,7 +232,7 @@ index e39bba163..4a5dc2b05 100644
 +++ b/src/audio/dos/SDL_dosaudio_sb.c
 @@ -27,6 +27,7 @@
  #include "../../core/dos/SDL_dos_scheduler.h"
- #include "../../video/dos/SDL_dosdbg.h" /* DOSKUTSU patch 0041: doskutsu_dbg_log routing */
+ #include "../../video/dos/SDL_dosdbg.h" /* DOSKUTSU patch 0041: dos_port_dbg_log routing */
  #include "SDL_dosaudio_sb.h"
 +#include <SDL3/SDL_dosaudio_shutdown.h> /* DOSKUTSU patch 0053: engine-callable SDL_DOSAudioBeginShutdown export */
  
@@ -306,12 +306,12 @@ index e39bba163..4a5dc2b05 100644
 +{
 +    if (!g_dos_audio_quiescence_gate_disabled) {
 +        g_dos_audio_quiescence_gate_disabled = true;
-+        doskutsu_dbg_log("audio: SDL_DOSAudioBeginShutdown -- gate disabled "
++        dos_port_dbg_log("audio: SDL_DOSAudioBeginShutdown -- gate disabled "
 +                         "for shutdown lock-handoff (engine pre-empted "
 +                         "SDL/0050 GetDeviceBuf quiescence walk before "
 +                         "MIX_DestroyMixer)");
 +    } else {
-+        doskutsu_dbg_log("audio: SDL_DOSAudioBeginShutdown -- gate already "
++        dos_port_dbg_log("audio: SDL_DOSAudioBeginShutdown -- gate already "
 +                         "disabled (killswitch or repeat call); no-op");
 +    }
 +}

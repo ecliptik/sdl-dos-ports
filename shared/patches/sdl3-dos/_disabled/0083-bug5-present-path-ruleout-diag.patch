@@ -61,7 +61,7 @@ index dddb5f357..fd6845c44 100644
 +   Armed by the engine latch g_title_diag_armed (set at title_init,
 +   so the intro's ~488 presents do NOT log -- avoids per-present perturbation),
 +   AND gated on SDL_HINT_DOS_STARVE_DIAG=1 (shared with SDL/0082's snd:
-+   markers, which carry along for cb_fills corroboration). doskutsu_dbg_log is
++   markers, which carry along for cb_fills corroboration). dos_port_dbg_log is
 +   safe here (present path = non-IRQ main thread). Markers-only, read-only
 +   w.r.t. the displayed frame. Default OFF. Workspace-local; never upstreamed. */
 +extern volatile bool g_title_diag_armed; /* engine-defined, set true in title_init (nxengine) */
@@ -84,7 +84,7 @@ index dddb5f357..fd6845c44 100644
 +    const bool _pd = _pd_active();
 +    if (_pd) {
 +        s_pd_vbl_calls++;
-+        doskutsu_dbg_log("present-diag/vbl: enter call=%lu t=%lu",
++        dos_port_dbg_log("present-diag/vbl: enter call=%lu t=%lu",
 +                         (unsigned long)s_pd_vbl_calls, (unsigned long)SDL_GetTicks());
 +    }
      while (inportb(VGA_STATUS_PORT) & VGA_STATUS_VBLANK) {
@@ -94,7 +94,7 @@ index dddb5f357..fd6845c44 100644
          SDL_CPUPauseInstruction();
      }
 +    if (_pd) {
-+        doskutsu_dbg_log("present-diag/vbl: exit  call=%lu t=%lu",
++        dos_port_dbg_log("present-diag/vbl: exit  call=%lu t=%lu",
 +                         (unsigned long)s_pd_vbl_calls, (unsigned long)SDL_GetTicks());
 +    }
  }
@@ -115,12 +115,12 @@ index dddb5f357..fd6845c44 100644
 +    if (_pd_active()) {
 +        s_pd_pf_calls++;
 +        if (!s_pd_banner) {
-+            doskutsu_dbg_log("present-diag: SDL/0083 ENABLED + ARMED "
++            dos_port_dbg_log("present-diag: SDL/0083 ENABLED + ARMED "
 +                             "(STARVE_DIAG=1, title-armed) -- present-path rule-out markers");
 +            s_pd_banner = true;
 +        }
 +        if ((s_pd_pf_calls % 128) == 0) {
-+            doskutsu_dbg_log("present-diag/pf: calls=%lu t=%lu vbl_calls=%lu",
++            dos_port_dbg_log("present-diag/pf: calls=%lu t=%lu vbl_calls=%lu",
 +                             (unsigned long)s_pd_pf_calls, (unsigned long)SDL_GetTicks(),
 +                             (unsigned long)s_pd_vbl_calls);
 +        }

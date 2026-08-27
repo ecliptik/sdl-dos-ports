@@ -65,7 +65,7 @@ index dddb5f357..741bd4a4f 100644
 +            _bg_resolved = true;
 +            const char *h = SDL_GetHint("SDL_HINT_DOS_BANK_GRAN_FIX");
 +            g_bank_gran_fix = (h && SDL_strcmp(h, "0") == 0) ? 0 : 1;
-+            doskutsu_dbg_log("sdl: SDL/0115 BANK-GRAN-FIX %s "
++            dos_port_dbg_log("sdl: SDL/0115 BANK-GRAN-FIX %s "
 +                             "(banked multi-bank walk recomputes bank=offset/gran "
 +                             "each step; correct for WinGranularity<WinSize cards; "
 +                             "g2k gran==size degenerates to the prior bank++ walk; "
@@ -141,7 +141,7 @@ index dddb5f357..741bd4a4f 100644
 +                static int _p115_logged = 0;
 +                if (bank > 0 && _p115_logged == 0) {
 +                    _p115_logged = 1;
-+                    doskutsu_dbg_log(
++                    dos_port_dbg_log(
 +                        "SDL/0115 BANK-GRAN-WALK: bank=%d off_in_win=%lu bytes=%lu "
 +                        "win_gran=%lu win_size=%lu (first non-bank-0 write; "
 +                        "offset/gran recompute active)",
@@ -167,7 +167,7 @@ index dddb5f357..741bd4a4f 100644
 -            static int _w162_logged = 0;
 -            if (bank > 0 && _w162_logged == 0) {
 -                _w162_logged = 1;
--                doskutsu_dbg_log(
+-                dos_port_dbg_log(
 -                    "WAVE16-2-BANK1-FIX: bank=%d src_off=%lu dst_off=%lu "
 -                    "bytes=%lu win_base=0x%08lx win_gran=%lu win_size=%lu "
 -                    "(first non-bank-0 dosmemput; defensive offset rewrite "
@@ -197,7 +197,7 @@ index dddb5f357..741bd4a4f 100644
 +                static int _w162_logged = 0;
 +                if (bank > 0 && _w162_logged == 0) {
 +                    _w162_logged = 1;
-+                    doskutsu_dbg_log(
++                    dos_port_dbg_log(
 +                        "WAVE16-2-BANK1-FIX: bank=%d src_off=%lu dst_off=%lu "
 +                        "bytes=%lu win_base=0x%08lx win_gran=%lu win_size=%lu "
 +                        "(first non-bank-0 dosmemput; legacy bank++ walk)",

@@ -158,7 +158,7 @@ sdl3: verify-patches-applied $(SYSROOT)/lib/libSDL3.a
 # via `git am`, making the embedded revision non-reproducible across
 # rebuilds of identical source). Doskutsu's own build additionally embeds a
 # content-based build-sha fingerprint (see its Makefile's RUNMANIFEST_FLAGS
-# / DOSKUTSU_BUILD_SHA12) -- that's a doskutsu-specific diagnostic feature,
+# / DOS_PORT_BUILD_SHA12) -- that's a doskutsu-specific diagnostic feature,
 # not part of this shared fragment; a port wanting the same can add its own
 # equivalent following that pattern.
 SDL_REVISION_PIN := SDL3-DOS+$(PORT_NAME)

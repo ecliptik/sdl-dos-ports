@@ -60,7 +60,7 @@ case. Suppressed calls return true (claiming success) so SDL3's window
 setup machinery keeps believing fullscreen worked -- we just don't do the
 hardware mode change.
 
-The gate logs through doskutsu_dbg_log so the suppression appears in
+The gate logs through dos_port_dbg_log so the suppression appears in
 sdldbg.log alongside the mode-set traces from patches 0008/0009. Look
 for "mode-set #N (suppressed by PIN_WINDOW_TO_NATIVE_MODE hint)".
 
@@ -200,7 +200,7 @@ index 732061960..8cdbf34bc 100644
 +        SDL_GetHintBoolean(SDL_HINT_DOS_PIN_WINDOW_TO_NATIVE_MODE, false) &&
 +        (data->current_mode.internal->w != modedata->w ||
 +         data->current_mode.internal->h != modedata->h)) {
-+        DOSKUTSU_MODES_LOG("mode-set #%d (suppressed by PIN_WINDOW_TO_NATIVE_MODE hint): "
++        DOS_PORT_MODES_LOG("mode-set #%d (suppressed by PIN_WINDOW_TO_NATIVE_MODE hint): "
 +                           "requested %dx%d differs from active %dx%d (current id=0x%X) "
 +                           "-> returning true without VBE mode-set",
 +                           ms_calls, modedata->w, modedata->h,

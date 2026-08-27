@@ -129,7 +129,7 @@ index 0ddd9d943..e5a46cfa1 100644
  // WaitForVBlank() at line ~1098 spins on the VGA status port with NO
  // timeout; in the VRAM-resident flip path that is a HW-IO hang risk on
 @@ -3032,19 +3068,22 @@ static bool _vram_resident_is_s3_virge(Uint16 *out_chip_id)
- // doskutsu_dbg_log banner narrating either ENABLED or DISABLED + reason.
+ // dos_port_dbg_log banner narrating either ENABLED or DISABLED + reason.
  //
  // DOSKUTSU patch 0077 (S3-2 Stage 1) -- retargeted from the wave-50
 -// Cirrus-5434 path to the S3 ViRGE/DX. Three gates, all fail-safe to the
@@ -219,7 +219,7 @@ index 0ddd9d943..e5a46cfa1 100644
 +    // on g2k S3+UNIVBE; gate here so a streams config falls back safely.
 +    const Uint8 cr67 = _crtc_read(0x67);
 +    if ((cr67 & 0x0C) == 0x0C) {
-         doskutsu_dbg_log("sdl: S3-2 stage1 VRAM-resident page-flip DISABLED "
+         dos_port_dbg_log("sdl: S3-2 stage1 VRAM-resident page-flip DISABLED "
 -                         "(0x4F07 self-verify FAILED: get_ax=0x%04X set_ax=0x%04X "
 -                         "rb_ax=0x%04X rb_dx=%u test_dx=%u; sysmem copy-present "
 -                         "fallback -- no hang)",
@@ -271,7 +271,7 @@ index 0ddd9d943..e5a46cfa1 100644
 +        _vr_irq_restore(_vr_if);
 +        verified = (r0d == 0x00 && r0c == 0x96 && (r69 & 0x1F) == 0x00);
 +        if (!verified) {
-+            doskutsu_dbg_log("sdl: S3-2 stage1 VRAM-resident page-flip DISABLED "
++            dos_port_dbg_log("sdl: S3-2 stage1 VRAM-resident page-flip DISABLED "
 +                             "(direct-CRTC self-verify FAILED: wrote CR0D=00 CR0C=96 "
 +                             "CR69hi=0, read CR0D=0x%02X CR0C=0x%02X CR69=0x%02X; "
 +                             "sysmem copy-present fallback -- no INT, no hang)",
@@ -281,7 +281,7 @@ index 0ddd9d943..e5a46cfa1 100644
 +        }
 +    }
 +
-     doskutsu_dbg_log("sdl: S3-2 stage1 VRAM-resident page-flip ENABLED "
+     dos_port_dbg_log("sdl: S3-2 stage1 VRAM-resident page-flip ENABLED "
 -                     "(S3 ViRGE/DX chip-id=0x%04X; VBE 0x4F07 flip self-verified; "
 +                     "(S3 ViRGE/DX chip-id=0x%04X; direct-CRTC WORD-unit flip "
 +                     "self-verified, NO INT 0x10; CR67=0x%02X non-streams; "
@@ -358,7 +358,7 @@ index 0ddd9d943..e5a46cfa1 100644
  
 @@ -3222,7 +3263,7 @@ static void _vram_resident_finish_swap(const SDL_DOSVesaDirectState *st,
          _vram_resident_engage_banner_logged = 1;
-         doskutsu_dbg_log("sdl: S3-2 stage1 first page-flip present "
+         dos_port_dbg_log("sdl: S3-2 stage1 first page-flip present "
                           "(hidden_page_byte_offset=0x%06lX; visible_page now=%d; "
 -                         "copy-present dropped, VBE 0x4F07 flip)",
 +                         "copy-present dropped, direct-CRTC flip)",
@@ -382,7 +382,7 @@ index 0ddd9d943..e5a46cfa1 100644
 @@ -3293,7 +3332,7 @@ bool SDL_DOSVesaPagePresent(const SDL_DOSVesaDirectState *st, int page_idx)
      if (!_vram_resident_engage_banner_logged) {
          _vram_resident_engage_banner_logged = 1;
-         doskutsu_dbg_log("sdl: S3-2 stage1 first page-flip present "
+         dos_port_dbg_log("sdl: S3-2 stage1 first page-flip present "
 -                         "(page_idx=%d; copy-present dropped, VBE 0x4F07 flip)",
 +                         "(page_idx=%d; copy-present dropped, direct-CRTC flip)",
                           page_idx);

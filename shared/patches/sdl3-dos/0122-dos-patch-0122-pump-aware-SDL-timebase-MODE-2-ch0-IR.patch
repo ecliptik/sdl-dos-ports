@@ -234,7 +234,7 @@ index 29751d626..650fe671b 100644
                       s_pcspk_sfx_enabled ? "ENABLED" : "disabled (killswitch=0)",
                       (unsigned)s_pcspk_fire_hz, PCSPK_NOTE_RING);
 +    /* SDL/0122: one-shot boot banner (smoke BANNERS gate anchors on this line). */
-+    doskutsu_dbg_log("audio: SDL/0122 pump-aware timebase %s (PIT ch0 MODE %d; "
++    dos_port_dbg_log("audio: SDL/0122 pump-aware timebase %s (PIT ch0 MODE %d; "
 +                     "SDL_GetPerformanceCounter derived from the IRQ-0 period "
 +                     "counter, rebased at PumpStart perf_base=%lu; killswitch "
 +                     "SDL_HINT_DOS_PUMP_TIMEBASE=0 -> MODE 3 + uclock "
@@ -261,7 +261,7 @@ index 29751d626..650fe671b 100644
 +        const uint32_t div = s_pit_div ? s_pit_div : 1u;
 +        const Uint64 expected = ((Uint64)s_isr_count * (Uint64)div) / 65536ULL;
 +        const long   delta    = (long)((Sint64)s_bios_chain - (Sint64)expected);
-+        doskutsu_dbg_log("audio: SDL/0122 pump teardown -- isr_count=%lu div=%u "
++        dos_port_dbg_log("audio: SDL/0122 pump teardown -- isr_count=%lu div=%u "
 +                         "expected_bios_chains=%lu actual_bios_chains=%lu "
 +                         "delta=%ld (delta<0 == IRQ-0 fires lost while interrupts "
 +                         "were masked; delta==0 == no DOS time lost; timebase=%s)",

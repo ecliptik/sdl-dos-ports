@@ -53,7 +53,7 @@ one audio chunk processed):
                  SDL3_mixer downmix cost that nx 0131 explicitly leaves
                  to this patch's lane.
 
-  irq_isr:       delta of patch 0100's existing doskutsu_audio_irq_wall_us
+  irq_isr:       delta of patch 0100's existing dos_port_audio_irq_wall_us
                  export across the 100-call block. Re-emitted under the
                  p12-audio sdl namespace for one-stop attribution; the
                  underlying counter is identical to what nx 0131 reports
@@ -200,7 +200,7 @@ index 44eedd70d..22a5f5864 100644
 +                   SDL3_mixer MixerCallback chain wall-clock; the
 +                   period when SDL3 calls SDL_GetAudioStreamData on
 +                   each bound stream + per-track downmix).
-+     irq_isr:      delta of doskutsu_audio_irq_wall_us across the
++     irq_isr:      delta of dos_port_audio_irq_wall_us across the
 +                   block (existing patch 0100 export; re-emitted under
 +                   p12-audio sdl namespace for one-stop attribution).
 +
@@ -226,7 +226,7 @@ index 44eedd70d..22a5f5864 100644
 +   accumulate a stale span. */
 +static Uint64 g_p12_sdl_t_gdb_exit_ns = 0;
 +/* IRQ-5 wall-us baseline at last emit; per-block delta computed at
-+   each emit via doskutsu_audio_irq_wall_us - baseline. */
++   each emit via dos_port_audio_irq_wall_us - baseline. */
 +static Uint32 g_p12_sdl_irq_wall_us_baseline = 0;
 +
  static void ResetSoundBlasterDSP(void)
@@ -293,7 +293,7 @@ index 44eedd70d..22a5f5864 100644
 +            (p12_hint && p12_hint[0] == '1' && p12_hint[1] == 0);
 +        g_p12_sdl_audio_instr_active = flip_on && p12_on;
 +        if (g_p12_sdl_audio_instr_active) {
-+            doskutsu_dbg_log("audio: SDL/0055 P12 SDL-side audio brackets ACTIVE "
++            dos_port_dbg_log("audio: SDL/0055 P12 SDL-side audio brackets ACTIVE "
 +                             "(FLIP_INSTR=1 + P12_AUDIO_INSTR=1; emits "
 +                             "[p12-audio sdl n=100 ...] per 100 PlayDevice calls)");
 +            /* Reset accumulators + baseline so the first emit measures
@@ -303,9 +303,9 @@ index 44eedd70d..22a5f5864 100644
 +            g_p12_sdl_mix_mixer_ns = 0;
 +            g_p12_sdl_playdev_calls = 0;
 +            g_p12_sdl_t_gdb_exit_ns = 0;
-+            g_p12_sdl_irq_wall_us_baseline = doskutsu_audio_irq_wall_us;
++            g_p12_sdl_irq_wall_us_baseline = dos_port_audio_irq_wall_us;
 +        } else {
-+            doskutsu_dbg_log("audio: SDL/0055 P12 SDL-side audio brackets OFF "
++            dos_port_dbg_log("audio: SDL/0055 P12 SDL-side audio brackets OFF "
 +                             "(set BOTH SDL_HINT_DOS_FLIP_INSTR=1 and "
 +                             "SDL_HINT_DOS_P12_AUDIO_INSTR=1 to engage)");
 +        }
@@ -378,11 +378,11 @@ index 44eedd70d..22a5f5864 100644
 +                   inline equivalent here so the silence-skip path
 +                   participates in cadence too. */
 +                if (++g_p12_sdl_playdev_calls >= 100) {
-+                    const Uint32 _p12_irq_now = doskutsu_audio_irq_wall_us;
++                    const Uint32 _p12_irq_now = dos_port_audio_irq_wall_us;
 +                    const Uint32 _p12_irq_delta =
 +                        _p12_irq_now - g_p12_sdl_irq_wall_us_baseline;
 +                    g_p12_sdl_irq_wall_us_baseline = _p12_irq_now;
-+                    doskutsu_dbg_log(
++                    dos_port_dbg_log(
 +                        "[p12-audio sdl n=100 audio_thread=%lu ring_refill=%lu "
 +                        "mix_mixer=%lu irq_isr=%lu]",
 +                        (unsigned long)(g_p12_sdl_audio_thread_ns / 1000ULL),
@@ -426,18 +426,18 @@ index 44eedd70d..22a5f5864 100644
 +       1024 frames / 22050 Hz mono this is ~46 ms wall-clock per
 +       call -> emit cadence ~4.6 sec under Tier-2 config. Field units:
 +       audio_thread/ring_refill/mix_mixer reported in us (ns/1000);
-+       irq_isr re-emits the doskutsu_audio_irq_wall_us delta which is
++       irq_isr re-emits the dos_port_audio_irq_wall_us delta which is
 +       already in us from patch 0100. */
 +    if (g_p12_sdl_audio_instr_active) {
 +        const Uint64 _p12_now = SDL_GetTicksNS();
 +        g_p12_sdl_ring_refill_ns += _p12_now - _p12_ring_t0;
 +        g_p12_sdl_audio_thread_ns += _p12_now - _p12_play_t0;
 +        if (++g_p12_sdl_playdev_calls >= 100) {
-+            const Uint32 _p12_irq_now = doskutsu_audio_irq_wall_us;
++            const Uint32 _p12_irq_now = dos_port_audio_irq_wall_us;
 +            const Uint32 _p12_irq_delta =
 +                _p12_irq_now - g_p12_sdl_irq_wall_us_baseline;
 +            g_p12_sdl_irq_wall_us_baseline = _p12_irq_now;
-+            doskutsu_dbg_log(
++            dos_port_dbg_log(
 +                "[p12-audio sdl n=100 audio_thread=%lu ring_refill=%lu "
 +                "mix_mixer=%lu irq_isr=%lu]",
 +                (unsigned long)(g_p12_sdl_audio_thread_ns / 1000ULL),

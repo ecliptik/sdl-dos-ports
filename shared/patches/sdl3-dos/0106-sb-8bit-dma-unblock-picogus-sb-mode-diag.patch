@@ -38,7 +38,7 @@ consumer takes the same branch. DOSBox-X (sbtype=sb16, emulates H5) holds
 is_sb16=true too. The new term only changes the result for a DSP-4.x card
 that lacks an H channel, or when the hint/override forces 8-bit.
 
-Diagnostics (all via doskutsu_dbg_log -> <TAG>SDL.LOG; positioned to answer
+Diagnostics (all via dos_port_dbg_log -> <TAG>SDL.LOG; positioned to answer
 "where does it die"):
   - unconditional DMA-path decision banner at detection (is_sb16/force_8bit/
     dsp_ver/highdma -> path), plus a loud graceful-fallback witness;
@@ -48,9 +48,9 @@ Diagnostics (all via doskutsu_dbg_log -> <TAG>SDL.LOG; positioned to answer
     branches;
   - OpenDevice SUCCESS witness (path + IRQ count at open);
   - CloseDevice run-end witness: total IRQ-5 fires (0 == DMA-IRQ never armed
-    -> silence is upstream of the ISR), reusing doskutsu_audio_irq_count;
-  - CloseDevice WB/MPU witness: doskutsu_mpu_write_count + the bit-6 DRR
-    poll-timeout count doskutsu_mpu_drr_cap_hits, to confirm/deny the
+    -> silence is upstream of the ISR), reusing dos_port_audio_irq_count;
+  - CloseDevice WB/MPU witness: dos_port_mpu_write_count + the bit-6 DRR
+    poll-timeout count dos_port_mpu_drr_cap_hits, to confirm/deny the
     wave-40 REFUTE_MPU_TIMEOUT (DreamBlaster S2 output-busy-after-byte-1)
     signature recurs on this card.
 
@@ -115,7 +115,7 @@ index 578f7bf8a..842d14040 100644
 +       controller was programmed with. The DSP command sequence is logged
 +       separately in each start branch below (SDL/0106). Always-on (read-only
 +       snapshot at open; no killswitch). */
-+    doskutsu_dbg_log("audio: SDL/0106 OpenDevice DMA programmed: path=%s "
++    dos_port_dbg_log("audio: SDL/0106 OpenDevice DMA programmed: path=%s "
 +                     "dma_ch=%d (%s) dma_buflen=%d fmt=0x%X ch=%d freq=%d Hz "
 +                     "irq=%d ack_port=0x%X silence=0x%02X",
 +                     is_sb16 ? "16-bit-high-DMA" : "8-bit-low-DMA",
@@ -135,7 +135,7 @@ index 578f7bf8a..842d14040 100644
  
 +        /* DOSKUTSU patch (SDL/0106): DSP start-command-sequence witness for
 +           the 16-bit (is_sb16) path. */
-+        doskutsu_dbg_log("audio: SDL/0106 DSP start seq (16-bit): 0xD1(spkr-on) "
++        dos_port_dbg_log("audio: SDL/0106 DSP start seq (16-bit): 0xD1(spkr-on) "
 +                         "0x41 rate=%d 0xB6(autoinit/FIFO) 0x30(S16-stereo) "
 +                         "block_size=%d (words-1)",
 +                         device->spec.freq, block_size);
@@ -153,7 +153,7 @@ index 578f7bf8a..842d14040 100644
 +           sequence the PicoGUS-SB now reaches after the SDL/0106 graceful
 +           fall-back; if IRQ-5 still never fires, the OpenDevice-DMA + this
 +           line bracket exactly where the chip was last touched. */
-+        doskutsu_dbg_log("audio: SDL/0106 DSP start seq (8-bit): 0xD1(spkr-on) "
++        dos_port_dbg_log("audio: SDL/0106 DSP start seq (8-bit): 0xD1(spkr-on) "
 +                         "0x40 tc=%d (rate=%d effective=%d) 0x48 block_size=%d "
 +                         "(bytes-1) 0x1C(8-bit autoinit)%s",
 +                         (int)time_constant, device->spec.freq, effective_rate,
@@ -173,11 +173,11 @@ index 578f7bf8a..842d14040 100644
 +       an unambiguous "the SB device opened on the %s path" marker. Snapshots
 +       the IRQ-fire count at open (should be 0 here, before any IRQ has fired)
 +       so the CloseDevice delta = IRQ-5 fires during the run. */
-+    doskutsu_dbg_log("audio: SDL/0106 OpenDevice SUCCESS path=%s dma_ch=%d "
++    dos_port_dbg_log("audio: SDL/0106 OpenDevice SUCCESS path=%s dma_ch=%d "
 +                     "irq=%d irq_count_at_open=%lu",
 +                     is_sb16 ? "16-bit-high-DMA" : "8-bit-low-DMA",
 +                     hidden->dma_channel, soundblaster_irq,
-+                     (unsigned long)doskutsu_audio_irq_count);
++                     (unsigned long)dos_port_audio_irq_count);
      return true;
  }
  
@@ -187,30 +187,30 @@ index 578f7bf8a..842d14040 100644
      g_dos_sb_device_open = false;
 +
 +    /* DOSKUTSU patch (SDL/0106): IRQ-5-fire counter at CloseDevice. The
-+       decisive "did the SB DMA IRQ ever fire" witness -- doskutsu_audio_irq_count
++       decisive "did the SB DMA IRQ ever fire" witness -- dos_port_audio_irq_count
 +       increments once per IRQ-5 in SoundBlasterIRQHandler. For a card whose
 +       DMA-IRQ never armed (the pre-patch PicoGUS-SB failure shape) this reads
 +       0 here, telling the analyst the silence is upstream of the ISR (the DMA
 +       never started) rather than in the mix path. Logged before any teardown
 +       so it reflects the whole run. */
-+    doskutsu_dbg_log("audio: SDL/0106 CloseDevice: total IRQ-5 fires this run = "
++    dos_port_dbg_log("audio: SDL/0106 CloseDevice: total IRQ-5 fires this run = "
 +                     "%lu (0 == DMA-IRQ never armed; the pumps never ran)",
-+                     (unsigned long)doskutsu_audio_irq_count);
++                     (unsigned long)dos_port_audio_irq_count);
 +
 +    /* DOSKUTSU patch (SDL/0106): WaveBlaster-path run-end witness. The MPU-401
 +       init RESULT is logged at init time in SDL_dos_audio_synth.c (the
 +       'mpu401: ... init at port_base=...' lines); here we surface the run-end
 +       totals so a single CloseDevice block answers whether the wave-40
-+       REFUTE_MPU_TIMEOUT signature recurs on this card: doskutsu_mpu_drr_cap_hits
++       REFUTE_MPU_TIMEOUT signature recurs on this card: dos_port_mpu_drr_cap_hits
 +       is the bit-6 DRR (Data-Ready-to-Receive) poll-timeout count (the g2k
 +       DreamBlaster S2 "output-buffer-busy stuck after byte 1" stall), and
-+       doskutsu_mpu_write_count is the total MPU bytes pushed. drr_cap_hits>0
++       dos_port_mpu_write_count is the total MPU bytes pushed. drr_cap_hits>0
 +       with write_count stalling near 1 == the MPU-output-busy wedge reproduced;
 +       drr_cap_hits==0 with write_count climbing == MPU output is healthy. */
-+    doskutsu_dbg_log("audio: SDL/0106 CloseDevice WB/MPU witness: "
++    dos_port_dbg_log("audio: SDL/0106 CloseDevice WB/MPU witness: "
 +                     "mpu_write_count=%lu drr_poll_cap_hits=%lu",
-+                     (unsigned long)doskutsu_mpu_write_count,
-+                     (unsigned long)doskutsu_mpu_drr_cap_hits);
++                     (unsigned long)dos_port_mpu_write_count,
++                     (unsigned long)dos_port_mpu_drr_cap_hits);
      if (hidden) {
          /* DOSKUTSU patch (Phase 10 patch 0043): force-DSP-pause hard-
             reset teardown path. Supersedes the patch 0040 amend's
@@ -275,10 +275,10 @@ index 578f7bf8a..842d14040 100644
 +        soundblaster_silence_value = soundblaster_is_sb16 ? 0x00 : 0x80; // S16LE silence is 0x00, U8 silence is 0x80
 +
 +        /* Unconditional decision banner (mirrors SDL/0073 always-on pattern):
-+           routed via doskutsu_dbg_log to <TAG>SDL.LOG so the iter log shows
++           routed via dos_port_dbg_log to <TAG>SDL.LOG so the iter log shows
 +           which DMA path this card resolved -- the decisive "where does it
 +           die" witness for the PicoGUS-SB case. Required smoke banner. */
-+        doskutsu_dbg_log("audio: SDL/0106 SB DMA-path decision: is_sb16=%d "
++        dos_port_dbg_log("audio: SDL/0106 SB DMA-path decision: is_sb16=%d "
 +                         "force_8bit=%d dsp_ver=%d highdma=%d -> %s path",
 +                         soundblaster_is_sb16 ? 1 : 0,
 +                         force_8bit ? 1 : 0,
@@ -291,7 +291,7 @@ index 578f7bf8a..842d14040 100644
 +           8-bit D-channel path that the pre-patch code would have hard-errored
 +           on. Names the force-8bit hint for the operator. */
 +        if ((soundblaster_version >= 4) && !have_highdma && !force_8bit) {
-+            doskutsu_dbg_log("audio: SDL/0106 DSP %d.%d reports SB16 but BLASTER "
++            dos_port_dbg_log("audio: SDL/0106 DSP %d.%d reports SB16 but BLASTER "
 +                             "has no H (high/16-bit DMA) channel -- GRACEFUL "
 +                             "fall back to the 8-bit low-DMA D-channel path "
 +                             "(D=%d) instead of erroring; this is the "
@@ -339,14 +339,14 @@ index e3431f9f3..9dc29b6c3 100644
 +       means the status port is never READ, so a poll-timeout cannot occur and
 +       cap_hits stays 0 by construction -- in that mode the relevant signal is
 +       sb.c's mpu_write_count climbing (bytes accepted) with audible output. */
-+    doskutsu_dbg_log("mpu401: SDL/0106 WB init result=%s port_base=0x%04x "
++    dos_port_dbg_log("mpu401: SDL/0106 WB init result=%s port_base=0x%04x "
 +                     "drr_poll_enabled=%d drr_cap=%u drr_cap_hits=%lu "
 +                     "(cap_hits>0 + write stall == wave-40 MPU-busy wedge recurs)",
 +                     dp_ok ? "OK" : "FAILED",
 +                     (unsigned)port_base,
 +                     s_mpu401_drr_poll_enabled ? 1 : 0,
-+                     (unsigned)doskutsu_mpu_drr_cap,
-+                     (unsigned long)doskutsu_mpu_drr_cap_hits);
++                     (unsigned)dos_port_mpu_drr_cap,
++                     (unsigned long)dos_port_mpu_drr_cap_hits);
 +    return dp_ok;
  }
  

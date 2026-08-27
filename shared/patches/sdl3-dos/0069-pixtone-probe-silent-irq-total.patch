@@ -19,10 +19,10 @@ Block-over-block deltas on that counter therefore lose any depth peak that
 resolves within a block -- exactly the rapid-fire short-burst shape the
 probe is trying to capture.
 
-This patch adds a sibling doskutsu_audio_silent_irq_count counter:
+This patch adds a sibling dos_port_audio_silent_irq_count counter:
 
   - volatile uint32_t, defined in SDL_dos_audio_synth.c alongside the
-    existing doskutsu_audio_irq_count / sfx_active_count / irq_wall_us
+    existing dos_port_audio_irq_count / sfx_active_count / irq_wall_us
     extern family.
   - extern-declared in SDL_dos_audio_synth.h.
   - incremented in SoundBlasterIRQHandler at the silent-IRQ branch
@@ -64,7 +64,7 @@ index d8a4a73dd..0d11dafec 100644
 +           0038 (single-bus-cycle inc on x86). Never reset; engine reads
 +           at audit-flush boundary and computes block-over-block delta.
 +           See docs/internal/PIXTONE-MULTISOURCE-DESIGN.md sec.2.1 #2. */
-+        doskutsu_audio_silent_irq_count++;
++        dos_port_audio_silent_irq_count++;
          if (isr_consecutive_silent_irqs >= IDLE_PAUSE_THRESHOLD &&
              g_dos_audio_idle_pause_enabled && !isr_dsp_paused) {
              g_dos_audio_pause_request = true;
@@ -78,25 +78,25 @@ index d8a4a73dd..0d11dafec 100644
 +       SDL_dos_audio_synth.c, incremented in the IRQ silent-branch
 +       above) is always live. Banner is emitted unconditionally so the
 +       smoke gate can verify the export is wired and the engine-side
-+       Pixtone probe can read doskutsu_audio_silent_irq_count via
++       Pixtone probe can read dos_port_audio_silent_irq_count via
 +       extern. See docs/internal/PIXTONE-MULTISOURCE-DESIGN.md sec.2.1
 +       #2 + sec.4 #4. */
-+    doskutsu_dbg_log("audio: SDL/0069 cumulative silent-IRQ counter export: ENABLED "
-+                     "(doskutsu_audio_silent_irq_count; monotonic; Pixtone "
++    dos_port_dbg_log("audio: SDL/0069 cumulative silent-IRQ counter export: ENABLED "
++                     "(dos_port_audio_silent_irq_count; monotonic; Pixtone "
 +                     "multi-source probe hypothesis-C signal)");
 +
      /* DOSKUTSU patch (Phase 11 patch 0050): resolve quiescence-gate
         killswitch once at OpenDevice time. Strict-"0" match per CLAUDE.md
         env-var convention. Cached at module scope; read by
 @@ -1442,6 +1463,11 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
-     DOS_LockVariable(doskutsu_audio_irq_count);
-     DOS_LockVariable(doskutsu_audio_irq_wall_us);
-     DOS_LockVariable(doskutsu_audio_sfx_active_count);
+     DOS_LockVariable(dos_port_audio_irq_count);
+     DOS_LockVariable(dos_port_audio_irq_wall_us);
+     DOS_LockVariable(dos_port_audio_sfx_active_count);
 +    /* DOSKUTSU patch (Phase 11 patch 0069): cumulative silent-IRQ
 +       counter is incremented from IRQ context (sb.c silent-IRQ branch),
 +       so its storage must be DPMI-locked alongside the other audio
 +       extern counters; otherwise the increment can page-fault. */
-+    DOS_LockVariable(doskutsu_audio_silent_irq_count);
++    DOS_LockVariable(dos_port_audio_silent_irq_count);
      /* DOSKUTSU patch (Phase 10 patch 0039): lock timer-mode + TSC mhz
         so IRQ-context reads in SDL_DOSAudioReadTimer / DeltaUs (inlined
         at the IRQ handler call site) don't page-fault. Both are written
@@ -104,9 +104,9 @@ diff --git a/src/core/dos/SDL_dos_audio_synth.c b/src/core/dos/SDL_dos_audio_syn
 index 765f8eec7..211e3cdac 100644
 --- a/src/core/dos/SDL_dos_audio_synth.c
 +++ b/src/core/dos/SDL_dos_audio_synth.c
-@@ -593,6 +593,21 @@ volatile uint32_t doskutsu_audio_irq_wall_us = 0;
- volatile uint32_t doskutsu_audio_irq_count = 0;
- volatile uint32_t doskutsu_audio_sfx_active_count = 0;
+@@ -593,6 +593,21 @@ volatile uint32_t dos_port_audio_irq_wall_us = 0;
+ volatile uint32_t dos_port_audio_irq_count = 0;
+ volatile uint32_t dos_port_audio_sfx_active_count = 0;
  
 +/* DOSKUTSU patch (Phase 11 patch 0069): cumulative silent-IRQ counter
 +   for the Pixtone multi-source probe (hypothesis C: cooperative-
@@ -121,7 +121,7 @@ index 765f8eec7..211e3cdac 100644
 +   fire moments.
 +
 +   Per docs/internal/PIXTONE-MULTISOURCE-DESIGN.md sec.2.1 #2. */
-+volatile uint32_t doskutsu_audio_silent_irq_count = 0;
++volatile uint32_t dos_port_audio_silent_irq_count = 0;
 +
  /* Force-pause / force-resume request flags. Set by ForcePause/Resume;
     serviced by the SB16 backend's audio writer / WaitDevice loop in
@@ -130,9 +130,9 @@ diff --git a/src/core/dos/SDL_dos_audio_synth.h b/src/core/dos/SDL_dos_audio_syn
 index 596b8a028..f602051df 100644
 --- a/src/core/dos/SDL_dos_audio_synth.h
 +++ b/src/core/dos/SDL_dos_audio_synth.h
-@@ -356,6 +356,14 @@ extern volatile uint32_t doskutsu_audio_irq_wall_us;
- extern volatile uint32_t doskutsu_audio_irq_count;
- extern volatile uint32_t doskutsu_audio_sfx_active_count;
+@@ -356,6 +356,14 @@ extern volatile uint32_t dos_port_audio_irq_wall_us;
+ extern volatile uint32_t dos_port_audio_irq_count;
+ extern volatile uint32_t dos_port_audio_sfx_active_count;
  
 +/* Phase 11 patch 0069: cumulative silent-IRQ counter for the Pixtone
 +   multi-source probe (hypothesis C). Monotonic; never reset. Engine
@@ -140,7 +140,7 @@ index 596b8a028..f602051df 100644
 +   over-block delta. See SDL_dos_audio_synth.c for the rationale and
 +   docs/internal/PIXTONE-MULTISOURCE-DESIGN.md sec.2.1 #2 for the
 +   probe contract. */
-+extern volatile uint32_t doskutsu_audio_silent_irq_count;
++extern volatile uint32_t dos_port_audio_silent_irq_count;
 +
  #ifdef __cplusplus
  }

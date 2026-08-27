@@ -143,7 +143,7 @@ index e5a46cfa1..48d873201 100644
 +        int v_zero = 1, s_zero = 1;
 +        for (int i = 0; i < 16; i++) { if (vram_b1[i]) v_zero = 0; if (src_b1[i]) s_zero = 0; }
 +
-+        doskutsu_dbg_log(
++        dos_port_dbg_log(
 +            "DV-BANK1-READBACK @flush=%lu: probe_bank=%d match=%d vram_all_zero=%d "
 +            "src_all_zero=%d "
 +            "vram=%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x "
@@ -159,7 +159,7 @@ index e5a46cfa1..48d873201 100644
 +
 +    // Emit + reset the per-flush delta block every 100 flips.
 +    if (_dva_n >= 100) {
-+        doskutsu_dbg_log(
++        dos_port_dbg_log(
 +            "DV-BANK-AUDIT @flush=%lu: switches/flush avg=%lu.%02lu (min=%lu max=%lu) "
 +            "bytes/flush avg=%lu (min=%lu max=%lu) "
 +            "fb_size=%lu win_size=%lu win_gran=%lu multibank=%d [over %d flips] "

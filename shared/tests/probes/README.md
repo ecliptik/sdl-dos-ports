@@ -22,8 +22,8 @@ DJGPP's own runtime only.
 
 `audbuf.c` and `sdlprob1.c` (and a couple of others that reference the same
 symbols) `extern` a small set of instrumentation counters —
-`doskutsu_audio_irq_count`, `doskutsu_audio_irq_wall_us`,
-`doskutsu_audio_sfx_active_count` — that doskutsu's own patched SDL/engine
+`dos_port_audio_irq_count`, `dos_port_audio_irq_wall_us`,
+`dos_port_audio_sfx_active_count` — that doskutsu's own patched SDL/engine
 exports for exactly this purpose. These probes will not link against a
 build that doesn't export those symbols under those names.
 
@@ -37,7 +37,7 @@ Everything else in this directory does not have this dependency.
 ## Naming
 
 Probe-owned environment variables have been renamed from doskutsu's
-originals to a neutral prefix (e.g. `DOSKUTSU_LOG_TAG` -> `DOS_PORT_LOG_TAG`)
+originals to a neutral prefix (e.g. `DOS_PORT_LOG_TAG` -> `DOS_PORT_LOG_TAG`)
 since these are read by the probe's own code and are safe to rename freely.
 Comments referencing `SDL_HINT_DOS_*` hints still use that name because
 they document behavior of doskutsu's *current* (not-yet-renamed) SDL patch

@@ -234,7 +234,7 @@ index 42e9ed907..1ee59c1e5 100644
  // Bumped whenever fb_state is invalidated (DOSVESA_InvalidateCachedFramebuffer)
 @@ -49,6 +50,346 @@
  // needed; plain Uint32 is fine.
- static Uint32 _doskutsu_dvd_generation = 0;
+ static Uint32 _dos_port_dvd_generation = 0;
  
 +// ============================================================================
 +// DOSKUTSU patch 0035 (Phase 9 wave 20) -- flush-path instrumentation.
@@ -258,35 +258,35 @@ index 42e9ed907..1ee59c1e5 100644
 +// Workspace-local; never upstreamed (per project sdl_ai_policy memory).
 +// ============================================================================
 +
-+#define DOSKUTSU_INSTR_BLOCK_SAMPLES 100  // flips per emit-and-reset block
++#define DOS_PORT_INSTR_BLOCK_SAMPLES 100  // flips per emit-and-reset block
 +
 +// Hint cache: -1 unknown, 0 disabled, 1 enabled. Sampled on first
 +// DOSVESA_UpdateWindowFramebuffer call.
 +static int _instr_enabled_cached = -1;
 +
-+// Sample buffers (uint64 nanoseconds). Sized to DOSKUTSU_INSTR_BLOCK_SAMPLES;
++// Sample buffers (uint64 nanoseconds). Sized to DOS_PORT_INSTR_BLOCK_SAMPLES;
 +// counters track how many slots are populated so we don't emit stats over
 +// uninitialized entries (palette_dac in particular is sparsely populated --
 +// the palette only changes once every 16-20 flips on the title screen).
 +//
 +// Slow-path buffers (DOSVESA_UpdateWindowFramebuffer):
-+static Uint64 _instr_pal_samples[DOSKUTSU_INSTR_BLOCK_SAMPLES];
++static Uint64 _instr_pal_samples[DOS_PORT_INSTR_BLOCK_SAMPLES];
 +static int    _instr_pal_n = 0;
-+static Uint64 _instr_dos_samples[DOSKUTSU_INSTR_BLOCK_SAMPLES];
++static Uint64 _instr_dos_samples[DOS_PORT_INSTR_BLOCK_SAMPLES];
 +static int    _instr_dos_n = 0;
-+static Uint64 _instr_tot_samples[DOSKUTSU_INSTR_BLOCK_SAMPLES];
++static Uint64 _instr_tot_samples[DOS_PORT_INSTR_BLOCK_SAMPLES];
 +static int    _instr_tot_n = 0;
 +
 +// Fast-path buffers (SDL_DOSVesaDirect* helpers, patch 0034). The W20A
 +// run config (DIRECT_VESA=1 + FORCE_LFB=1) takes the fast path, so these
 +// are the essential buckets for the wave-20 misc-slice analysis.
-+static Uint64 _instr_dv_present_samples[DOSKUTSU_INSTR_BLOCK_SAMPLES];
++static Uint64 _instr_dv_present_samples[DOS_PORT_INSTR_BLOCK_SAMPLES];
 +static int    _instr_dv_present_n = 0;
-+static Uint64 _instr_dv_palette_samples[DOSKUTSU_INSTR_BLOCK_SAMPLES];
++static Uint64 _instr_dv_palette_samples[DOS_PORT_INSTR_BLOCK_SAMPLES];
 +static int    _instr_dv_palette_n = 0;
-+static Uint64 _instr_dv_get_state_samples[DOSKUTSU_INSTR_BLOCK_SAMPLES];
++static Uint64 _instr_dv_get_state_samples[DOS_PORT_INSTR_BLOCK_SAMPLES];
 +static int    _instr_dv_get_state_n = 0;
-+static Uint64 _instr_dv_banked_flush_samples[DOSKUTSU_INSTR_BLOCK_SAMPLES];
++static Uint64 _instr_dv_banked_flush_samples[DOS_PORT_INSTR_BLOCK_SAMPLES];
 +static int    _instr_dv_banked_flush_n = 0;
 +
 +// Counters within the current 100-flip block (slow path):
@@ -330,7 +330,7 @@ index 42e9ed907..1ee59c1e5 100644
 +
 +// Format a nanosecond duration as "X.XX" milliseconds (two decimals)
 +// into a caller-supplied 16-byte buffer. Returns the buffer for chaining
-+// inside a single doskutsu_dbg_log call. Two decimals = 10 us granularity,
++// inside a single dos_port_dbg_log call. Two decimals = 10 us granularity,
 +// which is plenty for ms-scale phase timings.
 +static const char *_instr_fmt_ms(Uint64 ns, char *buf16)
 +{
@@ -379,7 +379,7 @@ index 42e9ed907..1ee59c1e5 100644
 +    Uint64 p95 = arr[idx_p95];
 +
 +    char b_min[16], b_med[16], b_mean[16], b_p95[16], b_max[16];
-+    doskutsu_dbg_log(
++    dos_port_dbg_log(
 +        "[%s n=%d phase=%s min=%s med=%s mean=%s p95=%s max=%s ms] @flush=%lu",
 +        tag, n, phase,
 +        _instr_fmt_ms(mn,   b_min),
@@ -391,7 +391,7 @@ index 42e9ed907..1ee59c1e5 100644
 +}
 +
 +// Emit + reset one block. Called when _instr_block_events reaches
-+// DOSKUTSU_INSTR_BLOCK_SAMPLES (i.e., after 100 flip anchors fired --
++// DOS_PORT_INSTR_BLOCK_SAMPLES (i.e., after 100 flip anchors fired --
 +// either UWFB returns or SDL_DOSVesaDirectPresentFull calls). Palette
 +// stats suppressed below MIN_PALETTE_SAMPLES (prevents noisy single-
 +// sample reports -- palette typically fires 5-10 times in a 100-flip
@@ -413,7 +413,7 @@ index 42e9ed907..1ee59c1e5 100644
 +                          _instr_pal_samples, _instr_pal_n,
 +                          _instr_total_flips);
 +    } else if (_instr_pal_n > 0) {
-+        doskutsu_dbg_log(
++        dos_port_dbg_log(
 +            "[uwfb-stat n=%d phase=palette_dac low_sample_count "
 +            "(below MIN=%d, stats omitted)] @flush=%lu",
 +            _instr_pal_n, MIN_PALETTE_SAMPLES,
@@ -441,7 +441,7 @@ index 42e9ed907..1ee59c1e5 100644
 +                          _instr_dv_palette_samples, _instr_dv_palette_n,
 +                          _instr_total_flips);
 +    } else if (_instr_dv_palette_n > 0) {
-+        doskutsu_dbg_log(
++        dos_port_dbg_log(
 +            "[direct-vesa-stat n=%d phase=program_palette low_sample_count "
 +            "(below MIN=%d, stats omitted)] @flush=%lu",
 +            _instr_dv_palette_n, MIN_PALETTE_SAMPLES,
@@ -461,7 +461,7 @@ index 42e9ed907..1ee59c1e5 100644
 +    // recovery fires) -- non-zero on a direct-VESA run signals SDL is
 +    // re-populating fb_state mid-run, which the engine handles by
 +    // re-snapshotting on generation bump (see patch 0034 doc-comments).
-+    doskutsu_dbg_log(
++    dos_port_dbg_log(
 +        "[flip-instr-counters slow_path_uwfb_calls=%lu "
 +        "palette_dac_calls=%lu cursor_composite_calls=%lu "
 +        "direct_vesa_present_calls=%lu direct_vesa_palette_calls=%lu "
@@ -481,7 +481,7 @@ index 42e9ed907..1ee59c1e5 100644
 +    // partial-flush callers are rare; including in every block adds
 +    // noise to the common case where it's always 0.
 +    if (_instr_dv_banked_flush_calls_block > 0) {
-+        doskutsu_dbg_log(
++        dos_port_dbg_log(
 +            "[flip-instr-counters direct_vesa_banked_flush_calls=%lu] @flush=%lu",
 +            (unsigned long)_instr_dv_banked_flush_calls_block,
 +            (unsigned long)_instr_total_flips);
@@ -503,9 +503,9 @@ index 42e9ed907..1ee59c1e5 100644
 +}
 +
 +// Add a sample to a phase array, gated on enabled + capacity.
-+#define DOSKUTSU_INSTR_RECORD(arr, n_var, ns_value)                    \
++#define DOS_PORT_INSTR_RECORD(arr, n_var, ns_value)                    \
 +    do {                                                                \
-+        if ((n_var) < DOSKUTSU_INSTR_BLOCK_SAMPLES) {                   \
++        if ((n_var) < DOS_PORT_INSTR_BLOCK_SAMPLES) {                   \
 +            (arr)[(n_var)++] = (ns_value);                              \
 +        }                                                               \
 +    } while (0)
@@ -520,7 +520,7 @@ index 42e9ed907..1ee59c1e5 100644
 +        return;
 +    }
 +    _instr_total_flips++;
-+    if (++_instr_block_events >= DOSKUTSU_INSTR_BLOCK_SAMPLES) {
++    if (++_instr_block_events >= DOS_PORT_INSTR_BLOCK_SAMPLES) {
 +        _instr_emit_block();
 +    }
 +}
@@ -536,7 +536,7 @@ index 42e9ed907..1ee59c1e5 100644
 +        return;
 +    }
 +    const Uint64 t_exit = SDL_GetTicksNS();
-+    DOSKUTSU_INSTR_RECORD(_instr_tot_samples, _instr_tot_n,
++    DOS_PORT_INSTR_RECORD(_instr_tot_samples, _instr_tot_n,
 +                          t_exit - t_entry);
 +    _instr_slow_path_uwfb_calls_block++;
 +    _instr_account_flip_and_maybe_emit();
@@ -555,7 +555,7 @@ index 42e9ed907..1ee59c1e5 100644
 +        return;
 +    }
 +    const Uint64 t_exit = SDL_GetTicksNS();
-+    DOSKUTSU_INSTR_RECORD(arr, *n, t_exit - t_entry);
++    DOS_PORT_INSTR_RECORD(arr, *n, t_exit - t_entry);
 +    (*calls)++;
 +}
 +
@@ -570,7 +570,7 @@ index 42e9ed907..1ee59c1e5 100644
 +        return;
 +    }
 +    const Uint64 t_exit = SDL_GetTicksNS();
-+    DOSKUTSU_INSTR_RECORD(_instr_dv_present_samples, _instr_dv_present_n,
++    DOS_PORT_INSTR_RECORD(_instr_dv_present_samples, _instr_dv_present_n,
 +                          t_exit - t_entry);
 +    _instr_dv_present_calls_block++;
 +    _instr_account_flip_and_maybe_emit();
@@ -612,7 +612,7 @@ index 42e9ed907..1ee59c1e5 100644
 +            _instr_realloc_calls_block++;
 +        }
          bool ok = populate_fb_state_for_direct_fb(device, window->surface);
-         DOSKUTSU_LC_LOG("UpdateWindowFramebuffer: lazy-reinit ok=%d direct_fb=%d "
+         DOS_PORT_LC_LOG("UpdateWindowFramebuffer: lazy-reinit ok=%d direct_fb=%d "
                          "use_dosmemput=%d vram_ptr=%p vram_phys=0x%08lx fb_size=%lu "
 @@ -989,10 +1351,30 @@ bool DOSVESA_UpdateWindowFramebuffer(SDL_VideoDevice *device, SDL_Window *window
              SDL_Palette *pal = window->surface->palette;
@@ -627,7 +627,7 @@ index 42e9ed907..1ee59c1e5 100644
                  ProgramVGADAC(pal);
 +                if (_instr_enabled_cached) {
 +                    const Uint64 _instr_pal_b = SDL_GetTicksNS();
-+                    DOSKUTSU_INSTR_RECORD(_instr_pal_samples, _instr_pal_n,
++                    DOS_PORT_INSTR_RECORD(_instr_pal_samples, _instr_pal_n,
 +                                          _instr_pal_b - _instr_pal_a);
 +                    _instr_pal_calls_block++;
 +                }
@@ -657,7 +657,7 @@ index 42e9ed907..1ee59c1e5 100644
 +        // write cost from the misc slice.
 +        if (_instr_enabled_cached) {
 +            const Uint64 _instr_dos_b = SDL_GetTicksNS();
-+            DOSKUTSU_INSTR_RECORD(_instr_dos_samples, _instr_dos_n,
++            DOS_PORT_INSTR_RECORD(_instr_dos_samples, _instr_dos_n,
 +                                  _instr_dos_b - _instr_dos_a);
 +        }
 +
@@ -714,7 +714,7 @@ index 42e9ed907..1ee59c1e5 100644
              ProgramVGADAC(dac_palette);
 +            if (_instr_enabled_cached) {
 +                const Uint64 _instr_pal_b = SDL_GetTicksNS();
-+                DOSKUTSU_INSTR_RECORD(_instr_pal_samples, _instr_pal_n,
++                DOS_PORT_INSTR_RECORD(_instr_pal_samples, _instr_pal_n,
 +                                      _instr_pal_b - _instr_pal_a);
 +                _instr_pal_calls_block++;
 +            }
@@ -774,7 +774,7 @@ index 42e9ed907..1ee59c1e5 100644
                  ProgramVGADAC(dac_palette);
 +                if (_instr_enabled_cached) {
 +                    const Uint64 _instr_pal_b = SDL_GetTicksNS();
-+                    DOSKUTSU_INSTR_RECORD(_instr_pal_samples, _instr_pal_n,
++                    DOS_PORT_INSTR_RECORD(_instr_pal_samples, _instr_pal_n,
 +                                          _instr_pal_b - _instr_pal_a);
 +                    _instr_pal_calls_block++;
 +                }
@@ -794,7 +794,7 @@ index 42e9ed907..1ee59c1e5 100644
                  ProgramVGADAC(dac_palette);
 +                if (_instr_enabled_cached) {
 +                    const Uint64 _instr_pal_b = SDL_GetTicksNS();
-+                    DOSKUTSU_INSTR_RECORD(_instr_pal_samples, _instr_pal_n,
++                    DOS_PORT_INSTR_RECORD(_instr_pal_samples, _instr_pal_n,
 +                                          _instr_pal_b - _instr_pal_a);
 +                    _instr_pal_calls_block++;
 +                }

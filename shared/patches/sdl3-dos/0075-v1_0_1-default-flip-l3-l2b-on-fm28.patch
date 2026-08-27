@@ -103,7 +103,7 @@ index 2f73af135..1a9617653 100644
 @@ -1672,10 +1679,11 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
          if (hint_set && backend_organya) {
              g_dos_pixtone_irq_mix_active = false;
-             doskutsu_dbg_log("audio: SDL/0071 pixtone IRQ-mix: REQUESTED but "
+             dos_port_dbg_log("audio: SDL/0071 pixtone IRQ-mix: REQUESTED but "
 -                             "Organya backend active; skipping (Lever 3 "
 -                             "requires OPL3/WB/midi-stub backend for clean "
 -                             "SFX-vs-music separation; SDL_HINT_DOS_"
@@ -119,7 +119,7 @@ index 2f73af135..1a9617653 100644
 @@ -1730,7 +1738,8 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
                  const unsigned hr_db = hr_bits * 6u;
                  const unsigned hr_concurrent = 2u << hr_bits; /* 2^(N+1) */
-                 doskutsu_dbg_log("audio: SDL/0071 pixtone IRQ-mix: ENABLED "
+                 dos_port_dbg_log("audio: SDL/0071 pixtone IRQ-mix: ENABLED "
 -                                 "(opt-in via SDL_HINT_DOS_PIXTONE_IRQ_MIX=1; "
 +                                 "(default-ON since v1.0.1; set SDL_HINT_DOS_"
 +                                 "PIXTONE_IRQ_MIX=0 to disable; "
@@ -129,7 +129,7 @@ index 2f73af135..1a9617653 100644
 @@ -1744,9 +1753,9 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
          } else {
              g_dos_pixtone_irq_mix_active = false;
-             doskutsu_dbg_log("audio: SDL/0071 pixtone IRQ-mix: DISABLED "
+             dos_port_dbg_log("audio: SDL/0071 pixtone IRQ-mix: DISABLED "
 -                             "(default; set SDL_HINT_DOS_PIXTONE_IRQ_MIX"
 -                             "=1 to engage; off-path cost is one cached-bool "
 -                             "test per IRQ-5; SDL3_mixer SFX path unchanged)");
@@ -158,7 +158,7 @@ index 2f73af135..1a9617653 100644
          g_dos_midi_baseline_seeded = false;
          if (hint_set) {
              g_dos_midi_isr_tick_active = true;
-             doskutsu_dbg_log("audio: SDL/0072 midi tick from ISR: ENABLED "
+             dos_port_dbg_log("audio: SDL/0072 midi tick from ISR: ENABLED "
 -                             "(opt-in via SDL_HINT_DOS_MIDI_ISR_TICK=1; "
 +                             "(default-ON since v1.0.1; set SDL_HINT_DOS_"
 +                             "MIDI_ISR_TICK=0 to disable; "
@@ -168,7 +168,7 @@ index 2f73af135..1a9617653 100644
 @@ -1778,10 +1795,10 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
          } else {
              g_dos_midi_isr_tick_active = false;
-             doskutsu_dbg_log("audio: SDL/0072 midi tick from ISR: DISABLED "
+             dos_port_dbg_log("audio: SDL/0072 midi tick from ISR: DISABLED "
 -                             "(default; set SDL_HINT_DOS_MIDI_ISR_TICK=1 "
 -                             "to engage; off-path cost is two cached reads + "
 -                             "early branch per IRQ-5; engine main-loop "

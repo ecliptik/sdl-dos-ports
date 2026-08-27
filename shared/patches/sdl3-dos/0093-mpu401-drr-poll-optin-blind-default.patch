@@ -92,7 +92,7 @@ index 2d7a4db71..301e39438 100644
 +    }
 +
      if (!do_probe) {
--        doskutsu_dbg_log("mpu401: direct-port init at port_base=0x%04x "
+-        dos_port_dbg_log("mpu401: direct-port init at port_base=0x%04x "
 -                         "(default since patch 0080; bit-6 DRR polling "
 -                         "before UART entry + every byte write per "
 -                         "WBTEST-006 H20 confirmation; probe path "
@@ -113,7 +113,7 @@ index 2d7a4db71..301e39438 100644
 -           Ready to Receive); the helper above gates this write on it
 -           per DOSMID source (mpu401_uart in MPU401.C). */
 +        if (s_mpu401_drr_poll_enabled) {
-+            doskutsu_dbg_log("mpu401: direct-port init at port_base=0x%04x "
++            dos_port_dbg_log("mpu401: direct-port init at port_base=0x%04x "
 +                             "(DRR poll ON via SDL_HINT_DOS_AUDIO_WB_DRR_POLL=1; "
 +                             "bit-6 DRR polling before UART entry + every byte "
 +                             "write per WBTEST-006 H20. ONLY enable on HW where "
@@ -124,7 +124,7 @@ index 2d7a4db71..301e39438 100644
 +            /* bit-6 DRR poll before UART entry (opt-in path). */
 +            (void)SDL_DOSMpu401WaitDRR(port_base);
 +        } else {
-+            doskutsu_dbg_log("mpu401: blind init at port_base=0x%04x "
++            dos_port_dbg_log("mpu401: blind init at port_base=0x%04x "
 +                             "(DRR poll OFF by default since SDL/0093 -- no MPU "
 +                             "status-register read, cannot stall the ISA bus; "
 +                             "patch-0044 fail-to-silence policy. Set "

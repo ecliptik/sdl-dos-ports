@@ -9,7 +9,7 @@ convention + team-lead 2026-05-12 ACK: slot 0001 is the correct
 first-in-series, since patches/SDL_mixer/ was previously empty.)
 
 Surfaces `mixer->actual_mixed_bytes` as a cross-module volatile global
-`doskutsu_mixer_actual_mixed_bytes` so the SDL3-DOS audio backend can
+`dos_port_mixer_actual_mixed_bytes` so the SDL3-DOS audio backend can
 read it in PlayDevice instead of bytewise-scanning the final_mixbuf.
 Pairs with patches/SDL/0057 (Shape D reader) and SDL/0058 (Shape A
 mechanism histogram). Wave-36 Phase 11 fps lever per
@@ -46,12 +46,12 @@ in SDL3-DOS):
   single-pass linker mode, libSDL3.a is processed FIRST; if
   SDL_mixer's reference to the volatile were extern-only and the
   definition lived in SDL3-DOS (SDL_dos_audio_synth.c alongside
-  doskutsu_audio_irq_count), the linker would not yet know SDL_mixer
+  dos_port_audio_irq_count), the linker would not yet know SDL_mixer
   needs the symbol when processing libSDL3.a, so SDL_dos_audio_synth.o
   might not be pulled in (no other live reference), and SDL_mixer's
   reference would fail to resolve.
 
-  nxengine's existing `doskutsu_audio_irq_count` pattern works because
+  nxengine's existing `dos_port_audio_irq_count` pattern works because
   nxengine is LAST in the link order -- ld scans prior libs to
   resolve nxengine's externs. Cross-vendor-archive references
   (SDL_mixer -> SDL3-DOS) don't have that luxury without `--start-
@@ -85,7 +85,7 @@ Concurrency / atomicity:
   - Therefore: same-thread reader; no cross-thread atomicity question.
     `volatile int` for compiler-fence semantics; aligned-int x86
     loads/stores are atomic by ISA anyway. Same pattern as the
-    existing `doskutsu_audio_irq_count` / `doskutsu_audio_irq_wall_us`
+    existing `dos_port_audio_irq_count` / `dos_port_audio_irq_wall_us`
     volatile exports from SDL3-DOS.
 
 Coordination with SDL3-DOS readers:
@@ -101,7 +101,7 @@ Coordination with SDL3-DOS readers:
 Validation:
   - Compile clean at i486 -O3 (visibility-attribute warnings on
     lines 3311+ pre-exist this patch; unrelated to the new code).
-  - Symbol `_doskutsu_mixer_actual_mixed_bytes` verified in
+  - Symbol `_dos_port_mixer_actual_mixed_bytes` verified in
     libSDL3_mixer.a via `strings | grep` after rebuild.
 
 Cross-reference:
@@ -150,7 +150,7 @@ index 242d6412..21b10e78 100644
 +       linker flags. Placing the definition in SDL_mixer.c (the writer)
 +       and the extern decl in SDL3-DOS (the reader) keeps the link
 +       single-pass clean. nxengine's existing
-+       `doskutsu_audio_irq_count` pattern works because nxengine is
++       `dos_port_audio_irq_count` pattern works because nxengine is
 +       LAST in the link order, so ld searches prior libs to resolve
 +       it; cross-vendor-archive references don't have that luxury.
 +
@@ -167,8 +167,8 @@ index 242d6412..21b10e78 100644
 +       when SDL_HINT_DOS_SILENCE_SHAPE=D (see SDL/0057);
 +       otherwise Shape A bytewise-scan path runs as before, ignoring
 +       this value. */
-+    extern volatile int doskutsu_mixer_actual_mixed_bytes;
-+    doskutsu_mixer_actual_mixed_bytes = mixer->actual_mixed_bytes;
++    extern volatile int dos_port_mixer_actual_mixed_bytes;
++    dos_port_mixer_actual_mixed_bytes = mixer->actual_mixed_bytes;
 +
      SDL_PutAudioStreamData(stream, final_mixbuf, additional_amount);
  }
@@ -184,10 +184,10 @@ index 242d6412..21b10e78 100644
 +   Volatile int chosen (not _Atomic) for DOS DJGPP compatibility +
 +   single-writer (audio thread) single-reader (audio thread) cross-TU
 +   pattern; semantics match the existing
-+   `doskutsu_audio_irq_count`/`doskutsu_audio_irq_wall_us` exports
++   `dos_port_audio_irq_count`/`dos_port_audio_irq_wall_us` exports
 +   from SDL3-DOS (volatile uint32_t with no atomic semantics; x86
 +   aligned-int loads/stores are atomic by ISA). */
-+volatile int doskutsu_mixer_actual_mixed_bytes = 0;
++volatile int dos_port_mixer_actual_mixed_bytes = 0;
 +
 +
  int MIX_Generate(MIX_Mixer *mixer, void *buffer, int buflen)

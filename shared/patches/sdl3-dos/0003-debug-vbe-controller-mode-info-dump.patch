@@ -56,11 +56,11 @@ index 2976caf8c..116872307 100644
 +// to the VBE mode attributes we're given (LFB vs banked, pitch, etc).
 +// Output appended to /sdldbg.log alongside 0002's output. Local-only patch
 +// per workspace policy (memory note "SDL upstream -- local patches only").
-+static FILE *_doskutsu_modes_dbg_log = NULL;
-+static void _doskutsu_modes_dbg_open(void)
++static FILE *_dos_port_modes_dbg_log = NULL;
++static void _dos_port_modes_dbg_open(void)
 +{
-+    if (!_doskutsu_modes_dbg_log) {
-+        _doskutsu_modes_dbg_log = fopen("/sdldbg.log", "ab");
++    if (!_dos_port_modes_dbg_log) {
++        _dos_port_modes_dbg_log = fopen("/sdldbg.log", "ab");
 +    }
 +}
  
@@ -78,9 +78,9 @@ index 2976caf8c..116872307 100644
 +    // Mach64 / M64VBE investigation where flips run 30-50x slower than
 +    // DOSBox-X parity (docs/PHASE8-FINDINGS.md).
 +    if (vesa_info) {
-+        _doskutsu_modes_dbg_open();
-+        if (_doskutsu_modes_dbg_log) {
-+            fprintf(_doskutsu_modes_dbg_log,
++        _dos_port_modes_dbg_open();
++        if (_dos_port_modes_dbg_log) {
++            fprintf(_dos_port_modes_dbg_log,
 +                    "DOSVESA-CTRL: VBE %d.%d  total_vram=%lu_KB  oem_sw_rev=0x%04X\n"
 +                    "DOSVESA-CTRL: oem_string='%s'\n"
 +                    "DOSVESA-CTRL: oem_vendor='%s'  product='%s'  rev='%s'\n"
@@ -95,12 +95,12 @@ index 2976caf8c..116872307 100644
 +                    vesa_info->num_modes);
 +            for (int i = 0; i < vesa_info->num_modes; i++) {
 +                if ((i % 16) == 0) {
-+                    fprintf(_doskutsu_modes_dbg_log, "\n  ");
++                    fprintf(_dos_port_modes_dbg_log, "\n  ");
 +                }
-+                fprintf(_doskutsu_modes_dbg_log, " 0x%04X", vesa_info->mode_list[i]);
++                fprintf(_dos_port_modes_dbg_log, " 0x%04X", vesa_info->mode_list[i]);
 +            }
-+            fprintf(_doskutsu_modes_dbg_log, "\n");
-+            fflush(_doskutsu_modes_dbg_log);
++            fprintf(_dos_port_modes_dbg_log, "\n");
++            fflush(_dos_port_modes_dbg_log);
 +        }
 +    }
 +
@@ -115,9 +115,9 @@ index 2976caf8c..116872307 100644
 +    // mode's full attributes so we can attribute slow flushes / wrong stride
 +    // / banked-vs-LFB to specific BIOS-reported values. Investigation tracker:
 +    // docs/PHASE8-FINDINGS.md "What we have not confirmed" list.
-+    _doskutsu_modes_dbg_open();
-+    if (_doskutsu_modes_dbg_log) {
-+        fprintf(_doskutsu_modes_dbg_log,
++    _dos_port_modes_dbg_open();
++    if (_dos_port_modes_dbg_log) {
++        fprintf(_dos_port_modes_dbg_log,
 +                "DOSVESA-MODESET: id=0x%04X %dx%d %dbpp pitch=%d attr=0x%04X memmodel=%d "
 +                "has_lfb=%d use_lfb=%d banked=%d "
 +                "lfb_addr=0x%08lX win_seg=0x%04X win_size=%uKB win_gran=%uKB win_attr=0x%02X "
@@ -130,7 +130,7 @@ index 2976caf8c..116872307 100644
 +                (unsigned)modedata->win_granularity, modedata->win_a_attributes,
 +                (unsigned long)modedata->win_func_ptr,
 +                (int)SDL_GetHintBoolean(SDL_HINT_DOS_ALLOW_DIRECT_FRAMEBUFFER, false));
-+        fflush(_doskutsu_modes_dbg_log);
++        fflush(_dos_port_modes_dbg_log);
 +    }
 +
      if (use_lfb) {

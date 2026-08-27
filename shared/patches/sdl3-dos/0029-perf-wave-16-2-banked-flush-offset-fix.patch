@@ -127,7 +127,7 @@ index 6d60fc050..85d4e3d28 100644
 +            static int _w162_logged = 0;
 +            if (bank > 0 && _w162_logged == 0) {
 +                _w162_logged = 1;
-+                doskutsu_dbg_log(
++                dos_port_dbg_log(
 +                    "WAVE16-2-BANK1-FIX: bank=%d src_off=%lu dst_off=%lu "
 +                    "bytes=%lu win_base=0x%08lx win_gran=%lu win_size=%lu "
 +                    "(first non-bank-0 dosmemput; defensive offset rewrite "

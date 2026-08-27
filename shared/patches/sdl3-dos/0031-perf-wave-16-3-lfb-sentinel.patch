@@ -206,7 +206,7 @@ index 6c34ad55d..3486258c1 100644
 +                    // here -- the data went somewhere we can't read back.
 +                    SDL_memcpy(readback, dp, 16);
 +                    const int match = (SDL_memcmp(lfb_sentinel_pat, readback, 16) == 0) ? 1 : 0;
-+                    doskutsu_dbg_log(
++                    dos_port_dbg_log(
 +                        "WAVE16-3-LFB-SENTINEL @off=%lu: write_via=lfb_vram_ptr "
 +                        "read_via=lfb_vram_ptr match=%d "
 +                        "wrote=%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x "

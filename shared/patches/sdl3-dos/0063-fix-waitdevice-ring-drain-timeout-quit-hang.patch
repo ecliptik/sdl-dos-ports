@@ -174,7 +174,7 @@ index 4dbc05f54..33a7e7bd7 100644
 +            if (_wd_wait_start_ns == 0) {
 +                _wd_wait_start_ns = _wd_now;
 +            } else if ((_wd_now - _wd_wait_start_ns) >= DOS_AUDIO_WAITDEVICE_TIMEOUT_NS) {
-+                doskutsu_dbg_log("audio: SDL/0063 WaitDevice ring-drain timeout "
++                dos_port_dbg_log("audio: SDL/0063 WaitDevice ring-drain timeout "
 +                                 "(%d ms) -- IRQ-5 wedged; returning to unblock "
 +                                 "audio-thread teardown",
 +                                 (int)(DOS_AUDIO_WAITDEVICE_TIMEOUT_NS / 1000000ULL));
@@ -205,11 +205,11 @@ index 4dbc05f54..33a7e7bd7 100644
 +        g_dos_audio_waitdevice_timeout_disabled =
 +            (wdt_hint && wdt_hint[0] == '0' && wdt_hint[1] == 0);
 +        if (g_dos_audio_waitdevice_timeout_disabled) {
-+            doskutsu_dbg_log("audio: SDL_HINT_DOS_DOS_AUDIO_WAITDEVICE_TIMEOUT=0 "
++            dos_port_dbg_log("audio: SDL_HINT_DOS_DOS_AUDIO_WAITDEVICE_TIMEOUT=0 "
 +                             "(SDL/0063 ring-drain backstop DISABLED; WaitDevice "
 +                             "reverts to pre-0063 unbounded spin)");
 +        } else {
-+            doskutsu_dbg_log("audio: SDL/0063 WaitDevice ring-drain timeout active "
++            dos_port_dbg_log("audio: SDL/0063 WaitDevice ring-drain timeout active "
 +                             "(default; ~1000 ms backstop; quit-to-DOS teardown "
 +                             "deadlock guard + WaitDevice-originated DSP resume)");
 +        }

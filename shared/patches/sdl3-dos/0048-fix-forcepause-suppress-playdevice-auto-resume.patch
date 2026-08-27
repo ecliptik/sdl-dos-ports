@@ -8,7 +8,7 @@ Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
 Iter J IDLEPROB ABORT (2026-05-08): SDL_DOSAudioForcePause() issued but
-doskutsu_audio_irq_count kept incrementing past 200 ms watchdog (last_count=74).
+dos_port_audio_irq_count kept incrementing past 200 ms watchdog (last_count=74).
 DSP cmd 0xD5 was being clobbered by PlayDevice's auto-resume within ~us.
 
 Root cause (full diagnostic in docs/PHASE11-IDLEPAUSE-DIAGNOSTIC.md):

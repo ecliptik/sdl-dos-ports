@@ -719,7 +719,7 @@ index 0f078e230..42e9ed907 100644
 +// using SDL_DOSVesaDirectGetState read this via SDL_DOSVesaDirectGetGeneration
 +// and re-snapshot when it changes. Single-threaded backend -> no atomics
 +// needed; plain Uint32 is fine.
-+static Uint32 _doskutsu_dvd_generation = 0;
++static Uint32 _dos_port_dvd_generation = 0;
 +
  // note that DOS_SURFACE's value is the same string that the dummy driver uses.
  #define DOS_SURFACE "SDL.internal.window.surface"
@@ -733,7 +733,7 @@ index 0f078e230..42e9ed907 100644
 +    // becomes stale and gets re-fetched on its next flip. Wraparound at
 +    // 2^32 is theoretically possible but in practice this is bumped once
 +    // at startup + once at quit, well within Uint32 range.
-+    _doskutsu_dvd_generation++;
++    _dos_port_dvd_generation++;
  }
  
  // Create a system-RAM surface (with a blank palette if INDEX8 and update the VGA DAC).
@@ -746,7 +746,7 @@ index 0f078e230..42e9ed907 100644
 +    // flip. Bumped on the success path only; failure returns above
 +    // leave the generation untouched (caller's previous snapshot is
 +    // still consistent with the not-yet-engaged state).
-+    _doskutsu_dvd_generation++;
++    _dos_port_dvd_generation++;
      return true;
  }
  
@@ -756,7 +756,7 @@ index 0f078e230..42e9ed907 100644
      SDL_ClearProperty(SDL_GetWindowProperties(window), DOS_SURFACE);
 +    // DOSKUTSU patch 0034 (wave 18): mode/window destruction also
 +    // invalidates direct-VESA callers' cached snapshots.
-+    _doskutsu_dvd_generation++;
++    _dos_port_dvd_generation++;
 +}
 +
 +// ============================================================================
@@ -814,7 +814,7 @@ index 0f078e230..42e9ed907 100644
 +
 +Uint32 SDL_DOSVesaDirectGetGeneration(void)
 +{
-+    return _doskutsu_dvd_generation;
++    return _dos_port_dvd_generation;
 +}
 +
 +void SDL_DOSVesaDirectSwitchBank(int bank, int *current_bank, Uint32 win_func_ptr)

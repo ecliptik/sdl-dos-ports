@@ -76,24 +76,24 @@ index 8308eba5d..d3038a609 100644
 +#ifdef SDL_VIDEO_DRIVER_DOSVESA
 +#include <stdio.h>
 +#include <unistd.h>
-+static FILE *_doskutsu_lifecycle_log = NULL;
-+static void _doskutsu_lifecycle_open(void)
++static FILE *_dos_port_lifecycle_log = NULL;
++static void _dos_port_lifecycle_open(void)
 +{
-+    if (!_doskutsu_lifecycle_log) {
-+        _doskutsu_lifecycle_log = fopen("/sdldbg.log", "ab");
++    if (!_dos_port_lifecycle_log) {
++        _dos_port_lifecycle_log = fopen("/sdldbg.log", "ab");
 +    }
 +}
-+#define DOSKUTSU_LIFECYCLE_LOG(...)                                  \
++#define DOS_PORT_LIFECYCLE_LOG(...)                                  \
 +    do {                                                             \
-+        _doskutsu_lifecycle_open();                                  \
-+        if (_doskutsu_lifecycle_log) {                               \
-+            fprintf(_doskutsu_lifecycle_log, "[lifecycle] " __VA_ARGS__); \
-+            fflush(_doskutsu_lifecycle_log);                         \
-+            fsync(fileno(_doskutsu_lifecycle_log));                  \
++        _dos_port_lifecycle_open();                                  \
++        if (_dos_port_lifecycle_log) {                               \
++            fprintf(_dos_port_lifecycle_log, "[lifecycle] " __VA_ARGS__); \
++            fflush(_dos_port_lifecycle_log);                         \
++            fsync(fileno(_dos_port_lifecycle_log));                  \
 +        }                                                            \
 +    } while (0)
 +#else
-+#define DOSKUTSU_LIFECYCLE_LOG(...) ((void)0)
++#define DOS_PORT_LIFECYCLE_LOG(...) ((void)0)
 +#endif
 +
  #include "SDL_clipboard_c.h"
@@ -103,7 +103,7 @@ index 8308eba5d..d3038a609 100644
  {
      CHECK_WINDOW_MAGIC(window, NULL);
  
-+    DOSKUTSU_LIFECYCLE_LOG("GetWindowSurface: window=%p surface_valid=%d existing=%p (will %s)\n",
++    DOS_PORT_LIFECYCLE_LOG("GetWindowSurface: window=%p surface_valid=%d existing=%p (will %s)\n",
 +                           (void *)window, (int)window->surface_valid,
 +                           (void *)window->surface,
 +                           window->surface_valid ? "return cached" : "destroy+recreate");
@@ -114,7 +114,7 @@ index 8308eba5d..d3038a609 100644
              window->surface_valid = true;
              window->surface->internal_flags |= SDL_INTERNAL_SURFACE_DONTFREE;
          }
-+        DOSKUTSU_LIFECYCLE_LOG("GetWindowSurface: window=%p new surface=%p (%dx%d)\n",
++        DOS_PORT_LIFECYCLE_LOG("GetWindowSurface: window=%p new surface=%p (%dx%d)\n",
 +                               (void *)window, (void *)window->surface,
 +                               window->surface ? window->surface->w : 0,
 +                               window->surface ? window->surface->h : 0);
@@ -125,7 +125,7 @@ index 8308eba5d..d3038a609 100644
  
  void SDL_OnWindowResized(SDL_Window *window)
  {
-+    DOSKUTSU_LIFECYCLE_LOG("OnWindowResized: window=%p w=%d h=%d (last_pixel=%dx%d)\n",
++    DOS_PORT_LIFECYCLE_LOG("OnWindowResized: window=%p w=%d h=%d (last_pixel=%dx%d)\n",
 +                           (void *)window, window ? window->w : 0, window ? window->h : 0,
 +                           window ? window->last_pixel_w : 0, window ? window->last_pixel_h : 0);
      SDL_CheckWindowDisplayChanged(window);
@@ -135,7 +135,7 @@ index 8308eba5d..d3038a609 100644
      int pixel_w = 0, pixel_h = 0;
  
      SDL_GetWindowSizeInPixels(window, &pixel_w, &pixel_h);
-+    DOSKUTSU_LIFECYCLE_LOG("CheckWindowPixelSizeChanged: window=%p got %dx%d (last_pixel=%dx%d) -> %s event\n",
++    DOS_PORT_LIFECYCLE_LOG("CheckWindowPixelSizeChanged: window=%p got %dx%d (last_pixel=%dx%d) -> %s event\n",
 +                           (void *)window, pixel_w, pixel_h,
 +                           window ? window->last_pixel_w : 0, window ? window->last_pixel_h : 0,
 +                           (window && (pixel_w != window->last_pixel_w || pixel_h != window->last_pixel_h)) ?
@@ -147,7 +147,7 @@ index 8308eba5d..d3038a609 100644
  
  void SDL_OnWindowPixelSizeChanged(SDL_Window *window)
  {
-+    DOSKUTSU_LIFECYCLE_LOG("OnWindowPixelSizeChanged: window=%p setting surface_valid=false (was %d) "
++    DOS_PORT_LIFECYCLE_LOG("OnWindowPixelSizeChanged: window=%p setting surface_valid=false (was %d) "
 +                           "old surface=%p\n",
 +                           (void *)window, window ? (int)window->surface_valid : -1,
 +                           (void *)(window ? window->surface : NULL));
@@ -166,27 +166,27 @@ index e8bc847b4..649d67696 100644
 +// Lazy-open helper that reuses /sdldbg.log from patch 0002. Lifecycle log
 +// lines are prefixed `[lifecycle]` so they're grep-able alongside SDL_video.c
 +// log lines from the same patch. See docs/PHASE9-15FPS-PLAN.md sec.3 Lever 1.3.
-+static FILE *_doskutsu_lc_log = NULL;
-+static void _doskutsu_lc_open(void)
++static FILE *_dos_port_lc_log = NULL;
++static void _dos_port_lc_open(void)
 +{
-+    if (!_doskutsu_lc_log) {
-+        _doskutsu_lc_log = fopen("/sdldbg.log", "ab");
++    if (!_dos_port_lc_log) {
++        _dos_port_lc_log = fopen("/sdldbg.log", "ab");
 +    }
 +}
-+#define DOSKUTSU_LC_LOG(...)                                                  \
++#define DOS_PORT_LC_LOG(...)                                                  \
 +    do {                                                                      \
-+        _doskutsu_lc_open();                                                  \
-+        if (_doskutsu_lc_log) {                                               \
-+            fprintf(_doskutsu_lc_log, "[lifecycle] " __VA_ARGS__);            \
-+            fflush(_doskutsu_lc_log);                                         \
-+            fsync(fileno(_doskutsu_lc_log));                                  \
++        _dos_port_lc_open();                                                  \
++        if (_dos_port_lc_log) {                                               \
++            fprintf(_dos_port_lc_log, "[lifecycle] " __VA_ARGS__);            \
++            fflush(_dos_port_lc_log);                                         \
++            fsync(fileno(_dos_port_lc_log));                                  \
 +        }                                                                     \
 +    } while (0)
 +
  //  Invalidation (called from SetDisplayMode before freeing DPMI mapping)
  void DOSVESA_InvalidateCachedFramebuffer(void)
  {
-+    DOSKUTSU_LC_LOG("InvalidateCachedFramebuffer: pre-state direct_fb=%d "
++    DOS_PORT_LC_LOG("InvalidateCachedFramebuffer: pre-state direct_fb=%d "
 +                    "vram_ptr=%p surface=%p lfb_surface=%p fb_size=%lu\n",
 +                    (int)fb_state.direct_fb, (void *)fb_state.vram_ptr,
 +                    (void *)fb_state.surface, (void *)fb_state.lfb_surface,
@@ -203,7 +203,7 @@ index e8bc847b4..649d67696 100644
 +    // SDL_zero(fb_state) below will discard it without freeing the surface
 +    // pointer first -- that's the staleness path Lever 1 needs to chase. See
 +    // docs/PHASE9-15FPS-PLAN.md sec.3 Lever 1.3 + Path C.
-+    DOSKUTSU_LC_LOG("CreateWindowFramebuffer: window=%p pre-clear fb_state surface=%p lfb_surface=%p "
++    DOS_PORT_LC_LOG("CreateWindowFramebuffer: window=%p pre-clear fb_state surface=%p lfb_surface=%p "
 +                    "direct_fb=%d vram_ptr=%p fb_size=%lu vram_w=%d vram_h=%d -> SDL_zero next\n",
 +                    (void *)window, (void *)fb_state.surface, (void *)fb_state.lfb_surface,
 +                    (int)fb_state.direct_fb, (void *)fb_state.vram_ptr,
@@ -225,7 +225,7 @@ index e8bc847b4..649d67696 100644
 +        static int lc_calls = 0;
 +        ++lc_calls;
 +        if (lc_calls == 1 || (lc_calls % 100) == 0) {
-+            DOSKUTSU_LC_LOG("UpdateWindowFramebuffer #%d: window=%p direct_fb=%d "
++            DOS_PORT_LC_LOG("UpdateWindowFramebuffer #%d: window=%p direct_fb=%d "
 +                            "vram_ptr=%p surface=%p lfb_surface=%p fb_size=%lu "
 +                            "vram_w=%d vram_h=%d window->surface=%p window->surface_valid=%d\n",
 +                            lc_calls, (void *)window,
@@ -239,8 +239,8 @@ index e8bc847b4..649d67696 100644
 +    }
 +
      // DOSKUTSU diagnostic header (patches/SDL/0002, task #21).
-     _doskutsu_dbg_open();
-     ++_doskutsu_dbg_call_total;
+     _dos_port_dbg_open();
+     ++_dos_port_dbg_call_total;
 -- 
 2.47.3
 

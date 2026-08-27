@@ -321,7 +321,7 @@ index ee69c3c95..418189449 100644
              *pitch = surface->pitch;
 @@ -559,7 +605,7 @@ bool DOSVESA_UpdateWindowFramebuffer(SDL_VideoDevice *device, SDL_Window *window
          if (lc_calls == 1 || (lc_calls % 100) == 0) {
-             DOSKUTSU_LC_LOG("UpdateWindowFramebuffer #%d: window=%p direct_fb=%d "
+             DOS_PORT_LC_LOG("UpdateWindowFramebuffer #%d: window=%p direct_fb=%d "
                              "vram_ptr=%p surface=%p lfb_surface=%p fb_size=%lu "
 -                            "vram_w=%d vram_h=%d window->surface=%p window->surface_valid=%d\n",
 +                            "vram_w=%d vram_h=%d window->surface=%p window->surface_valid=%d",
@@ -365,7 +365,7 @@ index ee69c3c95..418189449 100644
 +        // recreation path. We don't free it (SDL owns it through the
 +        // window's surface property). Just overwrite the pointer.
 +        bool ok = populate_fb_state_for_direct_fb(device, window->surface);
-+        DOSKUTSU_LC_LOG("UpdateWindowFramebuffer: lazy-reinit ok=%d direct_fb=%d "
++        DOS_PORT_LC_LOG("UpdateWindowFramebuffer: lazy-reinit ok=%d direct_fb=%d "
 +                        "use_dosmemput=%d vram_ptr=%p vram_phys=0x%08lx fb_size=%lu "
 +                        "vram_w=%d vram_h=%d (mode_id=0x%X)",
 +                        (int)ok, (int)fb_state.direct_fb, (int)fb_state.use_dosmemput,
@@ -379,8 +379,8 @@ index ee69c3c95..418189449 100644
 +    }
 +
      // DOSKUTSU diagnostic header (patches/SDL/0002, task #21; routed
-     // through shared doskutsu_dbg_log by patch 0009).
-     ++_doskutsu_dbg_call_total;
+     // through shared dos_port_dbg_log by patch 0009).
+     ++_dos_port_dbg_call_total;
 -- 
 2.47.3
 

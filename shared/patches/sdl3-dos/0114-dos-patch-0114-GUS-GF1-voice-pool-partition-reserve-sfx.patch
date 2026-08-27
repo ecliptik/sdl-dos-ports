@@ -133,7 +133,7 @@ index 362bd2ee1..1447fb233 100644
 +    /* gustune-1 #38 REQUIRED banner (always-on) -- anchored format "SDL/0114 GF1
 +       voice pool = " for the smoke two-witness. Reports the music/SFX partition
 +       of the SAME g_gus_voices hardware voices. */
-+    doskutsu_dbg_log("audio: SDL/0114 GF1 voice pool = %d music + %d sfx "
++    dos_port_dbg_log("audio: SDL/0114 GF1 voice pool = %d music + %d sfx "
 +                     "(GUS_SFX_VOICES; total %d)",
 +                     g_gus_voices - g_gus_sfx_reserve, g_gus_sfx_reserve,
 +                     g_gus_voices);

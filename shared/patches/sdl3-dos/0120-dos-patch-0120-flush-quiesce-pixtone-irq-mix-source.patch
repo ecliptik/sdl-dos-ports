@@ -38,7 +38,7 @@ pixtone_quiesced=N.
 Probe (rides along; zero hot-path cost): SDL_DOSAudioIsrRingWrite() exposes the
 software-ring producer byte cursor for the engine's per-cave [loadband-stat]
 line (SDL_HINT_DOS_LOADBAND_STAT, engine-gated). The other two STAT counters
--- doskutsu_audio_irq_count (fires) and g_dos_pixtone_active_count (the screech
+-- dos_port_audio_irq_count (fires) and g_dos_pixtone_active_count (the screech
 discriminator, the path the ring cursor is blind to) -- are already extern
 globals, read directly. No new SDL env var.
 
@@ -72,7 +72,7 @@ index 44ead6553..a5244c91a 100644
 + * to disambiguate the rc3/rc4 PicoGUS-SB cave-transition screech (whether stale
 + * audio is looping because a post-flush RING write, an active Pixtone IRQ-mix
 + * channel, or an IRQ-starved DMA replay). The other two STAT counters are read
-+ * directly from their existing extern globals: doskutsu_audio_irq_count (fires)
++ * directly from their existing extern globals: dos_port_audio_irq_count (fires)
 + * and g_dos_pixtone_active_count (active Pixtone IRQ-mix channels -- THE screech
 + * discriminator, exported in SDL3/SDL_dospixtone.h).
 + */
@@ -135,7 +135,7 @@ index 00e091b9f..f67964209 100644
      const int ring_frames = isr_ring_size / bpf;
 @@ -1104,14 +1125,29 @@ int SDL_DOSAudioFlushRingSilence(void)
      const int total_frames = ring_frames + dma_frames;
-     doskutsu_dbg_log("audio: SDL/0092 FlushRingSilence -- ring+DMA zeroed "
+     dos_port_dbg_log("audio: SDL/0092 FlushRingSilence -- ring+DMA zeroed "
                       "(silence_frames_flushed=%d = ring_frames=%d + "
 -                     "dma_frames=%d; ring_bytes=%d dma_bytes=%d) "
 -                     "pre-cold-render quiesce",
@@ -153,7 +153,7 @@ index 00e091b9f..f67964209 100644
 +   load_stage entry (POST-flush) + exit (gated by SDL_HINT_DOS_LOADBAND_STAT
 +   engine-side) for the per-cave [loadband-stat] line: a delta > 0 across the band
 +   means the mixer wrote new SFX into the RING after the flush. (The OTHER two STAT
-+   counters are read directly: doskutsu_audio_irq_count + g_dos_pixtone_active_count
++   counters are read directly: dos_port_audio_irq_count + g_dos_pixtone_active_count
 +   are already extern -- see SDL_dos_audio_synth.h / the public SDL_dospixtone.h;
 +   g_dos_pixtone_active_count is THE screech discriminator, the path this ring
 +   cursor is blind to.) Plain aligned read of already-maintained state -> zero

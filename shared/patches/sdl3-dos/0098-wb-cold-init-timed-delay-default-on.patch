@@ -66,7 +66,7 @@ index 030965e31..56a880e63 100644
 +               freeze). This makes the default-ON flip wedge-proof regardless of
 +               engine ordering. */
 +            if (SDL_DOSAudioSB_IsInitialized()) {
-+                doskutsu_dbg_log("mpu401: cold-init DEFAULT-ON but SB16 already "
++                dos_port_dbg_log("mpu401: cold-init DEFAULT-ON but SB16 already "
 +                                 "open at port_base=0x%04x -- engine reorder "
 +                                 "(0220/T68) did NOT arm WB before the SB16 open; "
 +                                 "DECLINING to avoid the hot-bus wedge (no 0x331 "
@@ -98,9 +98,9 @@ index 030965e31..56a880e63 100644
                  }
              }
  
--            doskutsu_dbg_log("mpu401: cold-init at port_base=0x%04x "
+-            dos_port_dbg_log("mpu401: cold-init at port_base=0x%04x "
 -                             "(SDL_HINT_DOS_AUDIO_WB_COLD_INIT=1; MPU UART "
-+            doskutsu_dbg_log("mpu401: cold-init DEFAULT-ON at port_base=0x%04x "
++            dos_port_dbg_log("mpu401: cold-init DEFAULT-ON at port_base=0x%04x "
 +                             "(SDL/0098 ship-flip; killswitch "
 +                             "SDL_HINT_DOS_AUDIO_WB_COLD_INIT=0; MPU UART "
                               "entered on the COLD bus BEFORE the SB16 open -- "

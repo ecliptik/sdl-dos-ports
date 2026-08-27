@@ -45,7 +45,7 @@ Patch contents:
    - Iter cap = 10000 (~10 ms on P54C, ~40x headroom above the
      observed iters_max=238 from WBTEST-006).
    - Returns true on DRR-clear-in-time, false on cap-hit.
-   - One-shot cap-warn via doskutsu_dbg_log naming the killswitch
+   - One-shot cap-warn via dos_port_dbg_log naming the killswitch
      path (SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=0); avoids log
      spam if a chip variant has stuck-high DRR.
    - Callers fail-soft (write the byte regardless of cap-hit) so
@@ -216,21 +216,21 @@ index 066f78b2b..587aaf8af 100644
 +    if (use_dsp_fallback) {
 +        /* === Opt-in fallback: DSP-mediated MIDI (legacy patch-0047 default) === */
          if (!SDL_DOSAudioSB_IsInitialized()) {
--            doskutsu_dbg_log("mpu401: DSP-mediated init aborted -- SB16 backend "
+-            dos_port_dbg_log("mpu401: DSP-mediated init aborted -- SB16 backend "
 -                             "not initialized (engine init order bug). Engine "
 -                             "must SDL_AudioBackend_Init before calling "
 -                             "SDL_DOSMpu401Init.");
-+            doskutsu_dbg_log("mpu401: DSP-mediated fallback init aborted -- "
++            dos_port_dbg_log("mpu401: DSP-mediated fallback init aborted -- "
 +                             "SB16 backend not initialized (engine init order "
 +                             "bug). Engine must SDL_AudioBackend_Init before "
 +                             "calling SDL_DOSMpu401Init.");
              return false;
          }
--        doskutsu_dbg_log("mpu401: DSP-mediated init at port_base=0x%04x "
+-        dos_port_dbg_log("mpu401: DSP-mediated init at port_base=0x%04x "
 -                         "(default since patch 0047; DSP cmd 0x34 UART entry; "
 -                         "set SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=1 to use "
 -                         "direct-port path instead)",
-+        doskutsu_dbg_log("mpu401: DSP-mediated fallback init at port_base=0x%04x "
++        dos_port_dbg_log("mpu401: DSP-mediated fallback init at port_base=0x%04x "
 +                         "(opt-in via SDL_HINT_DOS_AUDIO_WB_DIRECT_PORT=0; "
 +                         "default since patch 0080 is direct-port + bit-6 DRR "
 +                         "polling per WBTEST-006 H20 confirmation; DSP cmd 0x34 "
@@ -281,7 +281,7 @@ index 066f78b2b..587aaf8af 100644
 +        }
 +    }
 +    if (!s_mpu401_drr_cap_warned) {
-+        doskutsu_dbg_log("mpu401: DRR poll cap hit at port_base=0x%04x "
++        dos_port_dbg_log("mpu401: DRR poll cap hit at port_base=0x%04x "
 +                         "(bit 6 stuck high after 10000 iter ~= 10 ms; "
 +                         "chip variant may have stuck DRR; fail-soft "
 +                         "blind write follows -- direct-port path may be "
@@ -301,11 +301,11 @@ index 066f78b2b..587aaf8af 100644
      const bool do_probe = (probe_env && probe_env[0] == '1' && probe_env[1] == 0);
  
      if (!do_probe) {
--        doskutsu_dbg_log("mpu401: blind init at port_base=0x%04x "
+-        dos_port_dbg_log("mpu401: blind init at port_base=0x%04x "
 -                         "(probe disabled -- patch 0044 default; set "
 -                         "SDL_HINT_DOS_AUDIO_PROBE_MPU401=1 to enable "
 -                         "probe path with LOCKUP RISK on real Vibra16S+S2)",
-+        doskutsu_dbg_log("mpu401: direct-port init at port_base=0x%04x "
++        dos_port_dbg_log("mpu401: direct-port init at port_base=0x%04x "
 +                         "(default since patch 0080; bit-6 DRR polling "
 +                         "before UART entry + every byte write per "
 +                         "WBTEST-006 H20 confirmation; probe path "

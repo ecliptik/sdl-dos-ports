@@ -55,7 +55,7 @@
  * Probe scope (per team-lead brief, joint with sdl-engine):
  *
  *   Symbol contract from SDL/0037+0038:
- *     - extern volatile uint32_t doskutsu_audio_irq_count
+ *     - extern volatile uint32_t dos_port_audio_irq_count
  *     - SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES is upstream-honored hint
  *
  *   Per-buffer-size sweep:
@@ -65,7 +65,7 @@
  *     3. SDL_OpenAudioDeviceStream(default playback, 11025 mono S16)
  *     4. SDL_ResumeAudioStreamDevice
  *     5. SDL_Delay(200) — let backend stabilize (IRQ rate settles)
- *     6. snapshot doskutsu_audio_irq_count, spin uclock 1.0 sec, snapshot
+ *     6. snapshot dos_port_audio_irq_count, spin uclock 1.0 sec, snapshot
  *        again, compute delta = IRQs/sec
  *     7. SDL_DestroyAudioStream + SDL_Quit (so next sweep's SetHint takes)
  *
@@ -99,9 +99,9 @@
  *   - irq_count: monotonic count of IRQ-5 fires
  *   - irq_wall_us: cumulative IRQ-5 ISR wall-clock in µs (PIT/RDTSC)
  *   - sfx_active_count: increments only when ring had non-silence (sanity) */
-extern volatile uint32_t doskutsu_audio_irq_count;
-extern volatile uint32_t doskutsu_audio_irq_wall_us;
-extern volatile uint32_t doskutsu_audio_sfx_active_count;
+extern volatile uint32_t dos_port_audio_irq_count;
+extern volatile uint32_t dos_port_audio_irq_wall_us;
+extern volatile uint32_t dos_port_audio_sfx_active_count;
 
 /* ============================================================ */
 /* Logging                                                       */
@@ -225,18 +225,18 @@ static void run_sweep(int buffer_size, sweep_result_t *out)
     SDL_Delay(200);
 
     /* Measure delta over a 1-second window. */
-    out->irq_count_pre = doskutsu_audio_irq_count;
-    out->irq_us_pre    = doskutsu_audio_irq_wall_us;
-    out->sfx_pre       = doskutsu_audio_sfx_active_count;
+    out->irq_count_pre = dos_port_audio_irq_count;
+    out->irq_us_pre    = dos_port_audio_irq_wall_us;
+    out->sfx_pre       = dos_port_audio_sfx_active_count;
     double t0 = now_secs();
     while ((now_secs() - t0) < 1.0) {
         /* Tight uclock spin — no SDL_Delay here because we want the
          * window length to match wall-clock as closely as possible. */
     }
     double t1 = now_secs();
-    out->irq_count_post = doskutsu_audio_irq_count;
-    out->irq_us_post    = doskutsu_audio_irq_wall_us;
-    out->sfx_post       = doskutsu_audio_sfx_active_count;
+    out->irq_count_post = dos_port_audio_irq_count;
+    out->irq_us_post    = dos_port_audio_irq_wall_us;
+    out->sfx_post       = dos_port_audio_sfx_active_count;
     out->measure_secs = t1 - t0;
 
     uint32_t irq_delta = out->irq_count_post - out->irq_count_pre;
@@ -277,9 +277,9 @@ int main(int argc, char **argv)
     plog("slot 0116 verification.");
     plog("");
     plog("Symbol contract (SDL/0037+0038+0039):");
-    plog("  extern volatile uint32_t doskutsu_audio_irq_count       (IRQ-5 fires)");
-    plog("  extern volatile uint32_t doskutsu_audio_irq_wall_us     (cumulative ISR cost)");
-    plog("  extern volatile uint32_t doskutsu_audio_sfx_active_count (sanity-check)");
+    plog("  extern volatile uint32_t dos_port_audio_irq_count       (IRQ-5 fires)");
+    plog("  extern volatile uint32_t dos_port_audio_irq_wall_us     (cumulative ISR cost)");
+    plog("  extern volatile uint32_t dos_port_audio_sfx_active_count (sanity-check)");
     plog("  SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES                     (upstream hint)");
     plog("");
     plog("ISR-branch caveat (sdl-engine 2026-05-07): probe runs the IRQ-5 ISR's");

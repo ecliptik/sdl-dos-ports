@@ -10,9 +10,9 @@ Content-Transfer-Encoding: 8bit
 Companion to patch 0037 (audio synth helpers + public-API state).
 This patch wires the SB16 audio backend's IRQ-5 path to:
   1. Bracket each IRQ entry/exit with BIOS-tick timing for the
-     `doskutsu_audio_irq_wall_us` cumulative wall-clock counter.
-  2. Increment `doskutsu_audio_irq_count` per IRQ.
-  3. Increment `doskutsu_audio_sfx_active_count` when ring contains
+     `dos_port_audio_irq_wall_us` cumulative wall-clock counter.
+  2. Increment `dos_port_audio_irq_count` per IRQ.
+  3. Increment `dos_port_audio_sfx_active_count` when ring contains
      non-silence content (semantically: SFX-active under WB/OPL3
      backend; degenerates to ~ irq_count under Organya per
      docs/PHASE10-CONTRACT.md cross-PLAY ablation framing).
@@ -38,7 +38,7 @@ contract requires.
 
 ISR variables locked alongside existing isr_* state at OpenDevice:
   isr_consecutive_silent_irqs, isr_dsp_paused, idle-pause flags +
-  callback pointer, doskutsu_audio_* counters.
+  callback pointer, dos_port_audio_* counters.
 
 Per CLAUDE.md threading-zero invariant: no threads. Pause/resume
 requests are flag-driven; serviced synchronously from WaitDevice
@@ -182,9 +182,9 @@ index 327260a8b..7f44cbfc6 100644
 +    /* DOSKUTSU patch (Phase 10): bump per-block extern counters. Single
 +       32-bit volatile increment is atomic on x86 per kbd-counter
 +       precedent (patches 0023+0025); engine reads via extern. */
-+    doskutsu_audio_irq_count++;
++    dos_port_audio_irq_count++;
 +    if (ring_had_audio) {
-+        doskutsu_audio_sfx_active_count++;
++        dos_port_audio_sfx_active_count++;
 +    }
 +
 +    /* DOSKUTSU patch (Phase 10): wall-clock accumulate via BIOS tick
@@ -193,7 +193,7 @@ index 327260a8b..7f44cbfc6 100644
 +    const uint32_t exit_tick = (uint32_t)_farpeekl(_dos_ds, 0x46Cul);
 +    const uint32_t delta_ticks = exit_tick - entry_tick; /* modular */
 +    if (delta_ticks > 0) {
-+        doskutsu_audio_irq_wall_us += delta_ticks * 54925u;
++        dos_port_audio_irq_wall_us += delta_ticks * 54925u;
      }
  }
  static void SoundBlasterIRQHandler_End(void) {}
@@ -280,9 +280,9 @@ index 327260a8b..7f44cbfc6 100644
 +    DOS_LockVariable(g_dos_audio_idle_pause_enabled);
 +    DOS_LockVariable(g_dos_audio_pause_request);
 +    DOS_LockVariable(g_dos_audio_resume_request);
-+    DOS_LockVariable(doskutsu_audio_irq_count);
-+    DOS_LockVariable(doskutsu_audio_irq_wall_us);
-+    DOS_LockVariable(doskutsu_audio_sfx_active_count);
++    DOS_LockVariable(dos_port_audio_irq_count);
++    DOS_LockVariable(dos_port_audio_irq_wall_us);
++    DOS_LockVariable(dos_port_audio_sfx_active_count);
  
      DOS_HookInterrupt(soundblaster_irq, SoundBlasterIRQHandler, &hidden->interrupt_hook);
  

@@ -130,7 +130,7 @@ index 56a880e63..e3431f9f3 100644
 -               freeze). This makes the default-ON flip wedge-proof regardless of
 -               engine ordering. */
 -            if (SDL_DOSAudioSB_IsInitialized()) {
--                doskutsu_dbg_log("mpu401: cold-init DEFAULT-ON but SB16 already "
+-                dos_port_dbg_log("mpu401: cold-init DEFAULT-ON but SB16 already "
 -                                 "open at port_base=0x%04x -- engine reorder "
 -                                 "(0220/T68) did NOT arm WB before the SB16 open; "
 -                                 "DECLINING to avoid the hot-bus wedge (no 0x331 "
@@ -158,7 +158,7 @@ index 56a880e63..e3431f9f3 100644
 +               so DECLINE -> fall back to organya (fail-to-silence, never freeze).
 +               Wedge-proof AND lets the by-default + manual cold-init through. */
 +            if (SDL_DOSAudioSB_IsDeviceHot()) {
-+                doskutsu_dbg_log("mpu401: cold-init but SB16 bus is HOT "
++                dos_port_dbg_log("mpu401: cold-init but SB16 bus is HOT "
 +                                 "(IRQ-5 hooked + autoinit DMA running) at "
 +                                 "port_base=0x%04x -- WB armed AFTER the SB16 "
 +                                 "open (engine/SETUP reorder absent or late); "

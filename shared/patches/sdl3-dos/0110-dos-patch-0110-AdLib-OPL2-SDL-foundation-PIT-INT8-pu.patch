@@ -304,7 +304,7 @@ index 9dc29b6c3..285180bb0 100644
 +#include <SDL3/SDL_dosopltimer.h>   /* SDL/0110: AdLib PIT/IRQ-0 OPL music pump API */
  
  /* DOSKUTSU patch (Phase 10 patch 0041): route Phase 10 init banners
-    through doskutsu_dbg_log so they reach <TAG>SDL.LOG (sdldbg.log).
+    through dos_port_dbg_log so they reach <TAG>SDL.LOG (sdldbg.log).
 @@ -1174,6 +1176,257 @@ void SDL_DOSOpl3Shutdown(void)
      SDL_DOSOpl3WriteRegister(0x105, 0x00);
  }
@@ -343,7 +343,7 @@ index 9dc29b6c3..285180bb0 100644
 +    for (int v = 0; v < 9; v++) {
 +        SDL_DOSOpl3VoiceNoteOff(v);
 +    }
-+    doskutsu_dbg_log("audio: SDL/0110 OPL2 chip init (9 voices, single bank "
++    dos_port_dbg_log("audio: SDL/0110 OPL2 chip init (9 voices, single bank "
 +                     "0x388/0x389; no OPL3 0x105/0x104; WSE on; 0xBD cleared)");
 +}
 +
@@ -363,7 +363,7 @@ index 9dc29b6c3..285180bb0 100644
 +        SDL_DOSOpl3VoiceNoteOff(v);
 +    }
 +    SDL_DOSOpl3WriteRegister(0xBD, 0x00);
-+    doskutsu_dbg_log("audio: SDL/0110 OPL2 chip shutdown (9-voice TL=0x3F "
++    dos_port_dbg_log("audio: SDL/0110 OPL2 chip shutdown (9-voice TL=0x3F "
 +                     "sweep + KEY-OFF + 0xBD clear; OPL2 mode left intact)");
 +}
 +
@@ -451,18 +451,18 @@ index 9dc29b6c3..285180bb0 100644
 +bool SDL_DOSOplTimerPumpStart(int hz)
 +{
 +    if (s_opl_pump_active) {
-+        doskutsu_dbg_log("audio: SDL/0110 OPL timer pump: already active -- refused");
++        dos_port_dbg_log("audio: SDL/0110 OPL timer pump: already active -- refused");
 +        return false;
 +    }
 +    /* SINGLE OWNER of PIT ch0: never coexist with the SB IRQ-5 clock. */
 +    if (SDL_DOSAudioSB_IsDeviceHot()) {
-+        doskutsu_dbg_log("audio: SDL/0110 OPL timer pump: REFUSED -- SB device is "
++        dos_port_dbg_log("audio: SDL/0110 OPL timer pump: REFUSED -- SB device is "
 +                         "hot (SB IRQ-5 owns the MIDI clock; the PIT pump is the "
 +                         "no-SB AdLib path only)");
 +        return false;
 +    }
 +    if (hz < DOS_OPL_PUMP_HZ_MIN || hz > DOS_OPL_PUMP_HZ_MAX) {
-+        doskutsu_dbg_log("audio: SDL/0110 OPL timer pump: hz=%d out of range "
++        dos_port_dbg_log("audio: SDL/0110 OPL timer pump: hz=%d out of range "
 +                         "[%d,%d] -- refused", hz, DOS_OPL_PUMP_HZ_MIN,
 +                         DOS_OPL_PUMP_HZ_MAX);
 +        return false;
@@ -514,7 +514,7 @@ index 9dc29b6c3..285180bb0 100644
 +    s_opl_pump_active = true;
 +    DOS_EnableInterrupts();
 +
-+    doskutsu_dbg_log("audio: SDL/0110 OPL timer pump STARTED hz=%d div=%u "
++    dos_port_dbg_log("audio: SDL/0110 OPL timer pump STARTED hz=%d div=%u "
 +                     "us_per_tick=%u (PIT ch0 reprogrammed; BIOS INT8 chained "
 +                     "~every %u fast ticks -> 18.2065 Hz; tick_cb=%s)",
 +                     hz, (unsigned)div, (unsigned)s_us_per_tick,
@@ -542,7 +542,7 @@ index 9dc29b6c3..285180bb0 100644
 +       disable_interrupt=false: IRQ-0 (the system timer) must NEVER be masked. */
 +    DOS_UnhookInterrupt(&s_opl_pit_hook, false);
 +
-+    doskutsu_dbg_log("audio: SDL/0110 OPL timer pump STOPPED (PIT ch0 restored "
++    dos_port_dbg_log("audio: SDL/0110 OPL timer pump STOPPED (PIT ch0 restored "
 +                     "to 18.2065 Hz; IRQ-0 unhooked; timer left unmasked)");
 +}
 +

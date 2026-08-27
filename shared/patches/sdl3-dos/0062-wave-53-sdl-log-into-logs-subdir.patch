@@ -10,9 +10,9 @@ engine log moves into a "LOGS" subdirectory of the game directory
 log there too so a real-HW iter's two logs co-locate in one directory
 the operator can scp as a unit.
 
-doskutsu_dbg_resolve_path() now:
+dos_port_dbg_resolve_path() now:
   - composes a basename ("sdldbg.log" default, or "<TAG>SDL.LOG" when
-    DOSKUTSU_LOG_TAG is set);
+    DOS_PORT_LOG_TAG is set);
   - mkdir()s "/DOSKUTSU/LOGS" at runtime (DJGPP accepts '/'); on success
     or EEXIST the log goes to /DOSKUTSU/LOGS/<basename>;
   - on any other mkdir() failure (read-only volume, etc.) falls back to
@@ -21,7 +21,7 @@ doskutsu_dbg_resolve_path() now:
 The mkdir is defensive and independent of the engine-side mkdir -- no
 ordering dependency between the two backends.
 
-Finding-#5 tidy (SESSION-SNAPSHOT-2026-05-15): DOSKUTSU_LOG_TAG is now
+Finding-#5 tidy (SESSION-SNAPSHOT-2026-05-15): DOS_PORT_LOG_TAG is now
 capped at 5 chars when composing "<TAG>SDL.LOG", so the basename
 "<TAG>SDL" is deterministically inside DOS 8.3. Previously an over-long
 tag was silently truncated by the filesystem, which could collide the
@@ -53,7 +53,7 @@ index 26e38484a..3944c5cf4 100644
  static char g_dbg_log_path[64];
  
 -// DOSKUTSU patch (Phase 9 wave 13.6.1): the log-file path is overridable via
--// the DOSKUTSU_LOG_TAG env var so a multi-config bisect can write each run's
+-// the DOS_PORT_LOG_TAG env var so a multi-config bisect can write each run's
 -// SDL trace to a unique filename without renames between runs. The log lives
 -// in the doskutsu game directory alongside DEBUG.LOG (rather than at the CF
 -// root) -- single dir to scp from after a real-HW iter. When unset
@@ -69,7 +69,7 @@ index 26e38484a..3944c5cf4 100644
 +// "already exists" the path falls back to the un-prefixed "/DOSKUTSU/"
 +// location so logging never dies on an unwritable volume.
 +//
-+// The path is still overridable via the DOSKUTSU_LOG_TAG env var so a
++// The path is still overridable via the DOS_PORT_LOG_TAG env var so a
 +// multi-config bisect can write each run's SDL trace to a unique
 +// filename without renames. When unset (empty/null), the default
 +// basename "sdldbg.log" is used; when set to e.g. "R1", the basename
@@ -79,10 +79,10 @@ index 26e38484a..3944c5cf4 100644
 +// filesystem, which could collide the SDL log onto the engine's
 +// "<TAG>.LOG" basename (SESSION-SNAPSHOT-2026-05-15 finding #5). The
 +// "SDL" infix keeps the SDL and engine logs distinct inside LOGS/.
- static const char *doskutsu_dbg_resolve_path(void)
+ static const char *dos_port_dbg_resolve_path(void)
  {
 -    if (g_dbg_log_path[0] == '\0') {
--        const char *tag = SDL_getenv("DOSKUTSU_LOG_TAG");
+-        const char *tag = SDL_getenv("DOS_PORT_LOG_TAG");
 -        if (tag && tag[0] != '\0') {
 -            SDL_snprintf(g_dbg_log_path, sizeof(g_dbg_log_path),
 -                         "/DOSKUTSU/%sSDL.LOG", tag);
@@ -94,11 +94,11 @@ index 26e38484a..3944c5cf4 100644
 +        return g_dbg_log_path;
 +    }
 +
-+    // Compose the per-run basename: "<TAG>SDL.LOG" when DOSKUTSU_LOG_TAG
++    // Compose the per-run basename: "<TAG>SDL.LOG" when DOS_PORT_LOG_TAG
 +    // is set (tag capped at 5 chars so "<TAG>SDL" fits DOS 8.3), else
 +    // the default "sdldbg.log".
 +    char log_basename[16];
-+    const char *tag = SDL_getenv("DOSKUTSU_LOG_TAG");
++    const char *tag = SDL_getenv("DOS_PORT_LOG_TAG");
 +    if (tag && tag[0] != '\0') {
 +        char shorttag[6]; // 5 tag chars + NUL; SDL_strlcpy truncates to fit
 +        SDL_strlcpy(shorttag, tag, sizeof(shorttag));

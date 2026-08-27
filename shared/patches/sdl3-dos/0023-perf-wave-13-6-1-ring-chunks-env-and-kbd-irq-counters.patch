@@ -23,11 +23,11 @@ This patch makes wave 13.6 bisectable in a single CF-card swap:
    strings "4", "8", "16" -> 16. Cached on first OpenDevice call so
    re-entry never re-reads the env. resolve_ring_chunks() also exports
    the resolved value to a linkage-visible int
-   doskutsu_audio_ring_chunks_active that the engine's phase-timing log
+   dos_port_audio_ring_chunks_active that the engine's phase-timing log
    reads -- single source of truth, avoids engine-side parser drift.
 
-2. IRQ-delivery counters doskutsu_kbd_irq_count and
-   doskutsu_kbd_drain_count (volatile uint32_t, DOS_LockVariable'd)
+2. IRQ-delivery counters dos_port_kbd_irq_count and
+   dos_port_kbd_drain_count (volatile uint32_t, DOS_LockVariable'd)
    bumped from KeyboardIRQHandler and DOSVESA_PumpEvents drain loop
    respectively. Engine's phase-timing log block reads both via extern
    declarations. Locked with DOS_LockVariable since they're read across
@@ -91,13 +91,13 @@ index eb3e50b2c..327260a8b 100644
 +// Default (unset / unrecognized) = 16 to match wave 13.6 behaviour
 +// when no env vars are set.
 +//
-+// EXPORTED: doskutsu_audio_ring_chunks_active is read by the engine's
++// EXPORTED: dos_port_audio_ring_chunks_active is read by the engine's
 +// phase-timing log block (Renderer.cpp). Single source of truth.
 +
-+/* doskutsu_audio_ring_chunks_active: linkage-visible to engine. Set on
++/* dos_port_audio_ring_chunks_active: linkage-visible to engine. Set on
 +   the first call to resolve_ring_chunks(). Reads default to 16 if the
 +   audio device has not been opened yet. */
-+int doskutsu_audio_ring_chunks_active = 16;
++int dos_port_audio_ring_chunks_active = 16;
 +
 +static int resolve_ring_chunks(void)
 +{
@@ -116,7 +116,7 @@ index eb3e50b2c..327260a8b 100644
 +            /* else: keep default 16 */
 +        }
 +        cached = v;
-+        doskutsu_audio_ring_chunks_active = v;
++        dos_port_audio_ring_chunks_active = v;
 +    }
 +    return cached;
 +}
@@ -177,8 +177,8 @@ index 22906c6b6..912da585b 100644
 +   main thread BUT torn-read from IRQ context isn't impossible
 +   (engine thread reading via extern, IRQ firing) -- the lock costs
 +   nothing once and avoids reasoning about atomicity. Lock both. */
-+volatile uint32_t doskutsu_kbd_irq_count = 0;
-+volatile uint32_t doskutsu_kbd_drain_count = 0;
++volatile uint32_t dos_port_kbd_irq_count = 0;
++volatile uint32_t dos_port_kbd_drain_count = 0;
 +
  void DOSVESA_PumpEvents(SDL_VideoDevice *device)
  {
@@ -189,7 +189,7 @@ index 22906c6b6..912da585b 100644
          keyevents_tail = (keyevents_tail + 1) & (SDL_arraysize(keyevents_ringbuffer) - 1);
 +        /* DOSKUTSU patch (Phase 9 wave 13.6.1): drain-rate counter
 +           for keyboard-regression bisect. */
-+        doskutsu_kbd_drain_count++;
++        dos_port_kbd_drain_count++;
  
          // Handle remaining bytes of E1 Pause key sequence (E1 1D 45 E1 9D C5).
          if (pause_sequence_remaining > 0) {
@@ -199,7 +199,7 @@ index 22906c6b6..912da585b 100644
  {
 +    /* DOSKUTSU patch (Phase 9 wave 13.6.1): IRQ-fire counter for
 +       keyboard-regression bisect. Read by engine's phase-timing log. */
-+    doskutsu_kbd_irq_count++;
++    dos_port_kbd_irq_count++;
      keyevents_ringbuffer[keyevents_head] = inportb(KBD_DATA_PORT);
      keyevents_head = (keyevents_head + 1) & (SDL_arraysize(keyevents_ringbuffer) - 1);
      DOS_EndOfInterrupt(1);
@@ -208,8 +208,8 @@ index 22906c6b6..912da585b 100644
      DOS_LockVariable(keyevents_head);
      DOS_LockVariable(keyevents_tail);
 +    /* DOSKUTSU patch (Phase 9 wave 13.6.1): IRQ-bisect counters. */
-+    DOS_LockVariable(doskutsu_kbd_irq_count);
-+    DOS_LockVariable(doskutsu_kbd_drain_count);
++    DOS_LockVariable(dos_port_kbd_irq_count);
++    DOS_LockVariable(dos_port_kbd_drain_count);
  
      DOS_HookInterrupt(1, KeyboardIRQHandler, &data->keyboard_interrupt_hook);
  }

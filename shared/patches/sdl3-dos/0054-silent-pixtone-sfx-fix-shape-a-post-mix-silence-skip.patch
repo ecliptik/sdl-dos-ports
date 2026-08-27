@@ -139,7 +139,7 @@ index 4a5dc2b05..44eedd70d 100644
 @@ -506,12 +506,16 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
              (gate_hint && gate_hint[0] == '0' && gate_hint[1] == 0);
          if (g_dos_audio_quiescence_gate_disabled) {
-             doskutsu_dbg_log("audio: SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE=0 "
+             dos_port_dbg_log("audio: SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE=0 "
 -                             "(SDL/0050 quiescence gate DISABLED; pre-0050 always-"
 -                             "fill-ring behavior; auto-engage idle-pause cannot fire)");
 +                             "(SDL/0050-derived behavior DISABLED; under SDL/0054 "
@@ -147,10 +147,10 @@ index 4a5dc2b05..44eedd70d 100644
 +                             "skip-ring-write path; pre-0050 always-fill-ring "
 +                             "behavior; auto-engage idle-pause cannot fire)");
          } else {
--            doskutsu_dbg_log("audio: SDL/0050 quiescence gate active (default); "
+-            dos_port_dbg_log("audio: SDL/0050 quiescence gate active (default); "
 -                             "GetDeviceBuf returns *buffer_size=0 when no streams "
 -                             "have data -> auto-engage path can fire on silent gameplay");
-+            doskutsu_dbg_log("audio: SDL/0054 Shape A silence-detect active "
++            dos_port_dbg_log("audio: SDL/0054 Shape A silence-detect active "
 +                             "(default); PlayDevice scans mix-result for all-"
 +                             "silence + skips ring write when silent -> ring drains "
 +                             "via IRQ -> auto-engage path can fire on silent "

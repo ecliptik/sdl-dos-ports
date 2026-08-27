@@ -175,12 +175,12 @@ index c0ec89709..6d60fc050 100644
 +                    SwitchBank(sb_bank, &sb_bank_dummy, fb_state.win_func_ptr);
 +                    dosmemget(fb_state.win_base, 16, sentinel_r);
 +                    int match = (SDL_memcmp(sentinel_w, sentinel_r, 16) == 0) ? 1 : 0;
-+                    doskutsu_dbg_log(
++                    dos_port_dbg_log(
 +                        "WAVE16-1-SENTINEL @flush=%d: write_via=switchbank-bx0 "
 +                        "read_via=switchbank-bx0 match=%d "
 +                        "wrote=%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x "
 +                        "readback=%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-+                        _doskutsu_dbg_call_total, match,
++                        _dos_port_dbg_call_total, match,
 +                        sentinel_w[0], sentinel_w[1], sentinel_w[2], sentinel_w[3],
 +                        sentinel_w[4], sentinel_w[5], sentinel_w[6], sentinel_w[7],
 +                        sentinel_w[8], sentinel_w[9], sentinel_w[10], sentinel_w[11],

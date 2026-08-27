@@ -98,7 +98,7 @@ index 4fde0f0f4..8d5497059 100644
 +    }
 +
 +    if (SDL_sscanf(hint, "%d,%d,%d,%d,%d,%d", &xmin, &xcen, &xmax, &ymin, &ycen, &ymax) != 6) {
-+        doskutsu_dbg_log("[joycal] hint '%s' malformed (want xmin,xcenter,xmax,ymin,ycenter,ymax) -- using auto-cal", hint);
++        dos_port_dbg_log("[joycal] hint '%s' malformed (want xmin,xcenter,xmax,ymin,ycenter,ymax) -- using auto-cal", hint);
 +        return false;
 +    }
 +
@@ -108,7 +108,7 @@ index 4fde0f0f4..8d5497059 100644
 +    if (xmin < 0 || ymin < 0 ||
 +        (xmax - xmin) < 20 || (ymax - ymin) < 20 ||
 +        xcen < xmin || xcen > xmax || ycen < ymin || ycen > ymax) {
-+        doskutsu_dbg_log("[joycal] hint x=[%d,%d,%d] y=[%d,%d,%d] out of range -- using auto-cal",
++        dos_port_dbg_log("[joycal] hint x=[%d,%d,%d] y=[%d,%d,%d] out of range -- using auto-cal",
 +                         xmin, xcen, xmax, ymin, ycen, ymax);
 +        return false;
 +    }
@@ -120,7 +120,7 @@ index 4fde0f0f4..8d5497059 100644
 +    hwdata->axis_center[1] = ycen;
 +    hwdata->axis_max[1] = ymax;
 +    hwdata->calibrated = true; /* full cal (range + explicit center) from the stored SETUP values */
-+    doskutsu_dbg_log("[joycal] applied stored cal x=[%d,%d,%d] y=[%d,%d,%d] (range auto-widens if exceeded)",
++    dos_port_dbg_log("[joycal] applied stored cal x=[%d,%d,%d] y=[%d,%d,%d] (range auto-widens if exceeded)",
 +                     xmin, xcen, xmax, ymin, ycen, ymax);
 +    return true;
 +}

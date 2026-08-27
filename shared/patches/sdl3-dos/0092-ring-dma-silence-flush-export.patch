@@ -211,7 +211,7 @@ index ef73f955e..6019cfa2b 100644
 +     * unknown, return 0 (failure) BEFORE doing any partial work. The caller's
 +     * PASS test is simply "return > 0"; no cross-channel denominator math. */
 +    if (isr_dma_buffer == NULL || isr_dma_halfdma <= 0 || bpf <= 0) {
-+        doskutsu_dbg_log("audio: SDL/0092 FlushRingSilence -- NO-OP / FAIL "
++        dos_port_dbg_log("audio: SDL/0092 FlushRingSilence -- NO-OP / FAIL "
 +                         "(dma_buffer=%p dma_halfdma=%d bpf=%d; returning 0 = "
 +                         "DMA not fully zeroable -- partial-coverage fail)",
 +                         (void *)isr_dma_buffer, isr_dma_halfdma, bpf);
@@ -249,7 +249,7 @@ index ef73f955e..6019cfa2b 100644
 +    const int ring_frames = isr_ring_size / bpf;
 +    const int dma_frames  = (isr_dma_halfdma * 2) / bpf;
 +    const int total_frames = ring_frames + dma_frames;
-+    doskutsu_dbg_log("audio: SDL/0092 FlushRingSilence -- ring+DMA zeroed "
++    dos_port_dbg_log("audio: SDL/0092 FlushRingSilence -- ring+DMA zeroed "
 +                     "(silence_frames_flushed=%d = ring_frames=%d + "
 +                     "dma_frames=%d; ring_bytes=%d dma_bytes=%d) "
 +                     "pre-cold-render quiesce",

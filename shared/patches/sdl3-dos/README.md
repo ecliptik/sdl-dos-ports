@@ -28,7 +28,7 @@ work or wasn't kept) rather than deleted. Not applied by
 
 Several patches introduce SDL hints, log-tag env vars, or extern
 instrumentation symbols still named after doskutsu specifically —
-`SDL_HINT_DOS_*`, `DOSKUTSU_LOG_TAG`, `doskutsu_audio_irq_count` and
+`SDL_HINT_DOS_*`, `DOS_PORT_LOG_TAG`, `dos_port_audio_irq_count` and
 similar. These are **functional identifiers baked into working,
 hardware-validated code**, not just cosmetic strings — renaming them here
 without also updating every consumer (doskutsu's own `patches/nxengine-evo/`,

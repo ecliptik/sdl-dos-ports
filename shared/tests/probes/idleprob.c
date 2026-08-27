@@ -28,18 +28,18 @@
  * Probe scope (per team-lead brief, joint with sdl-engine):
  *
  *   Symbol contract from SDL/0037:
- *     - extern volatile uint32_t doskutsu_audio_irq_count
+ *     - extern volatile uint32_t dos_port_audio_irq_count
  *     - extern void SDL_DOSAudioForcePause(void)   (async; flag handled at next IRQ)
  *     - extern void SDL_DOSAudioForceResume(void)
  *
  *   Sequence:
  *     1. SDL_Init(AUDIO) + open audio stream (11025 mono S16) + resume
  *     2. SDL_Delay(200) — let backend stabilize
- *     3. Sanity-check: doskutsu_audio_irq_count incrementing (>0 IRQs/200ms)
+ *     3. Sanity-check: dos_port_audio_irq_count incrementing (>0 IRQs/200ms)
  *     4. Scenario A (audio active): time N_A iterations of synth loop over
  *        1.0 sec wall (uclock)
  *     5. SDL_DOSAudioForcePause()
- *     6. Verify pause engaged: poll doskutsu_audio_irq_count for 200 ms,
+ *     6. Verify pause engaged: poll dos_port_audio_irq_count for 200 ms,
  *        ensure delta = 0 across last 100 ms window. If still incrementing,
  *        ABORT with "pause did not engage within 200 ms"
  *     7. Scenario B (audio paused): time N_B iterations of same synth loop
@@ -82,7 +82,7 @@
 #include <unistd.h>
 
 /* SDL/0037 contract — see file header. */
-extern volatile uint32_t doskutsu_audio_irq_count;
+extern volatile uint32_t dos_port_audio_irq_count;
 extern void SDL_DOSAudioForcePause(void);
 extern void SDL_DOSAudioForceResume(void);
 
@@ -272,16 +272,16 @@ int main(int argc, char **argv)
     /* Step 4: sanity-check IRQ count incrementing                  */
     /* ============================================================ */
     step_begin("Sanity: IRQ count incrementing under audio active");
-    uint32_t cnt0 = doskutsu_audio_irq_count;
+    uint32_t cnt0 = dos_port_audio_irq_count;
     SDL_Delay(200);
-    uint32_t cnt1 = doskutsu_audio_irq_count;
+    uint32_t cnt1 = dos_port_audio_irq_count;
     uint32_t delta_active = cnt1 - cnt0;
     step_done("delta over 200 ms = %lu IRQs (rate %.0f/sec)",
               (unsigned long)delta_active, (double)delta_active / 0.2);
 
     if (delta_active == 0) {
         plog("WARN: no IRQs observed during 200 ms with audio active.");
-        plog("      Either SB16 IRQ-5 isn't wired, or doskutsu_audio_irq_count");
+        plog("      Either SB16 IRQ-5 isn't wired, or dos_port_audio_irq_count");
         plog("      isn't being incremented (SDL/0037+0038 missing from binary).");
         plog("      The probe will continue, but yield numbers will be UNRELIABLE.");
     }
@@ -290,9 +290,9 @@ int main(int argc, char **argv)
     /* Step 5: Scenario A — audio active, time synth loop 1.0 sec   */
     /* ============================================================ */
     step_begin("Scenario A: synth loop 1.0 sec, audio ACTIVE");
-    cnt0 = doskutsu_audio_irq_count;
+    cnt0 = dos_port_audio_irq_count;
     uint64_t iters_A = synth_loop_for(1.0);
-    cnt1 = doskutsu_audio_irq_count;
+    cnt1 = dos_port_audio_irq_count;
     uint32_t irqs_during_A = cnt1 - cnt0;
     step_done("iters=%llu  irqs_during=%lu",
               (unsigned long long)iters_A, (unsigned long)irqs_during_A);
@@ -313,7 +313,7 @@ int main(int argc, char **argv)
     int stable_streak_ms = 0;
     double t_pause_start = now_secs();
     while ((now_secs() - t_pause_start) < 0.2) {
-        uint32_t c = doskutsu_audio_irq_count;
+        uint32_t c = dos_port_audio_irq_count;
         if ((int)c == last_count) {
             stable_streak_ms += 10;
             if (stable_streak_ms >= 100) { pause_engaged = 1; break; }
@@ -332,7 +332,7 @@ int main(int argc, char **argv)
     } else {
         step_done("PAUSE DID NOT ENGAGE within 200 ms cap (last_count=%d)", last_count);
         plog("");
-        plog("ABORT: ForcePause request was issued but doskutsu_audio_irq_count");
+        plog("ABORT: ForcePause request was issued but dos_port_audio_irq_count");
         plog("       kept incrementing past the 200 ms watchdog. Either the helper");
         plog("       isn't linked from libSDL3.a or it doesn't actually halt IRQ-5.");
         plog("       Scenario B skipped; cannot compute yield delta.");
@@ -343,9 +343,9 @@ int main(int argc, char **argv)
     /* Step 8: Scenario B — audio paused, time synth loop 1.0 sec   */
     /* ============================================================ */
     step_begin("Scenario B: synth loop 1.0 sec, audio PAUSED");
-    cnt0 = doskutsu_audio_irq_count;
+    cnt0 = dos_port_audio_irq_count;
     uint64_t iters_B = synth_loop_for(1.0);
-    cnt1 = doskutsu_audio_irq_count;
+    cnt1 = dos_port_audio_irq_count;
     uint32_t irqs_during_B = cnt1 - cnt0;
     step_done("iters=%llu  irqs_during=%lu (should be 0 if pause held)",
               (unsigned long long)iters_B, (unsigned long)irqs_during_B);
@@ -356,9 +356,9 @@ int main(int argc, char **argv)
     step_begin("SDL_DOSAudioForceResume");
     SDL_DOSAudioForceResume();
     SDL_Delay(100);
-    cnt0 = doskutsu_audio_irq_count;
+    cnt0 = dos_port_audio_irq_count;
     SDL_Delay(200);
-    cnt1 = doskutsu_audio_irq_count;
+    cnt1 = dos_port_audio_irq_count;
     uint32_t resume_delta = cnt1 - cnt0;
     step_done("resume verify: %lu IRQs in 200 ms post-resume",
               (unsigned long)resume_delta);

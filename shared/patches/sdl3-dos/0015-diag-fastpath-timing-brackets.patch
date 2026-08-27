@@ -35,7 +35,7 @@ DOSVESA-FB-INIT log line already prints `pitches_match=1`, so we
 know which sub-mode is active.
 
 Per-100-flush summary line emitted to /sdldbg.log via the shared
-doskutsu_dbg_log writer (patch 0009 coordination):
+dos_port_dbg_log writer (patch 0009 coordination):
 
   fastpath-timing block @flush=N: dpmi_ms_avg=X (min=A max=B)
   copy_ms_avg=X (min=A max=B) post_ms_avg=X (min=A max=B)
@@ -83,7 +83,7 @@ Real-HW perf attribution is a DOS-only question (per
 dosbox_not_perf_proxy: DOSBox-X's emulated framebuffer flush is a
 host-memcpy and gives misleading numbers). The brackets compile in
 unconditionally on the DOS backend; non-DOS builds don't include
-SDL_dosframebuffer.c. Output is via doskutsu_dbg_log so it routes
+SDL_dosframebuffer.c. Output is via dos_port_dbg_log so it routes
 to the same /sdldbg.log used by the patch 0009 lifecycle traces.
 
 Local-only patch per workspace policy (memory note "SDL upstream --
@@ -118,7 +118,7 @@ index 4594ab5da..e76f9d524 100644
 +    //
 +    // Use SDL_GetPerformanceCounter (calls DJGPP uclock(), microsecond
 +    // resolution per src/timer/dos/SDL_systimer.c). Per-block summary
-+    // every 100 flushes via doskutsu_dbg_log.
++    // every 100 flushes via dos_port_dbg_log.
 +    const Uint64 _ts_t0 = SDL_GetPerformanceCounter();
 +    static Uint64 _ts_freq = 0;
 +    if (!_ts_freq) {
@@ -140,8 +140,8 @@ index 4594ab5da..e76f9d524 100644
 +    const Uint64 _ts_t1 = SDL_GetPerformanceCounter();
 +
      // DOSKUTSU diagnostic header (patches/SDL/0002, task #21; routed
-     // through shared doskutsu_dbg_log by patch 0009).
-     ++_doskutsu_dbg_call_total;
+     // through shared dos_port_dbg_log by patch 0009).
+     ++_dos_port_dbg_call_total;
 @@ -877,6 +907,14 @@ bool DOSVESA_UpdateWindowFramebuffer(SDL_VideoDevice *device, SDL_Window *window
              }
          }
@@ -200,13 +200,13 @@ index 4594ab5da..e76f9d524 100644
 +        if (total_us < _tb_total_min_us) _tb_total_min_us = total_us;
 +
 +        if (_tb_n >= 100) {
-+            doskutsu_dbg_log("fastpath-timing block @flush=%d: "
++            dos_port_dbg_log("fastpath-timing block @flush=%d: "
 +                             "dpmi_ms_avg=%lu.%03lu (min=%lu.%03lu max=%lu.%03lu) "
 +                             "copy_ms_avg=%lu.%03lu (min=%lu.%03lu max=%lu.%03lu) "
 +                             "post_ms_avg=%lu.%03lu (min=%lu.%03lu max=%lu.%03lu) "
 +                             "total_ms_avg=%lu.%03lu (min=%lu.%03lu max=%lu.%03lu) "
 +                             "[over %d flushes]",
-+                             _doskutsu_dbg_call_total,
++                             _dos_port_dbg_call_total,
 +                             (unsigned long)((_tb_dpmi_sum_us / _tb_n) / 1000),
 +                             (unsigned long)((_tb_dpmi_sum_us / _tb_n) % 1000),
 +                             (unsigned long)(_tb_dpmi_min_us / 1000),

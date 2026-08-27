@@ -353,9 +353,9 @@ index 87e660cdb..0ddd9d943 100644
  
  // Probe + cache VRAM-resident availability. Called lazily from the
  // PresentFull divert and from SDL_DOSVesaPagePresent. Emits a one-time
--// doskutsu_dbg_log banner narrating either ENABLED + sanity-check
+-// dos_port_dbg_log banner narrating either ENABLED + sanity-check
 -// register values, or DISABLED + reason.
-+// doskutsu_dbg_log banner narrating either ENABLED or DISABLED + reason.
++// dos_port_dbg_log banner narrating either ENABLED or DISABLED + reason.
 +//
 +// DOSKUTSU patch 0077 (S3-2 Stage 1) -- retargeted from the wave-50
 +// Cirrus-5434 path to the S3 ViRGE/DX. Three gates, all fail-safe to the
@@ -395,14 +395,14 @@ index 87e660cdb..0ddd9d943 100644
 -    // The probe-verified CRTC encoding is specific to Cirrus 5434 + UniVBE
 -    // 6.7; we refuse engagement on other chips/firmware combinations.
 -    if (!SDL_DOSVesaDirect_IsCirrusBLTAvailable()) {
--        doskutsu_dbg_log("sdl: wave-50 VRAM-resident page-flip DISABLED "
+-        dos_port_dbg_log("sdl: wave-50 VRAM-resident page-flip DISABLED "
 -                         "(chip not Cirrus 5434 OR SDL_HINT_DOS_CIRRUS_BLT=0; "
 -                         "engine uses sysmem fallback)");
 +    // (2) S3 ViRGE/DX detect (NOT the Cirrus gate). Decoupled from
 +    // SDL_HINT_DOS_CIRRUS_BLT -- this lever ships for the S3.
 +    Uint16 chip_id = 0;
 +    if (!_vram_resident_is_s3_virge(&chip_id)) {
-+        doskutsu_dbg_log("sdl: S3-2 stage1 VRAM-resident page-flip DISABLED "
++        dos_port_dbg_log("sdl: S3-2 stage1 VRAM-resident page-flip DISABLED "
 +                         "(chip-id=0x%04X != S3 ViRGE/DX 0x8A01; "
 +                         "sysmem copy-present fallback)",
 +                         (unsigned)chip_id);
@@ -420,7 +420,7 @@ index 87e660cdb..0ddd9d943 100644
 -        // Clearly disqualifying: dword addressing is active; the probe
 -        // verified only the byte-units encoding. Fall back rather than
 -        // risk programming the wrong display-start.
--        doskutsu_dbg_log("sdl: wave-50 VRAM-resident page-flip DISABLED "
+-        dos_port_dbg_log("sdl: wave-50 VRAM-resident page-flip DISABLED "
 -                         "(chip configured for non-byte encoding: "
 -                         "CRTC[0x14]=0x%02X bit6=1 (dword); CRTC[0x17]=0x%02X "
 -                         "SR[0x07]=0x%02X; falling back to dosmemput; "
@@ -472,7 +472,7 @@ index 87e660cdb..0ddd9d943 100644
 +    const bool verified = (get_ax == 0x004F && set_ax == 0x004F &&
 +                           rb_ax == 0x004F && rb_dx == test_dx);
 +    if (!verified) {
-+        doskutsu_dbg_log("sdl: S3-2 stage1 VRAM-resident page-flip DISABLED "
++        dos_port_dbg_log("sdl: S3-2 stage1 VRAM-resident page-flip DISABLED "
 +                         "(0x4F07 self-verify FAILED: get_ax=0x%04X set_ax=0x%04X "
 +                         "rb_ax=0x%04X rb_dx=%u test_dx=%u; sysmem copy-present "
 +                         "fallback -- no hang)",
@@ -482,12 +482,12 @@ index 87e660cdb..0ddd9d943 100644
          return 0;
      }
  
--    doskutsu_dbg_log("sdl: wave-50 VRAM-resident page-flip ENABLED "
+-    dos_port_dbg_log("sdl: wave-50 VRAM-resident page-flip ENABLED "
 -                     "(back-page=0x012C00; CRTC encoding=BYTE verified "
 -                     "via probe; CRTC[0x14]=0x%02X CRTC[0x17]=0x%02X "
 -                     "SR[0x07]=0x%02X)",
 -                     (unsigned)crtc14, (unsigned)crtc17, (unsigned)sr07);
-+    doskutsu_dbg_log("sdl: S3-2 stage1 VRAM-resident page-flip ENABLED "
++    dos_port_dbg_log("sdl: S3-2 stage1 VRAM-resident page-flip ENABLED "
 +                     "(S3 ViRGE/DX chip-id=0x%04X; VBE 0x4F07 flip self-verified; "
 +                     "bounded-vblank-after; copy-present dropped)",
 +                     (unsigned)chip_id);
@@ -597,10 +597,10 @@ index 87e660cdb..0ddd9d943 100644
 +
      if (!_vram_resident_engage_banner_logged) {
          _vram_resident_engage_banner_logged = 1;
--        doskutsu_dbg_log("sdl: wave-50 VRAM-resident page-flip first swap "
+-        dos_port_dbg_log("sdl: wave-50 VRAM-resident page-flip first swap "
 -                         "(back_page_byte_offset=0x%06lX; visible_page now=%d)",
 -                         (unsigned long)back_page_byte_offset,
-+        doskutsu_dbg_log("sdl: S3-2 stage1 first page-flip present "
++        dos_port_dbg_log("sdl: S3-2 stage1 first page-flip present "
 +                         "(hidden_page_byte_offset=0x%06lX; visible_page now=%d; "
 +                         "copy-present dropped, VBE 0x4F07 flip)",
 +                         (unsigned long)hidden_byte_offset,
@@ -643,7 +643,7 @@ index 87e660cdb..0ddd9d943 100644
 +    // (pairs with the ENABLED banner emitted from _vram_resident_check_enabled).
 +    if (!_vram_resident_engage_banner_logged) {
 +        _vram_resident_engage_banner_logged = 1;
-+        doskutsu_dbg_log("sdl: S3-2 stage1 first page-flip present "
++        dos_port_dbg_log("sdl: S3-2 stage1 first page-flip present "
 +                         "(page_idx=%d; copy-present dropped, VBE 0x4F07 flip)",
 +                         page_idx);
 +    }

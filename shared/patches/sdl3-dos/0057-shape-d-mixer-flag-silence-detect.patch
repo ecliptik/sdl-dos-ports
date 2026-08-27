@@ -31,7 +31,7 @@ Mechanism:
 
   - PlayDevice silence-detect block dispatches on the active shape:
         if (g_dos_silence_shape_d_active) {
-            all_silence = (doskutsu_mixer_actual_mixed_bytes == 0);
+            all_silence = (dos_port_mixer_actual_mixed_bytes == 0);
         } else {
             /* Shape A bytewise scan; unchanged from SDL/0054 */
         }
@@ -39,7 +39,7 @@ Mechanism:
     paths are unchanged: only the silence detection itself swaps
     mechanism.
 
-  - Weak-fallback definition of `doskutsu_mixer_actual_mixed_bytes`
+  - Weak-fallback definition of `dos_port_mixer_actual_mixed_bytes`
     in this TU (default 0; SDL_mixer's strong definition from
     patches/SDL_mixer/0001 overrides at final link). Lets SDL3's own
     test/utility binaries (which link libSDL3.a only without
@@ -48,7 +48,7 @@ Mechanism:
     no SDL3 test binary exercises the DOS audio backend.
 
   - Boot banner emits one of FOUR variants per flush-instr's wave-36
-    contract section 3.4 (engagement-verify gate via doskutsu_dbg_log):
+    contract section 3.4 (engagement-verify gate via dos_port_dbg_log):
 
       Variant 1 (Shape A default):
         "audio: SDL/0054 silence-detect Shape A active
@@ -56,7 +56,7 @@ Mechanism:
       Variant 2 (Shape D engaged):
         "audio: SDL/0054 silence-detect Shape D active
          (SHAPE=D; mixer-flag fast-path via
-         doskutsu_mixer_actual_mixed_bytes; replaces Shape A
+         dos_port_mixer_actual_mixed_bytes; replaces Shape A
          bytewise scan with O(1) volatile load)"
       Variant 3 (Shape A killswitched via SDL/0056):
         "audio: SDL/0054 silence-detect DISABLED
@@ -125,15 +125,15 @@ Concurrency / atomicity:
     section).
   - Therefore: same-thread reader; no cross-thread atomicity
     question. `volatile` for compiler-fence semantics only. Same
-    pattern as the existing `doskutsu_audio_irq_count` /
-    `doskutsu_audio_irq_wall_us` volatile exports from SDL3-DOS.
+    pattern as the existing `dos_port_audio_irq_count` /
+    `dos_port_audio_irq_wall_us` volatile exports from SDL3-DOS.
 
 Workspace-local DOS-port patch per memory/sdl_ai_policy.md; never
 upstreamed.
 
 Validation:
   - Compile clean at i486 -O3.
-  - Symbol `_doskutsu_mixer_actual_mixed_bytes` weak in libSDL3.a;
+  - Symbol `_dos_port_mixer_actual_mixed_bytes` weak in libSDL3.a;
     strong in libSDL3_mixer.a; final-link resolution verified.
   - All 4 banner variants verified in libSDL3.a via
     `strings | grep "Shape [AD]\\|SILENCE_DETECT=0 overrides"`.
@@ -168,7 +168,7 @@ Cross-reference:
   - docs/PHASE11-WAVE-35-FINDINGS.md section 2 (the +3.34 ms fi_ms
     slice regression Shape D aims to recover)
   - patches/SDL_mixer/0001-shape-d-mixer-flag-silence-detect-setter.patch
-    (the writer; defines `doskutsu_mixer_actual_mixed_bytes` strong)
+    (the writer; defines `dos_port_mixer_actual_mixed_bytes` strong)
   - memory/no_playing_it_safe.md (user directive 2026-05-12: prefer
     biggest correctness-retaining ceiling over smallest LOC)
   - memory/correctness_vs_perf_trade_machinery_at_authoring.md
@@ -195,7 +195,7 @@ index 3d9b511fe..6c040d7a1 100644
 +   detect engagement state. Default false (Shape A bytewise-scan path
 +   runs; identical to wave-35 SDL/0054 ship behavior). Set
 +   SDL_HINT_DOS_SILENCE_SHAPE=D at SDL_Init time to engage Shape
-+   D: PlayDevice reads the `doskutsu_mixer_actual_mixed_bytes`
++   D: PlayDevice reads the `dos_port_mixer_actual_mixed_bytes`
 +   volatile (defined in SDL3_mixer's MixerCallback per
 +   patches/SDL_mixer/0001) instead of bytewise-scanning the staging
 +   buffer. Strict-"D" match (single char + null terminator); any
@@ -274,7 +274,7 @@ index 3d9b511fe..6c040d7a1 100644
 +   ensures the architectural change doesn't break unrelated SDL3
 +   test infrastructure on the way to delivering the Shape D fps
 +   lever for doskutsu.exe. */
-+volatile int doskutsu_mixer_actual_mixed_bytes __attribute__((weak)) = 0;
++volatile int dos_port_mixer_actual_mixed_bytes __attribute__((weak)) = 0;
 +
  /* DOSKUTSU patch (Phase 11 patch 0055): Phase 12 SDL-side audio
     instrumentation state. Pairs with engine-side nx 0131 brackets for
@@ -323,25 +323,25 @@ index 3d9b511fe..6c040d7a1 100644
 +            (shape_hint && shape_hint[0] == 'D' && shape_hint[1] == 0);
          g_dos_silence_detect_enabled = !sd_disabled;
 -        if (g_dos_silence_detect_enabled) {
--            doskutsu_dbg_log("audio: SDL/0054 silence-detect ACTIVE (default; SFX-correct)");
+-            dos_port_dbg_log("audio: SDL/0054 silence-detect ACTIVE (default; SFX-correct)");
 -        } else {
 +        g_dos_silence_shape_d_active = shape_d;
 +        if (sd_disabled && shape_d) {
 +            /* Variant 4: conflict; DETECT=0 wins. */
-+            doskutsu_dbg_log("audio: SDL/0054 silence-detect DISABLED "
++            dos_port_dbg_log("audio: SDL/0054 silence-detect DISABLED "
 +                             "(SILENCE_DETECT=0 overrides SILENCE_SHAPE=D)");
 +        } else if (sd_disabled) {
 +            /* Variant 3: SILENCE_DETECT=0 (Shape A killswitched). */
-             doskutsu_dbg_log("audio: SDL/0054 silence-detect DISABLED (env-var; perf-experiment)");
+             dos_port_dbg_log("audio: SDL/0054 silence-detect DISABLED (env-var; perf-experiment)");
 +        } else if (shape_d) {
 +            /* Variant 2: Shape D engaged (SDL/0057 mixer-flag fast-path). */
-+            doskutsu_dbg_log("audio: SDL/0054 silence-detect Shape D active "
++            dos_port_dbg_log("audio: SDL/0054 silence-detect Shape D active "
 +                             "(SHAPE=D; mixer-flag fast-path via "
-+                             "doskutsu_mixer_actual_mixed_bytes; replaces "
++                             "dos_port_mixer_actual_mixed_bytes; replaces "
 +                             "Shape A bytewise scan with O(1) volatile load)");
 +        } else {
 +            /* Variant 1: Shape A active (default; SDL/0054 wave-35 path). */
-+            doskutsu_dbg_log("audio: SDL/0054 silence-detect Shape A active "
++            dos_port_dbg_log("audio: SDL/0054 silence-detect Shape A active "
 +                             "(default; bytewise scan; SFX-correct)");
          }
      }
@@ -360,7 +360,7 @@ index 3d9b511fe..6c040d7a1 100644
 +        /* DOSKUTSU patch (Phase 11 patch 0057): Shape D mixer-flag
 +           fast-path. When SHAPE=D is engaged, replace the Shape A
 +           bytewise scan with an O(1) volatile load of the SDL_mixer-
-+           defined `doskutsu_mixer_actual_mixed_bytes` global (set
++           defined `dos_port_mixer_actual_mixed_bytes` global (set
 +           in MixerCallback per patches/SDL_mixer/0001). The mixer's
 +           own bookkeeping is the source-of-truth for "did this iter
 +           produce non-silence"; the bytewise scan is a redundant
@@ -373,14 +373,14 @@ index 3d9b511fe..6c040d7a1 100644
 +           (SHAPE=D engaged) at the static-bool-resolved-at-open
 +           moment.
 +
-+           Concurrency: doskutsu_mixer_actual_mixed_bytes is written
++           Concurrency: dos_port_mixer_actual_mixed_bytes is written
 +           by MixerCallback on the audio thread during SDL3's mix loop
 +           (which runs between GetDeviceBuf and PlayDevice within one
 +           SDL_PlaybackAudioThreadIterate critical section); read here
 +           on the same thread. Same-thread reader; no cross-thread
 +           atomicity question. `volatile` for compiler-fence semantics. */
 +        if (g_dos_silence_shape_d_active) {
-+            all_silence = (doskutsu_mixer_actual_mixed_bytes == 0);
++            all_silence = (dos_port_mixer_actual_mixed_bytes == 0);
 +        } else {
 +            const Uint8 silence = soundblaster_silence_value;
 +            const Uint8 *p = buffer;

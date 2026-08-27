@@ -108,7 +108,7 @@ index cde248f53..9d4092049 100644
 --- a/src/audio/dos/SDL_dosaudio_sb.c
 +++ b/src/audio/dos/SDL_dosaudio_sb.c
 @@ -28,7 +28,7 @@
- #include "../../video/dos/SDL_dosdbg.h" /* DOSKUTSU patch 0041: doskutsu_dbg_log routing */
+ #include "../../video/dos/SDL_dosdbg.h" /* DOSKUTSU patch 0041: dos_port_dbg_log routing */
  #include "SDL_dosaudio_sb.h"
  #include <SDL3/SDL_dosaudio_shutdown.h> /* DOSKUTSU patch 0053: engine-callable SDL_DOSAudioBeginShutdown export */
 -#include <SDL3/SDL_dosaudio_pump.h>     /* DOSKUTSU patch 0067: engine-callable SDL_DOSAudioPump export (audio mid-gap-service) */

@@ -216,8 +216,8 @@ index b29e07c6d..1a6e3261b 100644
 --- a/src/video/dos/SDL_dosevents.c
 +++ b/src/video/dos/SDL_dosevents.c
 @@ -476,7 +476,22 @@ void DOSVESA_InitKeyboard(SDL_VideoDevice *device)
-     DOS_LockVariable(doskutsu_kbd_irq_vector_at_install);
-     DOS_LockVariable(doskutsu_kbd_pic1_mask_at_install);
+     DOS_LockVariable(dos_port_kbd_irq_vector_at_install);
+     DOS_LockVariable(dos_port_kbd_pic1_mask_at_install);
  
 -    DOS_HookInterrupt(1, KeyboardIRQHandler, &data->keyboard_interrupt_hook);
 +    /* DOSKUTSU patch (Phase 11): use DOS_HookInterruptReplace, not
