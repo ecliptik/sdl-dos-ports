@@ -117,6 +117,31 @@ verification than what's noted here. Organized architecture-wide first
   already called `SDL_Delay` directly; the absence of a prior incident
   here reflects that its engine happened to route through SDL already, not
   that this hazard doesn't apply to it.
+- **`SDL_Delay` yielding alone is necessary but not sufficient — a
+  correctly-yielding port can still underrun on real hardware only,
+  because DOSBox-X doesn't faithfully reproduce a single render-gap
+  outlasting ring depth.** This backend exports `SDL_DOSAudioPump()`
+  (`<SDL3/SDL_dosaudio_pump.h>`, `shared/patches/sdl3-dos/0067`+) for
+  exactly this: an engine-callable, explicit mid-gap ring-service call —
+  caller pattern `while (SDL_DOSAudioPump()) { }` — meant to be called at
+  per-frame strategic points in the main loop, not relied on as a
+  side-effect of yielding. It exists because doskutsu itself hit a
+  real-hardware-only underrun *with correct `SDL_Delay` yield behavior
+  already in place* — a single unusually-long render gap can outlast ring
+  depth regardless of the average frame rate, a failure mode DOSBox-X's
+  timing doesn't reproduce, so it won't show up in emulator-only testing.
+  Confirmed as a real, additional fix on dossage/Passage: after the
+  `SDL_Delay` fix above, DOSBox-X's own `PlayDevice` activity was still a
+  mixed silent/noisy ratio; adding a per-frame `SDL_DOSAudioPump()` call
+  to the main loop (dossage patch 0007) took it to fully non-silent
+  (100/100 noisy in the observed window). **Any port doing non-trivial
+  audio on this backend should call `SDL_DOSAudioPump()` from its main
+  loop, not just call `SDL_Delay` somewhere and assume cooperative
+  scheduling alone covers ring health** — `SDL_Delay` gets the pump
+  *scheduled at all* (see the trap above); `SDL_DOSAudioPump()` is the
+  belt-and-suspenders call that keeps it fed across gaps a DOSBox-X test
+  pass won't catch. Real-hardware confirmation on dossage/Passage pending
+  at time of writing.
 - **A worse variant of the above can hang indefinitely, and it's
   CPU-tier-specific.** If the audio thread is in-band/non-silent and never
   yields back while the main thread parks at a per-flip yield, the ring
