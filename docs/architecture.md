@@ -45,6 +45,10 @@ per-topic docs for detail:
   controller abstraction needed.
 - **Filesystem** (`filesystem.md`): 8.3 names, drive letters, no `$HOME`/
   `%APPDATA%`/XDG.
+- **DOS scripting** (`dos-scripting.md`): `COMMAND.COM` is not `cmd.exe`
+  -- no escape character, redirection parsed inside comments, a 256-byte
+  environment block, and other landmines for any port's install/launcher/
+  test BATs.
 - **Timing** (`timing.md`): decoupling simulation rate from render rate.
 - **Optimization** (`optimization.md`): what's actually expensive on
   486/Pentium-class hardware, and in what order to chase it.

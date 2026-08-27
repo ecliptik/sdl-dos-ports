@@ -146,11 +146,11 @@ exactly like a right one.
 
 Every project should maintain its own list of what its target platform
 does silently -- as checkable rules, enforced by a lint gate that runs
-*before* packaging, not discovered after deployment. The DOS/DJGPP/real
-MS-DOS-specific instance of this (no escape character in `COMMAND.COM`,
-redirection parsed inside `REM` comments, environment-block overflow
-silently dropping a `SET`, and similar) is its own topic -- not
-duplicated here.
+*before* packaging, not discovered after deployment. This hub's own
+DOS/DJGPP/real-MS-DOS instance of that list -- no escape character in
+`COMMAND.COM`, redirection parsed inside `REM` comments, a 256-byte
+environment block silently dropping a `SET`, and similar -- lives in
+`docs/dos-scripting.md`, not duplicated here.
 
 The methodology point worth keeping regardless of platform: **a gate's
 false-positive rate is a functional requirement, not a nuisance to tune
