@@ -140,8 +140,21 @@ verification than what's noted here. Organized architecture-wide first
   scheduling alone covers ring health** — `SDL_Delay` gets the pump
   *scheduled at all* (see the trap above); `SDL_DOSAudioPump()` is the
   belt-and-suspenders call that keeps it fed across gaps a DOSBox-X test
-  pass won't catch. Real-hardware confirmation on dossage/Passage pending
-  at time of writing.
+  pass won't catch. **Real-hardware confirmed on dossage/Passage.**
+  Follow-up finding, though: an unconditional `while (SDL_DOSAudioPump())
+  { }` called every frame at a sub-floor frame rate (Passage targets
+  15fps, below the ~21-25fps floor two bullets up) hit the defense-in-depth
+  32-iterate cap on ~99.5% of calls (424/426 in one measured run) — a
+  near-max catch-up burst every single frame is real CPU cost, not just a
+  diagnostic curiosity, on hardware already tight on frame budget. Fixed
+  by pumping to a modest **target ring depth** each frame instead of
+  looping until the ring is full or the cap trips — dossage's fix dropped
+  the cap-trip rate to ~3% (24 total) with audio still confirmed audible
+  (`vcctrl_audio_verdict` AUDIO_PRESENT throughout, same dB range) and no
+  regression, frame rate steady. **Prefer a target-depth top-up over an
+  unconditional run-to-cap loop** when calling `SDL_DOSAudioPump()` every
+  frame, especially for a port targeting a frame rate at or below the
+  cooperative-scheduler audio floor documented above.
 - **A worse variant of the above can hang indefinitely, and it's
   CPU-tier-specific.** If the audio thread is in-band/non-silent and never
   yields back while the main thread parks at a per-flip yield, the ring
