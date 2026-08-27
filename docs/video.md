@@ -205,3 +205,16 @@ shared layer; no port needs to re-derive this.
 486/Pentium-class hardware — see `optimization.md`. Full-screen pixel
 copies and pixel-format conversion are consistently the first or second
 most expensive thing on this class of hardware.
+
+This is also a correctness-risk reduction, not just a performance one.
+[DevilutionX](https://github.com/diasurgical/DevilutionX) — an unrelated
+engine also porting to DOS via SDL3 — sets
+`DEVILUTIONX_DISPLAY_PIXELFORMAT SDL_PIXELFORMAT_INDEX8` explicitly for
+its DOS build, sidestepping packed-multi-byte pixel-format conversion
+(the exact class of code implicated, though not yet confirmed as root
+cause, in dossage/Passage's real-hardware Mach64 investigation above)
+entirely. 8-bit indexed VGA/VESA banked-mode paths are the most
+thoroughly real-hardware-proven code in `shared/patches/sdl3-dos/`; a
+port that can accept indexed color inherits that maturity directly,
+where a 32-bit-truecolor port exercises less-trodden conversion paths on
+whatever format a given card's BIOS happens to pick.

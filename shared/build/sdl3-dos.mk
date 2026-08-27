@@ -118,6 +118,8 @@ djgpp-check:
 	@if ! command -v $(CC) >/dev/null 2>&1; then \
 	    echo "error: $(CC) not found on PATH." >&2; \
 	    echo "       Tried $(DJGPP_BIN)" >&2; \
+	    echo "       No DJGPP toolchain installed? See PORTING.md's" >&2; \
+	    echo "       'Prerequisites' section for how to build one." >&2; \
 	    exit 1; \
 	fi
 	@$(CC) --version | head -n1

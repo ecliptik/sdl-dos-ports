@@ -4,6 +4,27 @@ This describes the practical steps to take a candidate from `ports.yaml`
 through to a working DOS port, reusing everything already proven by
 doskutsu and staged in `shared/`.
 
+## 0. Prerequisites: the DJGPP toolchain
+
+`shared/build/sdl3-dos.mk`'s `djgpp-check` target only verifies a working
+DJGPP install is already on `PATH` -- it doesn't build one. If you don't
+already have a modern DJGPP cross-compiler (`i586-pc-msdosdjgpp-gcc` or
+`i386-pc-msdosdjgpp-gcc`), build one from source via
+[jwt27/build-gcc](https://github.com/jwt27/build-gcc) -- a well-known,
+actively-maintained community project for exactly this, confirmed as a
+working real-world recipe by
+[DevilutionX's own `dos-prep.sh`](https://github.com/diasurgical/DevilutionX/blob/master/Packaging/windows/dos-prep.sh),
+an unrelated project that also ports to DOS via SDL3:
+
+```sh
+git clone https://github.com/jwt27/build-gcc.git
+cd build-gcc
+sudo ./build-djgpp.sh --prefix=/opt/i386-pc-msdosdjgpp-toolchain --batch binutils gcc-14.2.0 djgpp-cvs
+```
+
+Then add `/opt/i386-pc-msdosdjgpp-toolchain/bin` to `PATH` before running
+`shared/scripts/setup-symlinks.sh`.
+
 ## 1. Pick a candidate
 
 Look at [`ports.yaml`](ports.yaml) for a `BACKLOG` entry. Lower `priority`

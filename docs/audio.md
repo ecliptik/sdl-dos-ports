@@ -27,6 +27,14 @@ Pentium-class:  decoded digital soundtrack (e.g. OGG/Vorbis if affordable)
                 OR an optional no-music performance mode
 ```
 
+Independent confirmation from an unrelated engine on the same platform:
+[DevilutionX's own DOS build notes](https://github.com/diasurgical/DevilutionX/blob/master/docs/building.md)
+record that real-time MP3 decoding drops their game to ~4.5fps on DOS
+(their `dr_mp3` decoder compiles and runs, it's just too slow), and their
+documented fix is the same shape as above — ship WAV-only audio in the
+DOS build's data files rather than attempting compressed-audio decode at
+all.
+
 Hardware MIDI is the highest-leverage option on slow hardware: moving music
 playback to an external synthesizer removes essentially all CPU cost from
 the host. If a game supports MIDI at all, hardware MIDI should be the
