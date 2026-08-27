@@ -62,6 +62,51 @@ been renamed to this scheme (see `shared/patches/sdl3-dos/README.md`'s
 "Naming debt (resolved)" section) -- don't reintroduce a per-port name for
 anything new.
 
+## When a port discovers a shared/-relevant fix or lesson
+
+A port's own `patches/SDL` and `patches/SDL_mixer` directories are
+symlinks into `.sdl-dos-ports/shared/patches/sdl3-dos`/`sdl3-mixer` (set
+up by `scripts/new-port.sh`) — a port session editing a file under
+`patches/SDL/` is editing files inside its own local checkout of this
+hub's submodule, which is a full clone with the same remote as this repo
+itself. That checkout *can* be committed and pushed directly back to the
+hub from inside a port repo. Don't do that as a first move, for the same
+reason concurrent, uncoordinated writes to any shared resource are
+risky: `shared/`'s own rules (nothing game-specific, neutral naming,
+build + validate under DOSBox-X before considering it done, fix forward
+with a new patch number rather than editing patch history for anything
+behavioral) need to actually be checked against, and a port session
+mid-investigation is optimizing for "unblock my own port," not for "is
+this correct for every future port."
+
+**The pattern that works** (developed across doskutsu/dossage's real
+cross-port collaboration, not yet exercised as a fully-autonomous
+port-pushes-directly flow): a port session that finds something
+shared/-relevant — a real bug in `shared/`'s own code, a hazard worth
+documenting for every port, a piece of methodology worth reusing —
+reports it to whichever session is coordinating the hub (with enough
+detail to verify, not just a conclusion: file/patch citations, the actual
+evidence, what's confirmed vs. inferred). The hub-side session verifies
+it against the actual current state of `shared/` (never take a summary on
+faith — this hub's own history already includes a case where an
+unverified secondhand relay would have shipped a subtly wrong hazard
+writeup), authors the fix or the doc addition following this file's own
+conventions, runs the same validation any `shared/` change needs (a full
+patch-series replay against the pinned upstream SHA from a clean reset,
+not just a diff read), and commits it here. Every consuming port then
+bumps its `.sdl-dos-ports` pin and picks it up.
+
+This applies to genuine fixes (a real bug in SDL3-DOS backend code, like
+patch `0127`'s hardcoded-path fix) and to documentation/methodology (a
+real-hardware hazard worth every port knowing, like the video/audio
+hazard catalogs in `docs/video.md`/`docs/audio.md`) equally — "feedback"
+flowing back is as much a first-class case as a patch is, not an
+afterthought. A port's own engine-specific patches (`patches/<engine>/`)
+essentially never belong in `shared/` by `CLAUDE.md`'s own "nothing
+game-specific" rule — the cases above are specifically about a port
+discovering something true about the *shared* layer or the *platform*
+while working on its own engine, not about promoting engine code itself.
+
 ## Two gotchas beyond the basics above
 
 - **`LC_ALL=C` when enumerating or sorting patch files.** Locale-aware
