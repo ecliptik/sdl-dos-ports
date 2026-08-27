@@ -94,10 +94,41 @@ into your own explicitly-created known-format surface (e.g.
 `SDL_PIXELFORMAT_XRGB8888`) and blit-convert onto the real window surface
 at present time, rather than writing raw pixels into the window surface
 directly. (Found on dossage/Passage via a real-hardware Mach64 pass,
-2026-08-26 — architecturally fixed in that port's own engine code;
-real-hardware reconfirmation that this fully resolves it is still
-pending, since a second, independent hazard below hadn't been ruled out
-yet at time of writing.)
+2026-08-26 — architecturally fixed in that port's own engine code as its
+patch 0003. **Confirmed as the complete fix**: a direct pixel-diff of a
+post-fix real-hardware capture against the DOSBox-X reference screenshot
+came back at 2.85/255 mean difference, consistent with JPEG noise, not a
+defect. The pre-fix saved frame was independently re-checked and confirmed
+genuinely, severely broken — near-total fine-grained garbage across nearly
+the whole frame — so this was a real bug with a real fix, not a
+non-issue. No second video hazard was involved; see the triage note
+below for how that got clarified.)
+
+**Diff against the known-good reference before reaching for hardware
+register diagnostics.** After the XRGB8888 fix above landed, a real-hardware
+Mach64 retest still showed a banded, non-uniform region on the right side
+of the screen. Read visually against expectations of "clean gameplay," this
+looked like corruption, and it drove a genuinely careful five-patch
+diagnostic chase at the shared SDL3-DOS layer — bank-switch chunk-content
+and post-write readback (`SDL/0128`-`0131`), a legacy VGA Graphics
+Controller register dump (`SDL/0132`), a raw CRTC offset register read
+(`SDL/0133`), and a standardized VBE 4F06 Get Scan Line Length call
+(`SDL/0134`) — all of which came back clean or internally consistent, ruling
+out bank-switching, legacy VGA read/write-mode state, and stride/pitch
+mismatches one by one with real evidence. The actual answer only surfaced
+when the "corrupted" capture was pixel-diffed directly against this
+project's own `docs/screenshots/dossage-gameplay.png` DOSBox-X reference
+(2.85/255 mean difference — the banded region was Passage's *intended*
+right-side visual content, not a defect at all). **Lesson for the next
+real-hardware-only video symptom that looks wrong on sight: do the direct
+pixel-diff against a known-good reference screenshot first**, before
+spending register-level diagnostic effort — it's cheaper than a single one
+of the probes above and would have closed this case immediately. This
+doesn't make the probes wasted work: they're retained in `shared/` as
+hint-gated (`SDL_HINT_DOS_BANK_CHUNK_PROBE`; zero cost when unset),
+chip-agnostic diagnostic tooling precisely because ruling out those layers
+cleanly is a real, reusable result for whatever the *next* investigation
+turns out to be.
 
 **A stale cached VRAM pitch across an in-place mode-set is a *closed*
 hazard at the shared layer, not one a new port needs to defend against
