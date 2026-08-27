@@ -75,7 +75,7 @@ index dde73e0ed..5efba3c60 100644
 +        fb_state.src_pitch     = fb_state.surface->pitch;
 +        fb_state.pixels        = (Uint8 *)fb_state.surface->pixels;
 +        fb_state.pitches_match = (fb_state.src_pitch == fb_state.vram_pitch);
-+        DOSKUTSU_LC_LOG("src-pitch re-derived: %d -> %d (vram_pitch=%d "
++        DOS_PORT_LC_LOG("src-pitch re-derived: %d -> %d (vram_pitch=%d "
 +                        "pitches_match=%d) -- surface changed under a live "
 +                        "framebuffer",
 +                        _old_pitch, fb_state.src_pitch, fb_state.vram_pitch,

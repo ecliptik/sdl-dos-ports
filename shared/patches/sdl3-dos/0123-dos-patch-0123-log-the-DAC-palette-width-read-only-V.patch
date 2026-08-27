@@ -64,7 +64,7 @@ index e8b864888..6256cec66 100644
 +        __dpmi_int(0x10, &regs);
 +        const bool dac_4f08_ok = (regs.x.ax == 0x004F);
 +        const int  dac_width   = dac_4f08_ok ? (int)regs.h.bh : -1;
-+        DOSKUTSU_MODES_LOG("DOSVESA-DACWIDTH: 4F08.get ax=0x%04X supported=%d "
++        DOS_PORT_MODES_LOG("DOSVESA-DACWIDTH: 4F08.get ax=0x%04X supported=%d "
 +                           "width_bits=%d writer_assumes=6 (width=8 + 6-bit "
 +                           "writes == washed-out palette; -1 == BIOS lacks 4F08, "
 +                           "6-bit VBE default assumed; read-only diagnostic, "

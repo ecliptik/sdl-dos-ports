@@ -210,7 +210,7 @@ index 861470cb3..c734f8964 100644
 +            ds_regs.x.dx = 0;      // Y = 0 (first scanline of frame)
 +            __dpmi_int(0x10, &ds_regs);
 +            const bool a1_ok = ((ds_regs.x.ax & 0x00FF) == 0x004F);
-+            DOSKUTSU_MODES_LOG("WAVE16-4-DISPLAY-START: vbe_4F07 bx=0x0080 cx=0 dx=0 "
++            DOS_PORT_MODES_LOG("WAVE16-4-DISPLAY-START: vbe_4F07 bx=0x0080 cx=0 dx=0 "
 +                               "ax=0x%04X %s",
 +                               ds_regs.x.ax, a1_ok ? "ok" : "FAIL");
 +
@@ -220,7 +220,7 @@ index 861470cb3..c734f8964 100644
 +            outportb(0x3D4, 0x13); const Uint8 pre_13 = inportb(0x3D5);
 +            outportb(0x3D4, 0x1A); const Uint8 pre_1A = inportb(0x3D5);
 +            outportb(0x3D4, 0x1D); const Uint8 pre_1D = inportb(0x3D5);
-+            DOSKUTSU_MODES_LOG("WAVE16-4-DISPLAY-START: crtc_pre 0x0C=0x%02X 0x0D=0x%02X "
++            DOS_PORT_MODES_LOG("WAVE16-4-DISPLAY-START: crtc_pre 0x0C=0x%02X 0x0D=0x%02X "
 +                               "0x13=0x%02X 0x1A=0x%02X 0x1D=0x%02X",
 +                               pre_0C, pre_0D, pre_13, pre_1A, pre_1D);
 +
@@ -236,11 +236,11 @@ index 861470cb3..c734f8964 100644
 +                const Uint8 read_1A = inportb(0x3D5);
 +                const Uint8 new_1A = (Uint8)(read_1A & ~0x03);
 +                outportb(0x3D5, new_1A);
-+                DOSKUTSU_MODES_LOG("WAVE16-4-DISPLAY-START: chip_direct displayStart_zero "
++                DOS_PORT_MODES_LOG("WAVE16-4-DISPLAY-START: chip_direct displayStart_zero "
 +                                   "wrote 0x0C=0x00 0x0D=0x00 0x1A=0x%02X (was=0x%02X)",
 +                                   new_1A, read_1A);
 +            } else {
-+                DOSKUTSU_MODES_LOG("WAVE16-4-DISPLAY-START: chip_direct displayStart_skipped "
++                DOS_PORT_MODES_LOG("WAVE16-4-DISPLAY-START: chip_direct displayStart_skipped "
 +                                   "(VBE 0x4F07 succeeded, no need for chip-direct)");
 +            }
 +
@@ -252,11 +252,11 @@ index 861470cb3..c734f8964 100644
 +            if (pre_13 != expected_offset) {
 +                outportb(0x3D4, 0x13);
 +                outportb(0x3D5, expected_offset);
-+                DOSKUTSU_MODES_LOG("WAVE16-4-DISPLAY-START: chip_direct offset_fix "
++                DOS_PORT_MODES_LOG("WAVE16-4-DISPLAY-START: chip_direct offset_fix "
 +                                   "wrote 0x13=0x%02X (was=0x%02X expected=pitch/8=0x%02X)",
 +                                   expected_offset, pre_13, expected_offset);
 +            } else {
-+                DOSKUTSU_MODES_LOG("WAVE16-4-DISPLAY-START: chip_direct offset_ok "
++                DOS_PORT_MODES_LOG("WAVE16-4-DISPLAY-START: chip_direct offset_ok "
 +                                   "0x13=0x%02X matches expected=pitch/8=0x%02X",
 +                                   pre_13, expected_offset);
 +            }
@@ -267,7 +267,7 @@ index 861470cb3..c734f8964 100644
 +            outportb(0x3D4, 0x13); const Uint8 post_13 = inportb(0x3D5);
 +            outportb(0x3D4, 0x1A); const Uint8 post_1A = inportb(0x3D5);
 +            outportb(0x3D4, 0x1D); const Uint8 post_1D = inportb(0x3D5);
-+            DOSKUTSU_MODES_LOG("WAVE16-4-DISPLAY-START: crtc_post 0x0C=0x%02X 0x0D=0x%02X "
++            DOS_PORT_MODES_LOG("WAVE16-4-DISPLAY-START: crtc_post 0x0C=0x%02X 0x0D=0x%02X "
 +                               "0x13=0x%02X 0x1A=0x%02X 0x1D=0x%02X",
 +                               post_0C, post_0D, post_13, post_1A, post_1D);
 +        }

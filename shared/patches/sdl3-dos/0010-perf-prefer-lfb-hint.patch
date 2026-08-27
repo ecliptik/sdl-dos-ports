@@ -125,7 +125,7 @@ index ce25712d1..732061960 100644
 -    // hint_allow_direct=1 forces banked even when LFB is available -- this
 -    // is the policy lever patch 0010 will invert. lfb_available comes
 -    // straight from BIOS-reported mode attrs.
--    DOSKUTSU_MODES_LOG("LFB-decision #%d: hint_allow_direct=%d lfb_available=%d "
+-    DOS_PORT_MODES_LOG("LFB-decision #%d: hint_allow_direct=%d lfb_available=%d "
 -                       "is_banked_usable=%d -> use_lfb=%d",
 -                       ms_calls, (int)hint_allow_direct, (int)modedata->has_lfb,
 -                       (int)is_banked_usable, (int)use_lfb);
@@ -137,7 +137,7 @@ index ce25712d1..732061960 100644
 +    // decision explicit so we can SEE *why* each mode-set chose what it
 +    // chose. hint_allow_direct=1 historically forced banked; patch 0010
 +    // adds hint_prefer_lfb which now wins over hint_allow_direct.
-+    DOSKUTSU_MODES_LOG("LFB-decision #%d: hint_allow_direct=%d hint_prefer_lfb=%d "
++    DOS_PORT_MODES_LOG("LFB-decision #%d: hint_allow_direct=%d hint_prefer_lfb=%d "
 +                       "lfb_available=%d is_banked_usable=%d -> use_lfb=%d",
 +                       ms_calls, (int)hint_allow_direct, (int)hint_prefer_lfb,
 +                       (int)modedata->has_lfb, (int)is_banked_usable, (int)use_lfb);
@@ -145,7 +145,7 @@ index ce25712d1..732061960 100644
      regs.x.ax = 0x4F02;
      regs.x.bx = modedata->mode_id | (use_lfb ? VBE_SETMODE_LFB : 0);
 @@ -718,7 +727,7 @@ bool DOSVESA_SetDisplayMode(SDL_VideoDevice *device, SDL_VideoDisplay *sdl_displ
-     DOSKUTSU_MODES_LOG("DOSVESA-MODESET: id=0x%04X %dx%d %dbpp pitch=%d attr=0x%04X memmodel=%d "
+     DOS_PORT_MODES_LOG("DOSVESA-MODESET: id=0x%04X %dx%d %dbpp pitch=%d attr=0x%04X memmodel=%d "
                         "has_lfb=%d use_lfb=%d banked=%d "
                         "lfb_addr=0x%08lX win_seg=0x%04X win_size=%uKB win_gran=%uKB win_attr=0x%02X "
 -                       "win_func=0x%08lX hint_direct_fb=%d",

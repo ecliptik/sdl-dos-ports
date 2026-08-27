@@ -51,7 +51,7 @@ index 14cf0fb35..8b45af4e6 100644
  {
      CHECK_WINDOW_MAGIC(window, NULL);
  
--    DOSKUTSU_LIFECYCLE_LOG("GetWindowSurface: window=%p surface_valid=%d existing=%p (will %s)\n",
+-    DOS_PORT_LIFECYCLE_LOG("GetWindowSurface: window=%p surface_valid=%d existing=%p (will %s)\n",
 -                           (void *)window, (int)window->surface_valid,
 -                           (void *)window->surface,
 -                           window->surface_valid ? "return cached" : "destroy+recreate");
@@ -69,11 +69,11 @@ index 14cf0fb35..8b45af4e6 100644
 +    if (window->surface_valid) {
 +        ++_gws_cached_calls;
 +        if (_gws_cached_calls <= 5 || (_gws_cached_calls % 1000) == 0) {
-+            DOSKUTSU_LIFECYCLE_LOG("GetWindowSurface (cached) #%lu: window=%p existing=%p\n",
++            DOS_PORT_LIFECYCLE_LOG("GetWindowSurface (cached) #%lu: window=%p existing=%p\n",
 +                                   _gws_cached_calls, (void *)window, (void *)window->surface);
 +        }
 +    } else {
-+        DOSKUTSU_LIFECYCLE_LOG("GetWindowSurface: window=%p surface_valid=0 existing=%p (will destroy+recreate)\n",
++        DOS_PORT_LIFECYCLE_LOG("GetWindowSurface: window=%p surface_valid=0 existing=%p (will destroy+recreate)\n",
 +                               (void *)window, (void *)window->surface);
          if (window->surface) {
              window->surface->internal_flags &= ~SDL_INTERNAL_SURFACE_DONTFREE;

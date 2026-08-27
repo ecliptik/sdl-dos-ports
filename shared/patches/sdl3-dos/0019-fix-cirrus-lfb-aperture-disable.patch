@@ -231,7 +231,7 @@ index 62a525f34..d19ae2844 100644
 +        // One log line per CreateWindowFramebuffer when the override
 +        // actually changes the path. Silent when banked was going to
 +        // win anyway (would be redundant noise on every flush-equiv).
-+        DOSKUTSU_LC_LOG("DISABLE_LFB engaged: auto=%d hint=%d -> banked path "
++        DOS_PORT_LC_LOG("DISABLE_LFB engaged: auto=%d hint=%d -> banked path "
 +                        "(would have used LFB otherwise: prefer_lfb=%d banked_usable=1)",
 +                        (int)data->force_banked_path, (int)hint_disable_lfb,
 +                        (int)prefer_lfb);
@@ -323,7 +323,7 @@ index 9a68dd3c9..00b34a2e1 100644
 +        // describes. The reason string carries the "what matched" detail
 +        // (UNIVBE+1MB exact vs. Cirrus substring) without exposing the
 +        // raw fingerprint logic to consumers.
-+        DOSKUTSU_MODES_LOG("cirrus-lfb-aperture-bug: detected (oem='%s' product='%s' vram=%luKB) "
++        DOS_PORT_MODES_LOG("cirrus-lfb-aperture-bug: detected (oem='%s' product='%s' vram=%luKB) "
 +                           "-> forcing banked path (reason: %s)",
 +                           info && info->oem_vendor ? info->oem_vendor : "(empty)",
 +                           info && info->oem_product ? info->oem_product : "(empty)",
@@ -334,7 +334,7 @@ index 9a68dd3c9..00b34a2e1 100644
 +        // detection outcome (negative result is just as useful as
 +        // positive when investigating a "should this hardware have
 +        // forced banked?" question).
-+        DOSKUTSU_MODES_LOG("cirrus-lfb-aperture-bug: NOT detected (oem='%s' product='%s' vram=%luKB) "
++        DOS_PORT_MODES_LOG("cirrus-lfb-aperture-bug: NOT detected (oem='%s' product='%s' vram=%luKB) "
 +                           "-> LFB path remains enabled (reason: %s)",
 +                           info && info->oem_vendor ? info->oem_vendor : "(empty)",
 +                           info && info->oem_product ? info->oem_product : "(empty)",

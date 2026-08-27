@@ -144,10 +144,10 @@ index dd4e7a6b5..72bb62f77 100644
 +        sds_regs.x.dx = 0;      // first scan line
 +        __dpmi_int(0x10, &sds_regs);
 +        if ((sds_regs.x.ax & 0x00FF) == 0x004F) {
-+            DOSKUTSU_MODES_LOG("display-start pinned to (0,0) via VBE 0x4F07: ax=0x%04X",
++            DOS_PORT_MODES_LOG("display-start pinned to (0,0) via VBE 0x4F07: ax=0x%04X",
 +                               sds_regs.x.ax);
 +        } else {
-+            DOSKUTSU_MODES_LOG("display-start force FAILED (VBE 0x4F07 unsupported?): ax=0x%04X "
++            DOS_PORT_MODES_LOG("display-start force FAILED (VBE 0x4F07 unsupported?): ax=0x%04X "
 +                               "-- continuing; visible page may be wrong",
 +                               sds_regs.x.ax);
 +        }

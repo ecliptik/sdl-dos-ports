@@ -150,7 +150,7 @@ DBX_ARGS=(-conf "$CONF" -nopromptfolder
 # this testing launcher so smoke-gate banner-emit checks can witness INFO
 # banners even when the untagged-run default is WARN. Unset (the default)
 # does nothing -- a port opts in by exporting e.g.
-# LAUNCH_LOG_VERBOSE_VAR=DOSKUTSU_LOG_VERBOSE before calling this script.
+# LAUNCH_LOG_VERBOSE_VAR=DOS_PORT_LOG_VERBOSE before calling this script.
 if [[ -n "${LAUNCH_LOG_VERBOSE_VAR:-}" ]]; then
   DBX_ARGS+=(-c "SET ${LAUNCH_LOG_VERBOSE_VAR}=1")
 fi

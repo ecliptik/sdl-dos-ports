@@ -192,13 +192,13 @@ index 322232f24..5663bb441 100644
 +    // a real-HW log always records which mode-id filter state was live. Names the
 +    // requested id, whether it was found, and the resulting pick.
 +    if (!force_mode_id_req) {
-+        DOSKUTSU_MODES_LOG("DOSVESA-FORCEMODE: hint unset -> filter inactive (all modes enumerated)");
++        DOS_PORT_MODES_LOG("DOSVESA-FORCEMODE: hint unset -> filter inactive (all modes enumerated)");
 +    } else if (!force_mode_present) {
-+        DOSKUTSU_MODES_LOG("DOSVESA-FORCEMODE: requested id=0x%04X NOT enumerated -> FALLBACK "
++        DOS_PORT_MODES_LOG("DOSVESA-FORCEMODE: requested id=0x%04X NOT enumerated -> FALLBACK "
 +                           "to unfiltered mode list (video init preserved)",
 +                           (unsigned)force_mode_id_req);
 +    } else {
-+        DOSKUTSU_MODES_LOG("DOSVESA-FORCEMODE: requested id=0x%04X FOUND -> enumeration filtered "
++        DOS_PORT_MODES_LOG("DOSVESA-FORCEMODE: requested id=0x%04X FOUND -> enumeration filtered "
 +                           "to this id (pick=%dx%d)",
 +                           (unsigned)force_mode_id_req, forced_w, forced_h);
 +    }
