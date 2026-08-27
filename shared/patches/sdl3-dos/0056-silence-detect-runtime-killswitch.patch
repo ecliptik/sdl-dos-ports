@@ -9,7 +9,7 @@ Shape A post-mix silence-detect. Default-ON (silence-detect enabled;
 SFX-correct path; pays the wave-35 +3.34 ms fi_ms slice cost). Set
 SDL_HINT_DOS_SILENCE_DETECT=0 to disable (skip silence-scan +
 skip-ring-write branch in PlayDevice; reverts to wave-34 always-fill-ring
-behavior; SFX silent under AUDIO_BACKEND=opl3 because Pixtone never
+behavior; SFX silent under AUDIO_BACKEND=opl3 because SfxSynth never
 propagates -- the wave-34 known-broken-but-fast path, exposed here for
 perf-experiment A/B isolation only).
 
@@ -79,7 +79,7 @@ Per memory/sdl_ai_policy.md the patch stays workspace-local; not for
 upstream.
 
 Companion patches:
-  SDL/0054 -- Shape A silent-Pixtone-SFX fix (the patch this gates;
+  SDL/0054 -- Shape A silent-SfxSynth-SFX fix (the patch this gates;
               the silence-scan code path itself is unchanged here)
   SDL/0055 -- P12 SDL-side audio brackets (sits above this patch
               numerically; coexists trivially -- different state flags,
@@ -120,7 +120,7 @@ index 22a5f5864..3d9b511fe 100644
 +   Set SDL_HINT_DOS_SILENCE_DETECT=0 to disable silence-detect for
 +   perf-experiment runs (skips the bytewise scan + skip-ring-write
 +   branch in PlayDevice; reverts to wave-34 always-fill-ring behavior;
-+   SFX will be silent under AUDIO_BACKEND=opl3 because Pixtone never
++   SFX will be silent under AUDIO_BACKEND=opl3 because SfxSynth never
 +   propagates -- this is the wave-34 known-broken-but-fast path,
 +   provided here for fps-cost isolation only).
 +

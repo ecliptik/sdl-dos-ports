@@ -99,7 +99,7 @@
 #include <go32.h>
 
 /* ============================================================ */
-/* SDL DOS backend -> engine extern (g_pixtone_active_count, patch */
+/* SDL DOS backend -> engine extern (g_dos_sfx_synth_active_count, patch */
 /* SDL/0071) is supplied by the SHARED stub TU                    */
 /* tests/probes/probe_sdl_stubs.c, linked into every SDL probe    */
 /* via PROBES_SDL_LDLIBS (task #34). Do NOT define it here too --  */

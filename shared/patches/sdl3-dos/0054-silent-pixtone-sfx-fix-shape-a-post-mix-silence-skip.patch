@@ -2,14 +2,14 @@ From 27142f4c64e099944fccbefb45cea92df8338096 Mon Sep 17 00:00:00 2001
 From: Micheal Waltz <micheal@ecliptik.com>
 Date: Mon, 11 May 2026 19:29:48 -0700
 Subject: [PATCH] =?UTF-8?q?dos:=20Phase=2011=20patch=200054=20=E2=80=94=20?=
- =?UTF-8?q?silent-Pixtone-SFX=20fix=20(Shape=20A:=20post-mix=20silence-ski?=
+ =?UTF-8?q?silent-SfxSynth-SFX=20fix=20(Shape=20A:=20post-mix=20silence-ski?=
  =?UTF-8?q?p)?=
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
 Wave-34 PLAY5 W34A4 confirmed root cause: SDL/0050's pre-mix
-quiescence gate in DOSSOUNDBLASTER_GetDeviceBuf traps Pixtone SFX
+quiescence gate in DOSSOUNDBLASTER_GetDeviceBuf traps SfxSynth SFX
 under AUDIO_BACKEND=opl3. Operator heard SFX audibly with
 SDL_HINT_DOS_DOS_AUDIO_QUIESCENCE_GATE=0 (killswitched) but
 silence with default gate active.
@@ -19,9 +19,9 @@ output data, which makes SDL_PlaybackAudioThreadIterate
 (SDL_audio.c:1189) skip the entire mix loop AND PlayDevice for that
 iter. But SDL3_mixer's MixerCallback (registered as the bound
 output_stream's get-callback at SDL_mixer.c:805) is precisely what
-PROPAGATES per-track Pixtone audio into the bound stream. Skipping
+PROPAGATES per-track SfxSynth audio into the bound stream. Skipping
 the mix loop means MixerCallback never fires, tracks never get
-pulled, Pixtone fires never reach the device. Vicious cycle under
+pulled, SfxSynth fires never reach the device. Vicious cycle under
 AUDIO_BACKEND=opl3 -- music goes out-of-band via OPL3 register
 writes, the SDL audio stream is perpetually empty pre-mix, gate
 fires every iter, SFX is silent for the entire session.
@@ -34,7 +34,7 @@ Three options surfaced during pair-investigation with build-qa:
       memory/sdl_pause_api_must_audit_auto_resume_gates.md)
 
 Team-lead arbitrated Shape A over C: self-contained in SDL,
-generalizes to any audio activity (not just Pixtone-tagged),
+generalizes to any audio activity (not just SfxSynth-tagged),
 architecturally correct layering (post-mix in PlayDevice vs pre-mix
 in GetDeviceBuf -- WASAPI's gate-at-GetDeviceBuf precedent doesn't
 apply to our cooperative-scheduled DOS backend). 0.2 fps cost vs C
@@ -43,7 +43,7 @@ is below fps_replication_probe_required.md's noise floor.
 Mechanism (Shape A):
   - GetDeviceBuf becomes trivial: always return staging_buffer with
     *buffer_size unchanged. Mixer-tick runs every iter ->
-    MixerCallback fires -> Pixtone tracks get pulled -> samples reach
+    MixerCallback fires -> SfxSynth tracks get pulled -> samples reach
     bound stream when SFX trigger fires.
   - PlayDevice scans the mixed staging buffer for all-silence
     (bytewise compare against soundblaster_silence_value -- 0x00 for
@@ -54,7 +54,7 @@ Mechanism (Shape A):
     ticks -> DSP auto-engage idle-pause fires when threshold met ->
     IRQ-5 stops -> fps recovered. SAME mechanism as SDL/0050;
     triggered post-mix instead of pre-mix.
-  - If non-silence (real audio: Pixtone SFX, direct-stream OGG,
+  - If non-silence (real audio: SfxSynth SFX, direct-stream OGG,
     etc.) -> normal ring write path -> SFX plays.
 
 Coexistence with prior patches:
@@ -154,7 +154,7 @@ index 4a5dc2b05..44eedd70d 100644
 +                             "(default); PlayDevice scans mix-result for all-"
 +                             "silence + skips ring write when silent -> ring drains "
 +                             "via IRQ -> auto-engage path can fire on silent "
-+                             "gameplay. Pixtone SFX still flow via mixer-tick.");
++                             "gameplay. SfxSynth SFX still flow via mixer-tick.");
          }
      }
  
@@ -272,10 +272,10 @@ index 4a5dc2b05..44eedd70d 100644
 +
 +       SDL3_mixer's `MixerCallback` (registered on the mixer's
 +       output_stream via SDL_SetAudioStreamGetCallback at
-+       SDL_mixer.c:805) is what PROPAGATES per-track Pixtone audio into
++       SDL_mixer.c:805) is what PROPAGATES per-track SfxSynth audio into
 +       the bound output stream. With buffer_size=0, SDL3 skips the mix
 +       loop's `SDL_GetAudioStreamDataAdjustGain` call -> MixerCallback
-+       never fires -> tracks never get pulled -> Pixtone fires never
++       never fires -> tracks never get pulled -> SfxSynth fires never
 +       reach the device. Under AUDIO_BACKEND=opl3 (music routed
 +       out-of-band via OPL3 register writes; SDL audio stream perpetually
 +       empty pre-mix), the gate fires every iter; SFX is silent for the
@@ -292,7 +292,7 @@ index 4a5dc2b05..44eedd70d 100644
 +       for all-silence; if all-silence -> skip the ring write
 +       (preserves the auto-engage mechanism -- ring still drains via
 +       IRQ -> consecutive-silent-IRQ counter ticks -> DSP halts). If
-+       non-silence (mixer pulled Pixtone samples this iter) -> normal
++       non-silence (mixer pulled SfxSynth samples this iter) -> normal
 +       ring write -> SFX plays.
 +
 +       Cost trade vs SDL/0050: mixer-tick CPU per iter (~10-50 us)
@@ -336,7 +336,7 @@ index 4a5dc2b05..44eedd70d 100644
 +       pre-mix quiescence gate that GetDeviceBuf used to implement
 +       (see GetDeviceBuf above for the architectural reasoning).
 +
-+       When the mixer produces all-silence output (no Pixtone SFX
++       When the mixer produces all-silence output (no SfxSynth SFX
 +       active + music backend is out-of-band like OPL3 / WaveBlaster):
 +       skip the ring write here and SDL_Delay(10) to throttle the audio
 +       thread. The IRQ-5 ISR continues draining the ring (now-silent
@@ -345,13 +345,13 @@ index 4a5dc2b05..44eedd70d 100644
 +       mechanism as SDL/0050; just gated on actual mix-result silence
 +       (post-mix) instead of pre-mix stream-availability.
 +
-+       Why this is correct under AUDIO_BACKEND=opl3 + Pixtone SFX:
++       Why this is correct under AUDIO_BACKEND=opl3 + SfxSynth SFX:
 +       SDL3's mix loop (SDL_audio.c:1254) runs every iter under Shape A
 +       because GetDeviceBuf always returns non-zero buffer_size. The
 +       mix calls SDL_GetAudioStreamData on each bound stream, which
 +       fires the get-callback chain (SDL3_mixer's MixerCallback ->
-+       per-track TrackGetCallback -> pulls from Pixtone-loaded chunks).
-+       When a Pixtone SFX fires via MIX_PlayTrack on main thread,
++       per-track TrackGetCallback -> pulls from SfxSynth-loaded chunks).
++       When a SfxSynth SFX fires via MIX_PlayTrack on main thread,
 +       the next audio-thread iter (<= 1 chunk-time later, typically
 +       ~10-12 ms at 22050 mono / 256 frames) pulls the samples ->
 +       mix produces non-silence -> this silence-detect block falls
@@ -418,7 +418,7 @@ index 4a5dc2b05..44eedd70d 100644
 +        }
 +    }
 +
-+    /* Normal path: mix produced non-silence (real audio -- Pixtone SFX
++    /* Normal path: mix produced non-silence (real audio -- SfxSynth SFX
 +       sample, direct-stream OGG, etc.) OR gate disabled (killswitch
 +       or shutdown coordination). Write the mixed staging buffer into
 +       the ring. */

@@ -40,7 +40,7 @@ Patch shape:
         callsite when the SDL ISR owns the tick.
     Mirrors the established public-header pattern from
     SDL_dosaudio_pump.h (SDL/0067) + SDL_dosaudio_shutdown.h
-    (SDL/0053) + SDL_dosvesa_directaccess.h + SDL_dospixtone.h
+    (SDL/0053) + SDL_dosvesa_directaccess.h + SDL_dossfx_synth.h
     (SDL/0071). Closes the "missing public header for new exported
     API" gap-class flush-instr sec.10.6 amended into the L3 design.
 
@@ -54,7 +54,7 @@ Patch shape:
       callback-pointer write is single-word aligned-volatile (atomic
       on x86; no cli/sti needed); accessor returns the cached bool.
     - **ISR insertion** at sb.c:1183-area (AFTER counter increments
-      including SDL/0071's g_dos_pixtone_active_count and the existing
+      including SDL/0071's g_dos_sfx_synth_pool_active_count and the existing
       dos_port_audio_sfx_active_count, BEFORE exit_timer read at
       sb.c:1191) so the MIDI tick wall-clock cost folds into the
       existing dos_port_audio_irq_wall_us instrumentation per
@@ -65,7 +65,7 @@ Patch shape:
       callback emit so subsequent emits have a valid delta source.
     - **OpenDevice hint resolution**: strict-"1" match;
       sentinel-cached on the existing pattern (matches MIDGAP_PUMP
-      / TICKPUMP / DATA_CACHE / PIXTONE_PROBE / PIXTONE_IRQ_MIX).
+      / TICKPUMP / DATA_CACHE / SFX_SYNTH_PROBE / SFX_SYNTH_IRQ_MIX).
       Two banner variants emit: ENABLED / DISABLED.
     - **DPMI locks** alongside the existing 0023+0025+0037+0038+0069
       +0071 block: DOS_LockVariable for the cached killswitch bool,
@@ -266,7 +266,7 @@ index 000000000..8e52a114d
 + * combined cost; per-lever attribution requires separate
 + * instrumentation if needed.
 + *
-+ * Like SDL_dosaudio_pump.h / shutdown.h / dospixtone.h /
++ * Like SDL_dosaudio_pump.h / shutdown.h / dossfx_synth.h /
 + * dosvesa_directaccess.h, this header is a workspace-local doskutsu
 + * addition. SDL/0072 hunks + these declarations are not contributed
 + * back to libsdl-org/SDL.
@@ -375,11 +375,11 @@ index 8592684e8..cf65f8e9f 100644
 --- a/src/audio/dos/SDL_dosaudio_sb.c
 +++ b/src/audio/dos/SDL_dosaudio_sb.c
 @@ -32,2 +32,3 @@
- #include <SDL3/SDL_dospixtone.h>        /* DOSKUTSU patch 0071: engine-callable SDL_DOSPixtone* channel-pool API (Lever 3 IRQ-5 ISR mix) */
+ #include <SDL3/SDL_dossfx_synth.h>        /* DOSKUTSU patch 0071: engine-callable SDL_DOSSfxSynth* channel-pool API (Lever 3 IRQ-5 ISR mix) */
 +#include <SDL3/SDL_dosmidi_tick.h>      /* DOSKUTSU patch 0072: engine-registered IRQ-5 MIDI tick callback (Lever 2b MidiScheduler ISR piggyback) */
  
-@@ -814,2 +815,41 @@ static bool g_dos_pixtone_irq_mix_active = false;
- static volatile Uint8 g_dos_pixtone_irq_mix_shift = 9;
+@@ -814,2 +815,41 @@ static bool g_dos_sfx_synth_irq_mix_active = false;
+ static volatile Uint8 g_dos_sfx_synth_irq_mix_shift = 9;
 +/* ========================================================================
 + * DOSKUTSU patch (Phase 11 patch 0072): Lever 2b -- MidiScheduler tick
 + * from the SB16 IRQ-5 ISR
@@ -420,7 +420,7 @@ index 8592684e8..cf65f8e9f 100644
 +static volatile Uint64   g_dos_midi_last_entry_timer = 0;
 +static volatile bool     g_dos_midi_baseline_seeded = false;
  
-@@ -1051,2 +1091,24 @@ void SDL_DOSPixtoneSetGain(int32_t channel_id, int16_t gain_x256)
+@@ -1051,2 +1091,24 @@ void SDL_DOSSfxSynthSetGain(int32_t channel_id, int16_t gain_x256)
  
 +/* DOSKUTSU patch (Phase 11 patch 0072): Lever 2b -- engine-facing
 + * registration API. The engine registers an ISR-safe C callback at
@@ -515,7 +515,7 @@ index 8592684e8..cf65f8e9f 100644
 +
      /* DOSKUTSU patch (Phase 11 patch 0050): resolve quiescence-gate
 @@ -1956,2 +2081,16 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
-     DOS_LockVariable(g_dos_pixtone_irq_mix_shift);
+     DOS_LockVariable(g_dos_sfx_synth_irq_mix_shift);
 +    /* DOSKUTSU patch (Phase 11 patch 0072): Lever 2b -- MidiScheduler
 +       tick from IRQ-5 ISR. The callback pointer, the active flag, and
 +       the inter-IRQ delta accumulator state are all read from IRQ

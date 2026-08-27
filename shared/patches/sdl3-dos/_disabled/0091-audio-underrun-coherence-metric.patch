@@ -73,7 +73,7 @@ index e592ec3ab..2cf2c0a2f 100644
 +            isr_max_silent_run = isr_consecutive_silent_irqs;
 +        }
          /* DOSKUTSU patch (Phase 11 patch 0069): cumulative silent-IRQ
-            counter for the Pixtone multi-source probe. Single 32-bit
+            counter for the SfxSynth multi-source probe. Single 32-bit
             volatile increment alongside the existing consecutive-depth
 @@ -2546,6 +2564,7 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
         counters in SDL_dos_audio_synth.c (patch 0037) are also touched

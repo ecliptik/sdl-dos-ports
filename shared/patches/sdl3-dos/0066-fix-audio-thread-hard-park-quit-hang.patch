@@ -53,7 +53,7 @@ touch any SDL-core lock (subsystem_rwlock, device->lock,
 output_stream->lock, close_cond) -- entirely SDL-DOS-backend lane.
 
 Audio is already silenced at SDL_DOSAudioBeginShutdown time (Organya
-shutdown ran at snd-shutdown[2/6], Pixtone at [3/6]), so parking the
+shutdown ran at snd-shutdown[2/6], SfxSynth at [3/6]), so parking the
 audio thread is lossless behaviorally. SDL_Delay(5) in the park loop
 yields cooperatively, so main runs freely during the park.
 
@@ -122,7 +122,7 @@ index 3d74628cc..04a1b266d 100644
 +   ("audio close:" lines emit), MIX_DestroyMixer returns, quit completes.
 +
 +   Audio is already silenced at SDL_DOSAudioBeginShutdown time (Organya
-+   shutdown ran at snd-shutdown[2/6], Pixtone at [3/6]), so parking the
++   shutdown ran at snd-shutdown[2/6], SfxSynth at [3/6]), so parking the
 +   audio thread loses nothing behaviorally.
 +
 +   Critically, this does NOT set device->shutdown early -- that would

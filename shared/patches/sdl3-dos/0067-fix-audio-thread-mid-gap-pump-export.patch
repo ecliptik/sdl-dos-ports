@@ -189,9 +189,9 @@ index 000000000..207c553f6
 + * 3. **Does NOT re-enter engine code via callback (beyond scalar slot
 + *    bookkeeping).** The one synchronous engine-callback re-entry that
 + *    can fire inside the iterate is SDL3_mixer's
-+ *    `MIX_SetTrackStoppedCallback` chain, which lands in Pixtone's
++ *    `MIX_SetTrackStoppedCallback` chain, which lands in SfxSynth's
 + *    `mySfxCallback` -> `pxtSoundDone`. `pxtSoundDone` is two scalar
-+ *    writes (`_sound_fx[slot].channel = -1` + `--g_pixtone_active_count`)
++ *    writes (`_sound_fx[slot].channel = -1` + `--g_dos_sfx_synth_active_count`)
 + *    -- the "marks a slot free" carve-out that the safety surface
 + *    explicitly allows. No other engine state is touched, no renderer
 + *    is reached, no event pump is run, no `SDL_LockMutex` is taken on
@@ -440,9 +440,9 @@ index 04a1b266d..d94af1c42 100644
 +   (3) Does NOT re-enter engine code via callback beyond scalar slot
 +       bookkeeping. The one synchronous engine-callback re-entry is the
 +       MIX_TrackStoppedCallback chain (SDL_mixer.c:466 -> :228) ->
-+       Pixtone's mySfxCallback (Pixtone.cpp:279) -> Pixtone::pxtSoundDone
++       SfxSynth's mySfxCallback (Pixtone.cpp:279) -> SfxSynth::pxtSoundDone
 +       (Pixtone.cpp:725-743), which is two scalar writes
-+       (`_sound_fx[slot].channel = -1` + `--g_pixtone_active_count`)
++       (`_sound_fx[slot].channel = -1` + `--g_dos_sfx_synth_active_count`)
 +       -- no renderer, no events, no engine-state mutation. This is
 +       the "marks a slot free" carve-out the design's sec.3.1
 +       explicitly allows.

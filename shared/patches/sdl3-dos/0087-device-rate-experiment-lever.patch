@@ -62,7 +62,7 @@ index 53a828396..cde248f53 100644
 +       lever overrides device->spec.freq to the operator-requested rate; opening
 +       at 11025 (== content) cuts the ring drain 4x, collapses the resampler to a
 +       cheap channel-dup, and auto-collapses the Bug 6 RATEDIV to identity (the
-+       dos_pixtone_recompute_ratediv reads the new dev_freq below).
++       dos_sfx_synth_recompute_ratediv reads the new dev_freq below).
 +
 +       Env-gated, DEFAULT UNSET = no change = byte-identical to pre-0087 (the
 +       44100 floor stands; zero production risk; OPL3 / WaveBlaster are

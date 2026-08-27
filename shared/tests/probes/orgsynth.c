@@ -38,7 +38,7 @@
  *
  *   Refutes:
  *     If ORGSYNTH share-of-audio_thread <25% -> P1 + P2 refuted. Music
- *         synth is not the bottleneck; pivot to P3 (Pixtone pre-render)
+ *         synth is not the bottleneck; pivot to P3 (SfxSynth pre-render)
  *         + P5/P7 (mix-side).
  *     If ORGSYNTH share <15% -> even WaveBlaster (3-5 day work) doesn't
  *         pay back; close architectural offload as wave-39+ candidate.
@@ -457,7 +457,7 @@ int main(int argc, char **argv)
     plog("              / (wave-36 PLAY5 P12 audio_thread total per equivalent window) * 100");
     plog("  Verdict:");
     plog("    >50%% (Organya-dominated) -> P2 (WaveBlaster) rank-1; P1 (OPL3) reserved fallback.");
-    plog("    25-50%% (balanced)        -> P7 (Lever G) rank-1 + P3 (Pixtone pre-render) rank-2.");
+    plog("    25-50%% (balanced)        -> P7 (Lever G) rank-1 + P3 (SfxSynth pre-render) rank-2.");
     plog("    <25%% (Organya-minor)     -> P3 rank-1; P1/P2 refuted.");
     plog("  Rate-sensitivity check (P7 secondary): if ORGSYNTH[44100] - ORGSYNTH[11025m] is");
     plog("    small relative to 4x rate change, Lever G doesn't help the Organya bucket.");

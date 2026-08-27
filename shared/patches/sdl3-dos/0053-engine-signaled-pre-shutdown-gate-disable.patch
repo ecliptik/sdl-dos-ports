@@ -143,7 +143,7 @@ index 000000000..b22a0f219
 + *
 + * From `SoundManager::shutdown()` (or equivalent engine teardown path)
 + * **immediately before** the call to `MIX_DestroyMixer`. The
-+ * `[3/6] pre-Pixtone::shutdown` -> `[4/6] pre-MIX_DestroyMixer` window in
++ * `[3/6] pre-SfxSynth::shutdown` -> `[4/6] pre-MIX_DestroyMixer` window in
 + * the doskutsu engine's `snd-shutdown` log markers is the canonical
 + * insertion point.
 + *

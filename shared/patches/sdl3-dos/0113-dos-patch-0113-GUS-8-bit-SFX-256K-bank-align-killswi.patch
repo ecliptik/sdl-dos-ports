@@ -10,7 +10,7 @@ pointer keeps bits 18-19 as the 256K bank select so a 16-bit sample crossing a
 bank wraps and corrupts. 8-bit samples use full 20-bit linear addressing, so
 gus_dram_alloc lets them straddle a bank freely.
 
-nx 0239 uploads Cave Story's Pixtone sound effects as 8-bit mono. The #38 crash
+nx 0239 uploads Cave Story's SfxSynth sound effects as 8-bit mono. The #38 crash
 (quit-to-DOS) reproduces at a LATE 8-bit SFX slot around ~715KB of GF1 DRAM in
 use -- just past the 0x80000 (512KB) bank boundary -- and is slot-data-specific.
 The leading hypothesis is a PicoGUS straddle intolerance the 8-bit path never
@@ -53,7 +53,7 @@ index 064773e28..362bd2ee1 100644
 +       limit: the voice read pointer keeps bits 18-19 as the 256K bank select, so
 +       a 16-bit sample crossing a bank wraps -> corruption). 8-bit samples use
 +       full 20-bit linear addressing, so on a classic GF1 they may cross a bank
-+       freely -- but nx 0239 uploads Pixtone SFX as 8-bit and the #38 crash is a
++       freely -- but nx 0239 uploads SfxSynth SFX as 8-bit and the #38 crash is a
 +       LATE 8-bit slot at ~715KB DRAM (just past the 0x80000 bank boundary),
 +       slot-data-specific. Leading hypothesis: a PicoGUS straddle intolerance the
 +       8-bit path never guarded against. GUS_SFX_BANKALIGN=1 extends the same
@@ -68,7 +68,7 @@ index 064773e28..362bd2ee1 100644
         cell if the IRQ-bit alone isn't enough. */
      g_gus_fullcanon = gus_hint_is_one("SDL_HINT_DOS_GUS_FULLCANON");
 +    /* gussfx-1 #38 killswitch (default OFF): extend the 256K no-straddle bump to
-+       8-bit allocs too (Pixtone SFX). OFF reproduces the crash; =1 engages the
++       8-bit allocs too (SfxSynth SFX). OFF reproduces the crash; =1 engages the
 +       guard -- both from the SAME binary for the g2k A/B. */
 +    g_gus_sfx_bankalign = gus_hint_is_one("SDL_HINT_DOS_GUS_SFX_BANKALIGN");
      g_gus_dr_head = g_gus_dr_tail = 0; /* arm the IRQ-safe diag ring */

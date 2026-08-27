@@ -28,7 +28,7 @@ Mechanism (extends the SDL/0110 pump; DEFAULT ON on the AdLib path):
   -- the repo's idiomatic "production lever default-ON with a killswitch"
   pattern. When off, the unchanged SDL/0110 music-only OplPitISR is installed:
   byte-identical to shipped v1.5.0, no ch2/0x61 touch.
-- Engine-facing API (include/SDL3/SDL_dosopltimer.h; nx-engine maps Pixtone SFX
+- Engine-facing API (include/SDL3/SDL_dosopltimer.h; nx-engine maps SfxSynth SFX
   IDs to (freq,duration) square-wave descriptors and calls it at the SFX
   trigger point): void SDL_DOSPcSpkBeep(Uint16 freq_hz, Uint16 duration_ms,
   int flush) + bool SDL_DOSPcSpkSfxEnabled(void). freq_hz==0 is a timed REST
@@ -95,7 +95,7 @@ index fc1d35863..3f516035e 100644
 + * Gated by SDL_HINT_DOS_PCSPK_SFX: DEFAULT ON on the AdLib path, resolved
 + * at pump Start via a strict-"0" killswitch (only the literal env "0" disables;
 + * when off, the pump is music-only and byte-identical to the shipped v1.5.0
-+ * AdLib path -- no ch2/0x61 touch). The engine (nx-engine) maps Pixtone SFX IDs
++ * AdLib path -- no ch2/0x61 touch). The engine (nx-engine) maps SfxSynth SFX IDs
 + * to (freq,duration) square-wave descriptors and calls SDL_DOSPcSpkBeep below.
 + */
 +
@@ -394,7 +394,7 @@ index 285180bb0..29751d626 100644
  
 +/* ========================================================================
 + * DOSKUTSU patch (SDL/0118): PC-speaker square-wave SFX engine-facing API.
-+ * The engine (nx-engine) maps Pixtone SFX IDs to (freq,duration) descriptors
++ * The engine (nx-engine) maps SfxSynth SFX IDs to (freq,duration) descriptors
 + * and calls SDL_DOSPcSpkBeep at its SFX trigger point. Contract:
 + * include/SDL3/SDL_dosopltimer.h.
 + * ======================================================================== */

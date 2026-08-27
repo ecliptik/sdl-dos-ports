@@ -10,7 +10,7 @@ var, closing the v1.0.8 organya-delivery productionization.
 
 New export SDL_DOSAudioSetDeviceFrameRate(int hz) on a new header
 SDL_dosaudio_devicerate.h. SoundManager calls it with SAMPLE_RATE before
-MIX_CreateMixerDevice (alongside SDL_DOSPixtoneSetMasterRate); the backend
+MIX_CreateMixerDevice (alongside SDL_DOSSfxSynthSetMasterRate); the backend
 caches it and applies it in OpenDevice. Opening at the content rate (11025
 Tier-2) instead of SDL core's 44100 quality floor cuts the DMA ring drain 4x
 and collapses the SDL logical->physical resampler to a cheap channel-dup --
@@ -22,7 +22,7 @@ Precedence in OpenDevice: env hint SDL_HINT_DOS_DOS_AUDIO_DEVICE_RATE
 killswitch SDL_HINT_DOS_DOS_AUDIO_DEVICE_RATE_DEFAULT=0 (strict-"0")
 disables the setter default for a clean A/B baseline cell. Out-of-band music
 backends (OPL3/WaveBlaster) never touch this PCM path, so default-backend
-audio is unchanged. Blast radius is the organya + Pixtone PCM path only.
+audio is unchanged. Blast radius is the organya + SfxSynth PCM path only.
 Workspace-local; never upstreamed.
 ---
  include/SDL3/SDL_dosaudio_devicerate.h | 106 +++++++++++++++++++++++++
@@ -98,7 +98,7 @@ index 000000000..7f3b5a74b
 + *
 + * Out-of-band music backends (OPL3 / WaveBlaster, MPU-401 / OPL-chip) never
 + * touch this PCM DMA path, so production audio under the default backend is
-+ * unaffected; the lever only changes the organya + Pixtone PCM path.
++ * unaffected; the lever only changes the organya + SfxSynth PCM path.
 + */
 +
 +#ifndef SDL_dosaudio_devicerate_h_
@@ -116,7 +116,7 @@ index 000000000..7f3b5a74b
 + * Request the SB16 PCM device frame rate, in Hz.
 + *
 + * Call from the engine main thread BEFORE the audio device opens (e.g. in
-+ * SoundManager, alongside SDL_DOSPixtoneSetMasterRate, just before
++ * SoundManager, alongside SDL_DOSSfxSynthSetMasterRate, just before
 + * MIX_CreateMixerDevice). Pass SAMPLE_RATE (the PCM frame rate, e.g. 11025 in
 + * Tier-2), NOT SAMPLE_RATE * AUDIO_CHANNELS.
 + *
@@ -151,7 +151,7 @@ index 9d4092049..ef73f955e 100644
  #include <SDL3/SDL_dosaudio_shutdown.h> /* DOSKUTSU patch 0053: engine-callable SDL_DOSAudioBeginShutdown export */
  #include <SDL3/SDL_dosaudio_pump.h>     /* DOSKUTSU patch 0067: engine-callable SDL_DOSAudioPump export (audio mid-gap-service); SDL/0088 adds the ring-fill + capacity queries here */
 +#include <SDL3/SDL_dosaudio_devicerate.h> /* DOSKUTSU patch 0090: engine-callable SDL_DOSAudioSetDeviceFrameRate export (device-rate productionization) */
- #include <SDL3/SDL_dospixtone.h>        /* DOSKUTSU patch 0071: engine-callable SDL_DOSPixtone* channel-pool API (Lever 3 IRQ-5 ISR mix) */
+ #include <SDL3/SDL_dossfx_synth.h>        /* DOSKUTSU patch 0071: engine-callable SDL_DOSSfxSynth* channel-pool API (Lever 3 IRQ-5 ISR mix) */
  #include <SDL3/SDL_dosmidi_tick.h>      /* DOSKUTSU patch 0072: engine-registered IRQ-5 MIDI tick callback (Lever 2b MidiScheduler ISR piggyback) */
  
 @@ -329,6 +330,17 @@ static SDL_AudioDevice * volatile g_dos_audio_device = NULL;
@@ -161,7 +161,7 @@ index 9d4092049..ef73f955e 100644
 +/* DOSKUTSU patch (SDL/0090): device-rate productionization state.
 +   g_dos_audio_device_rate_setter: the engine's requested PCM device frame
 +   rate (Hz), set via SDL_DOSAudioSetDeviceFrameRate() from SoundManager
-+   BEFORE the device opens (alongside SDL_DOSPixtoneSetMasterRate). 0 = unset
++   BEFORE the device opens (alongside SDL_DOSSfxSynthSetMasterRate). 0 = unset
 +   (no setter default; the SDL-core 44100 floor stands). Consumed once at
 +   OpenDevice. The SDL/0087 env hint (SDL_HINT_DOS_DOS_AUDIO_DEVICE_RATE)
 +   WINS over this setter when both are present, so flush-instr's sweep cells
@@ -181,7 +181,7 @@ index 9d4092049..ef73f955e 100644
 + * ========================================================================
 + * Engine-callable (main thread, BEFORE the device opens). SoundManager calls
 + * this with SAMPLE_RATE (the PCM frame rate, e.g. 11025 Tier-2) alongside
-+ * SDL_DOSPixtoneSetMasterRate, so the SB16 PCM device opens at the content
++ * SDL_DOSSfxSynthSetMasterRate, so the SB16 PCM device opens at the content
 + * rate by default: 4x less ring drain + the SDL logical->physical resampler
 + * collapses to a channel-dup (see the SDL/0087 block in OpenDevice +
 + * V108-MUSIC-RETROSPECTIVE.md sec.5.4).

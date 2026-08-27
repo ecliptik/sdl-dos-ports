@@ -2,7 +2,7 @@
  * gussfx.c -- standalone GF1 SFX-upload + per-slot trigger probe (GUS #38).
  *
  * Campaign 3 GUS-SFX (#38), iter-1 GROUND-TRUTH cell. Pure DJGPP; NO SDL, NO
- * engine, NO C++. Reproduces the nx-0239 `Pixtone::initGusSfx` DRAM-placement
+ * engine, NO C++. Reproduces the nx-0239 `SfxSynth::initGusSfx` DRAM-placement
  * sequence (8-bit UNSIGNED mono SFX bank) WITHOUT the engine, so the operator
  * can pin the exact crashing slot on the real PicoGUS (g2k) and confirm/refute
  * the leading hypothesis.
@@ -33,7 +33,7 @@
  *     "a host page-fault during the read means `len` EXCEEDS the caller's `data`
  *     buffer -- a caller-side length bug." i.e. the engine passes len >
  *     final_buffer's real allocation for one slot -> PIO over-reads `tmp[]` into
- *     an unmapped DPMI page -> quit to DOS. That is ENGINE-side (Pixtone render
+ *     an unmapped DPMI page -> quit to DOS. That is ENGINE-side (SfxSynth render
  *     size vs uploaded len) and this probe CANNOT reproduce it -- this probe
  *     GENERATES its sample bytes on the fly (no host buffer to over-read).
  *

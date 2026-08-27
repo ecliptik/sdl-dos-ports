@@ -212,7 +212,7 @@ index f67964209..128a1f80c 100644
 +++ b/src/audio/dos/SDL_dosaudio_sb.c
 @@ -32,6 +32,7 @@
  #include <SDL3/SDL_dosaudio_devicerate.h> /* DOSKUTSU patch 0090: engine-callable SDL_DOSAudioSetDeviceFrameRate export (device-rate productionization) */
- #include <SDL3/SDL_dospixtone.h>        /* DOSKUTSU patch 0071: engine-callable SDL_DOSPixtone* channel-pool API (Lever 3 IRQ-5 ISR mix) */
+ #include <SDL3/SDL_dossfx_synth.h>        /* DOSKUTSU patch 0071: engine-callable SDL_DOSSfxSynth* channel-pool API (Lever 3 IRQ-5 ISR mix) */
  #include <SDL3/SDL_dosmidi_tick.h>      /* DOSKUTSU patch 0072: engine-registered IRQ-5 MIDI tick callback (Lever 2b MidiScheduler ISR piggyback) */
 +#include <SDL3/SDL_dosident.h>          /* DOSKUTSU patch 0124: read-only SB HW-identity accessors (telemetry RUNMANIFEST) */
  

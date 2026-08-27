@@ -113,7 +113,7 @@ index cde248f53..9d4092049 100644
  #include <SDL3/SDL_dosaudio_shutdown.h> /* DOSKUTSU patch 0053: engine-callable SDL_DOSAudioBeginShutdown export */
 -#include <SDL3/SDL_dosaudio_pump.h>     /* DOSKUTSU patch 0067: engine-callable SDL_DOSAudioPump export (audio mid-gap-service) */
 +#include <SDL3/SDL_dosaudio_pump.h>     /* DOSKUTSU patch 0067: engine-callable SDL_DOSAudioPump export (audio mid-gap-service); SDL/0088 adds the ring-fill + capacity queries here */
- #include <SDL3/SDL_dospixtone.h>        /* DOSKUTSU patch 0071: engine-callable SDL_DOSPixtone* channel-pool API (Lever 3 IRQ-5 ISR mix) */
+ #include <SDL3/SDL_dossfx_synth.h>        /* DOSKUTSU patch 0071: engine-callable SDL_DOSSfxSynth* channel-pool API (Lever 3 IRQ-5 ISR mix) */
  #include <SDL3/SDL_dosmidi_tick.h>      /* DOSKUTSU patch 0072: engine-registered IRQ-5 MIDI tick callback (Lever 2b MidiScheduler ISR piggyback) */
  
 @@ -321,6 +321,14 @@ static volatile bool g_dos_audio_hard_park = false;
@@ -131,7 +131,7 @@ index cde248f53..9d4092049 100644
  /* DOSKUTSU patch (Phase 11 patch 0068, v2): cooperative-scheduler-
     starvation backstop for SDL_DOSAudioPump (the 0067 v2 export). v2
     wraps the outer SDL_LockMutex(device->lock) acquisition introduced
-@@ -885,6 +893,63 @@ static void dos_pixtone_recompute_ratediv(void)
+@@ -885,6 +893,63 @@ static void dos_sfx_synth_recompute_ratediv(void)
                           "shift_div=%d", d, devf, master, e);
      }
  }
@@ -174,7 +174,7 @@ index cde248f53..9d4092049 100644
 +
 +int SDL_DOSAudioRingFillMs(void)
 +{
-+    const int freq = g_dos_pixtone_dev_freq; /* device frame rate, cached at OpenDevice */
++    const int freq = g_dos_sfx_synth_dev_freq; /* device frame rate, cached at OpenDevice */
 +    if (freq <= 0) {
 +        return 0;
 +    }
@@ -183,7 +183,7 @@ index cde248f53..9d4092049 100644
 +
 +int SDL_DOSAudioRingCapacityMs(void)
 +{
-+    const int freq = g_dos_pixtone_dev_freq;
++    const int freq = g_dos_sfx_synth_dev_freq;
 +    const int bpf  = g_dos_ring_bytes_per_frame;
 +    if (freq <= 0 || bpf <= 0) {
 +        return 0;
@@ -198,14 +198,14 @@ index cde248f53..9d4092049 100644
 @@ -2210,6 +2275,10 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
         is cached unconditionally so a late SetMasterRate call can still
         recompute. Per BUG6-BALANCE-AND-SHIP-FIX-DESIGN.md Part 1. */
-     g_dos_pixtone_dev_freq = device->spec.freq;
+     g_dos_sfx_synth_dev_freq = device->spec.freq;
 +    /* DOSKUTSU patch (SDL/0088): cache bytes-per-frame for the ring-fill query.
 +       SB16 path forced S16 stereo above -> 4; computed generically so the
 +       pre-SB16 U8 mono/stereo paths are correct too. */
 +    g_dos_ring_bytes_per_frame = (int)SDL_AUDIO_FRAMESIZE(device->spec);
-     if (g_dos_pixtone_irq_mix_active) {
+     if (g_dos_sfx_synth_irq_mix_active) {
          const char *rd_hint =
-             SDL_GetHint("SDL_HINT_DOS_PIXTONE_IRQ_RATEDIV");
+             SDL_GetHint("SDL_HINT_DOS_SFX_SYNTH_IRQ_RATEDIV");
 -- 
 2.47.3
 

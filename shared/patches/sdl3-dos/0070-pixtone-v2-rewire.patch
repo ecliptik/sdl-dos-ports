@@ -1,15 +1,15 @@
 From e7ce5eb4cf8514b3314c973dc6fa8c6c87c5145c Mon Sep 17 00:00:00 2001
 From: Micheal Waltz <services.claude@accounts.ecliptik.com>
 Date: Wed, 20 May 2026 18:37:07 -0700
-Subject: [PATCH] dos: Phase 11 patch 0070 -- v2 Pixtone probe pix_active
+Subject: [PATCH] dos: Phase 11 patch 0070 -- v2 SfxSynth probe pix_active
  histogram + irq_delta fold-in
 
 Why DOS needs this:
 
-The v1 Pixtone multi-source probe iter (nxengine-evo/0165, 2026-05-20)
+The v1 SfxSynth multi-source probe iter (nxengine-evo/0165, 2026-05-20)
 returned hypothesis-E (instrumentation gap) per
 docs/internal/486-CLASS-CAMPAIGN-FINDINGS.md sec.21.5. Root cause: the
-v1 engine-side histogram sampler (SamplePixtoneActiveBucket at
+v1 engine-side histogram sampler (SampleSfxSynthActiveBucket at
 Renderer.cpp) was hooked to organyaStreamCallback, which fires only
 under the Organya music backend. OPL3 has been the wave-46 default
 since 2026-05-14, so the sampler never fired in the production
@@ -17,7 +17,7 @@ configuration -> samples=0 across all 13 v1 probe blocks ->
 discriminator-pillar table unable to compute hypotheses A vs C.
 
 This patch re-wires the histogram sampling to the SDL-side audio
-backend: g_pixtone_active_count is sampled once per audio-thread
+backend: g_dos_sfx_synth_active_count is sampled once per audio-thread
 iterate (top of DOSSOUNDBLASTER_PlayDevice), bucketed into the same 6
 bins as the v1 engine-side histogram ([0] / [1] / [2] / [3-5] /
 [6-10] / [11+] -- boundaries match Renderer.cpp:122). PlayDevice is
@@ -47,7 +47,7 @@ C99 unsigned overflow semantics).
 
 Patch shape:
 
-  - extern volatile uint32_t g_pixtone_active_count -- engine -> SDL
+  - extern volatile uint32_t g_dos_sfx_synth_active_count -- engine -> SDL
     extern direction. Novel for this codebase but linkage-clean: the
     engine-side symbol is in an extern "C" block at Pixtone.h:37.
   - static Uint32 g_c_pix_hist[6] -- file-scope histogram, touched
@@ -64,7 +64,7 @@ Patch shape:
     `pix_active min=X med=Y p90=Z max=W samples=N irq_delta=M` fields.
     Per-100-PlayDevice-call cadence unchanged. Histogram + irq snapshot
     reset on emit alongside the existing reset block.
-  - OpenDevice banner: "audio: SDL/0070 v2 Pixtone probe pix_active
+  - OpenDevice banner: "audio: SDL/0070 v2 SfxSynth probe pix_active
     histogram + irq_delta fold-in: rides on FINE_INSTR=1" -- the
     smoke gate's runtime-invocation witness; banner is unconditional
     so embed-vs-runtime is observable.
@@ -95,10 +95,10 @@ index 0d11dafec..d37139cfa 100644
 +++ b/src/audio/dos/SDL_dosaudio_sb.c
 @@ -205,2 +205,44 @@ static Uint32 g_c_audiocb_block = 0;       /* emitted-block counter */
  
-+/* DOSKUTSU patch (Phase 11 patch 0070): v2 Pixtone multi-source probe.
++/* DOSKUTSU patch (Phase 11 patch 0070): v2 SfxSynth multi-source probe.
 +   Sibling of nxengine 0165's engine-side histogram at
 +   `vendor/nxengine-evo/src/graphics/Renderer.cpp:129` (g_pix_hist_bucket).
-+   The v1 engine-side site (SamplePixtoneActiveBucket called from
++   The v1 engine-side site (SampleSfxSynthActiveBucket called from
 +   organyaStreamCallback) fires only under the Organya backend, which
 +   produced hypothesis-E in the v1 probe iter because OPL3 has been the
 +   wave-46 default since 2026-05-14. This SDL-side site samples at the
@@ -121,7 +121,7 @@ index 0d11dafec..d37139cfa 100644
 +
 +   Per docs/internal/PIXTONE-PROBE-V2-DESIGN.md sec.2 + flush-instr's
 +   #117 contract review. */
-+extern volatile uint32_t g_pixtone_active_count; /* engine -> SDL extern */
++extern volatile uint32_t g_dos_sfx_synth_active_count; /* engine -> SDL extern */
 +static Uint32 g_c_pix_hist[6] = {0, 0, 0, 0, 0, 0};
 +
 +/* DOSKUTSU patch (Phase 11 patch 0070): irq_count delta fold-in.
@@ -140,7 +140,7 @@ index 0d11dafec..d37139cfa 100644
  /* DOSKUTSU patch (Phase 11 patch 0066): audio-thread hard-park
 @@ -1063,2 +1105,14 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
  
-+    /* DOSKUTSU patch (Phase 11 patch 0070): banner for the v2 Pixtone
++    /* DOSKUTSU patch (Phase 11 patch 0070): banner for the v2 SfxSynth
 +       probe re-wire. The pix_active histogram + irq_delta fold-in
 +       engage when FINE_INSTR=1 turns on the [sdl-audiocb] block emit
 +       gate (see SDL/0064 banner above for the FINE_INSTR variant).
@@ -148,7 +148,7 @@ index 0d11dafec..d37139cfa 100644
 +       0165's organyaStreamCallback sampler missed the OPL3 default
 +       since wave-46). Pure-data instrumentation; no behavior change.
 +       Per docs/internal/PIXTONE-PROBE-V2-DESIGN.md sec.2 + sec.5. */
-+    dos_port_dbg_log("audio: SDL/0070 v2 Pixtone probe pix_active histogram "
++    dos_port_dbg_log("audio: SDL/0070 v2 SfxSynth probe pix_active histogram "
 +                     "+ irq_delta fold-in: rides on FINE_INSTR=1 (extends "
 +                     "[sdl-audiocb] block emit; no new env var)");
 +
@@ -156,14 +156,14 @@ index 0d11dafec..d37139cfa 100644
 @@ -1950,2 +2004,21 @@ static Uint8 *DOSSOUNDBLASTER_GetDeviceBuf(SDL_AudioDevice *device, int *buffer_
  
 +/* DOSKUTSU patch (Phase 11 patch 0070): bucket the current
-+   g_pixtone_active_count into the 6-bucket histogram. Boundaries match
++   g_dos_sfx_synth_active_count into the 6-bucket histogram. Boundaries match
 +   nxengine 0165 (Renderer.cpp:122): [0] / [1] / [2] / [3-5] / [6-10] /
 +   [11+]. Called from the top of DOSSOUNDBLASTER_PlayDevice under
 +   FINE_INSTR=1; one single-volatile-read + one branched bucket-inc;
 +   negligible cost. */
 +static void _c_pix_hist_sample(void)
 +{
-+    const Uint32 n = g_pixtone_active_count;
++    const Uint32 n = g_dos_sfx_synth_active_count;
 +    int b;
 +    if (n == 0)       b = 0;
 +    else if (n == 1)  b = 1;
@@ -240,8 +240,8 @@ index 0d11dafec..d37139cfa 100644
      }
 @@ -1996,2 +2118,13 @@ static bool DOSSOUNDBLASTER_PlayDevice(SDL_AudioDevice *device, const Uint8 *buf
  
-+    /* DOSKUTSU patch (Phase 11 patch 0070): v2 Pixtone probe -- sample
-+       g_pixtone_active_count once per PlayDevice invocation (= once per
++    /* DOSKUTSU patch (Phase 11 patch 0070): v2 SfxSynth probe -- sample
++       g_dos_sfx_synth_active_count once per PlayDevice invocation (= once per
 +       audio-thread iterate). Buckets into g_c_pix_hist[6] for the
 +       per-block emit in _c_audiocb_record. PlayDevice fires regardless
 +       of music backend -- closes the v1 hypothesis-E instrumentation

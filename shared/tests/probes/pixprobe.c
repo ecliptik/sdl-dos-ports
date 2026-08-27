@@ -1,16 +1,16 @@
 /*
- * pixprobe.c — Pixtone SFX mix cost in isolation (Phase 11 wave-22.5 / iter H).
+ * pixprobe.c — SfxSynth SFX mix cost in isolation (Phase 11 wave-22.5 / iter H).
  *
- * Question: what's the per-flip CPU cost of Pixtone SFX synthesis on PODP83?
- * User is considering alternate-flip mixing (slot 0114) — synthesize Pixtone
+ * Question: what's the per-flip CPU cost of SfxSynth SFX synthesis on PODP83?
+ * User is considering alternate-flip mixing (slot 0114) — synthesize SfxSynth
  * every other flip instead of every flip — to claw back fps. Trade-off: SFX
  * latency goes from ~17 ms (60 fps target) to ~33 ms. Need a measured cost
  * to know if the trade is worth it.
  *
  * Decision criteria (per team-lead brief):
- *   per-flip Pixtone cost < 3 ms   -> alternate-flip unnecessary
- *   per-flip Pixtone cost 6-8 ms   -> proceed with alternate-flip (matches estimate)
- *   per-flip Pixtone cost 10+ ms   -> alternate-flip critical; consider every-3-flip
+ *   per-flip SfxSynth cost < 3 ms   -> alternate-flip unnecessary
+ *   per-flip SfxSynth cost 6-8 ms   -> proceed with alternate-flip (matches estimate)
+ *   per-flip SfxSynth cost 10+ ms   -> alternate-flip critical; consider every-3-flip
  *
  * Per perf_predictions_unreliable.md: theoretical "32 multiplies/sample at
  * 83 MHz" math has been 5-30x wrong on PODP83+DJGPP+DPMI. The probe MEASURES
@@ -25,7 +25,7 @@
  *
  * Probe scope (per team-lead brief):
  *
- *   1. Initialize a Pixtone-equivalent synth structure that hits the same
+ *   1. Initialize a SfxSynth-equivalent synth structure that hits the same
  *      per-sample instruction mix as engine's stPXChannel::synth() (3
  *      wave-table indexed reads, ~5 integer multiplies, 1 integer divide,
  *      1 fp-mul-add for FM update, plus envelope.evaluate which has 3
@@ -36,10 +36,10 @@
  *   5. RDTSC timing on P54C+ (PODP83 supports it).
  *   6. N=100 reps per scenario, emit min/med/p95/max.
  *
- * The Pixtone-equivalent in this probe is faithfully cribbed from
+ * The SfxSynth-equivalent in this probe is faithfully cribbed from
  * vendor/nxengine-evo/src/sound/Pixtone.cpp::stPXChannel::synth() (Cave
  * Story 2004 spec) — same instruction mix, same per-sample math. NOT
- * functional Pixtone (no real waveform output, no sound played); this
+ * functional SfxSynth (no real waveform output, no sound played); this
  * probe only times the cost.
  *
  * Output: PIXPROB.LOG in cwd. Stdout mirrored. Pure DJGPP, no SDL.
@@ -106,7 +106,7 @@ static inline uint64_t rdtsc(void)
 }
 
 /* ============================================================ */
-/* Pixtone-equivalent channel structure                          */
+/* SfxSynth-equivalent channel structure                          */
 /*                                                               */
 /* Faithfully mirrors vendor/nxengine-evo/src/sound/Pixtone.cpp  */
 /* stPXChannel layout — same fields, same types, so the per-     */
@@ -129,7 +129,7 @@ typedef struct {
 } pix_channel_t;
 
 /* ============================================================ */
-/* Pixtone envelope — verbatim port of stPXEnvelope::evaluate    */
+/* SfxSynth envelope — verbatim port of stPXEnvelope::evaluate    */
 /* ============================================================ */
 
 static int pix_envelope(const pix_channel_t *c, int i)
@@ -153,7 +153,7 @@ static int pix_envelope(const pix_channel_t *c, int i)
 }
 
 /* ============================================================ */
-/* Pixtone synth — verbatim port of stPXChannel::synth          */
+/* SfxSynth synth — verbatim port of stPXChannel::synth          */
 /*                                                               */
 /* This is the load-bearing routine. Per-sample work:            */
 /*   - 3 wavetable indexed reads (load + sign-extend)            */
@@ -188,7 +188,7 @@ void pix_synth(const pix_channel_t *c, int8_t *out, int nsamples)
 static volatile int32_t g_sink = 0;
 
 /* ============================================================ */
-/* Setup: one realistic Pixtone channel                          */
+/* Setup: one realistic SfxSynth channel                          */
 /*                                                               */
 /* Real Cave Story SFX use varied wavetable patterns. We seed a  */
 /* mix of sine / triangle / sawtooth-like patterns that exercise */
@@ -324,10 +324,10 @@ int main(int argc, char **argv)
 
     open_log();
     plog("=== PIXPROB wave-22.5 / iter H starting ===");
-    plog("DJGPP build, target = Pixtone synth cost characterization");
+    plog("DJGPP build, target = SfxSynth synth cost characterization");
     plog("UCLOCKS_PER_SEC = %lu", (unsigned long)UCLOCKS_PER_SEC);
     plog("");
-    plog("Question: what's the per-flip CPU cost of Pixtone SFX synth on");
+    plog("Question: what's the per-flip CPU cost of SfxSynth SFX synth on");
     plog("PODP83? Answer drives slot 0114 (alternate-flip mix) ship/no-ship.");
     plog("");
 
@@ -349,7 +349,7 @@ int main(int argc, char **argv)
         return 2;
     }
 
-    plog("Pixtone channel initialized:");
+    plog("SfxSynth channel initialized:");
     plog("  carrier wavetable:   sine,     level=%d pitch=%.2f", ch.level_carr, ch.pitch_carr);
     plog("  frequency modulator: triangle, level=%d pitch=%.2f", ch.level_freq, ch.pitch_freq);
     plog("  amplitude modulator: sawtooth, level=%d pitch=%.2f", ch.level_amp, ch.pitch_amp);
@@ -367,7 +367,7 @@ int main(int argc, char **argv)
     /* K = 1 (low SFX scene), 4 (typical), 8 (combat heavy)         */
     /* ============================================================ */
     plog("---- 9-scenario sweep: 3 buffer sizes × 3 K values, N=%d each ----", N_REPS);
-    plog("Buffer size M = samples per Pixtone call");
+    plog("Buffer size M = samples per SfxSynth call");
     plog("K            = number of concurrent SFX calls per flip");
     plog("");
 
@@ -383,7 +383,7 @@ int main(int argc, char **argv)
 
     /* ============================================================ */
     /* Headline pair: M=256 (Tier-2 buffer) at K=1 + K=4            */
-    /* This is the most likely realistic per-flip Pixtone load.      */
+    /* This is the most likely realistic per-flip SfxSynth load.      */
     /* ============================================================ */
     plog("---- Headline pair: M=256 (Tier-2 buffer) ----");
     static uint64_t samples_K1[N_REPS], samples_K4[N_REPS];
@@ -426,7 +426,7 @@ int main(int argc, char **argv)
     /* ============================================================ */
     /* Decision interpretation                                      */
     /* ============================================================ */
-    plog("=== HEADLINE: per-flip Pixtone cost = %.2f ms (K=4 typical) ===",
+    plog("=== HEADLINE: per-flip SfxSynth cost = %.2f ms (K=4 typical) ===",
          per_flip_K4_ms);
     plog("");
 

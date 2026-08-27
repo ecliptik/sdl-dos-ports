@@ -9,7 +9,7 @@ Subject: [PATCH] dos: Phase 11 patch 0064 -- SFX-stall instrumentation part C
 docs/internal/SFX-STALL-INSTRUMENTATION-CONTRACT.md, the stall has
 three candidate locations. nx-engine's patch 0160 instruments parts A
 (the per-SFX-trigger call) and B (the engine-thread runFade bucket).
-B-2 source-traced that Pixtone SFX has NO engine-side mix callback --
+B-2 source-traced that SfxSynth SFX has NO engine-side mix callback --
 SFX runs through SDL3_mixer's MIX_* track pool, serviced by the
 SDL-DOS audio callback on the cooperative audio thread. No engine-side
 timer reaches it. Part C is that missing SDL-side bucket.
@@ -19,7 +19,7 @@ DOSSOUNDBLASTER_GetDeviceBuf entry (the start of one
 SDL_PlaybackAudioThreadIterate's DOS-backend work) through
 DOSSOUNDBLASTER_PlayDevice exit. That span brackets the SDL3 core mix
 loop, which fires SDL3_mixer's MixerCallback -> per-track pulls --
-where the Pixtone/SFX mix happens. The span is closed on both
+where the SfxSynth/SFX mix happens. The span is closed on both
 PlayDevice return paths (normal ring-write + silence-skip) so every
 audio-thread iteration is counted. Every 100 invocations a
 [sdl-audiocb block~N invocations=I total_ms=M max_ms=X] line emits on
@@ -68,7 +68,7 @@ index 33a7e7bd7..3d74628cc 100644
 +   the span from DOSSOUNDBLASTER_GetDeviceBuf (start of one
 +   SDL_PlaybackAudioThreadIterate's DOS-backend work) through
 +   DOSSOUNDBLASTER_PlayDevice exit (which brackets the SDL3 core mix
-+   loop -> SDL3_mixer MixerCallback -> Pixtone/SFX track pulls). Every
++   loop -> SDL3_mixer MixerCallback -> SfxSynth/SFX track pulls). Every
 +   100 invocations a [sdl-audiocb block~N invocations=I total_ms=M
 +   max_ms=X] line emits on the SDL debug-log channel (<TAG>SDL.LOG).
 +
@@ -117,7 +117,7 @@ index 33a7e7bd7..3d74628cc 100644
 +       part C): open the per-invocation SDL-DOS audio-callback timing
 +       span. GetDeviceBuf is the first DOS-backend entry of one
 +       SDL_PlaybackAudioThreadIterate; the SDL3 core mix loop (firing
-+       SDL3_mixer's MixerCallback -> Pixtone/SFX track pulls) runs
++       SDL3_mixer's MixerCallback -> SfxSynth/SFX track pulls) runs
 +       between this return and the PlayDevice call that closes the
 +       span via _c_audiocb_record(). FINE_INSTR-gated -- one cached-
 +       bool test when off. */

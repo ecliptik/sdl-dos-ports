@@ -13,8 +13,8 @@ operator full cross-thread (engine main + SDL audio-thread + IRQ-5
 ISR) attribution for the ~31 ms unattributed audio cost surfaced by
 audio_cost_attribution_unknown.md.
 
-The wave-35 lever-pick anchor said "rank #1: Phase 12 Pixtone-decouple"
-but tree-grep confirmed Pixtone is already pre-rendered (per nx 0131
+The wave-35 lever-pick anchor said "rank #1: Phase 12 SfxSynth-decouple"
+but tree-grep confirmed SfxSynth is already pre-rendered (per nx 0131
 commit message section "Context"). Instrumentation-first per
 reconcile_deepdive_against_tree_facts.md: measure where the audio
 slice actually lives before attacking it in wave-36+.
@@ -49,7 +49,7 @@ one audio chunk processed):
                  runs its mix loop, calling SDL_GetAudioStreamData on
                  each bound stream, which fires SDL3_mixer's
                  MixerCallback -> per-track TrackGetCallback ->
-                 Pixtone-chunk-pull chain. Reflects the SDL3 +
+                 SfxSynth-chunk-pull chain. Reflects the SDL3 +
                  SDL3_mixer downmix cost that nx 0131 explicitly leaves
                  to this patch's lane.
 
@@ -355,7 +355,7 @@ index 44eedd70d..22a5f5864 100644
 +           exit to PlayDevice entry. This is the period during which
 +           SDL3 calls SDL_GetAudioStreamData on each bound stream,
 +           which fires SDL3_mixer's MixerCallback -> per-track
-+           TrackGetCallback -> Pixtone-chunk-pull chain. */
++           TrackGetCallback -> SfxSynth-chunk-pull chain. */
 +        g_p12_sdl_mix_mixer_ns += _p12_play_t0 - g_p12_sdl_t_gdb_exit_ns;
 +        g_p12_sdl_t_gdb_exit_ns = 0;
 +    }

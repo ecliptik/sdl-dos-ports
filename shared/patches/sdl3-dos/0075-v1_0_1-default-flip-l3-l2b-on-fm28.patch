@@ -20,12 +20,12 @@ gives a single-revert if v1.0.1 needs to roll back to default-OFF.
 
 Three transforms in SDL_dosaudio_sb.c:
 
-1. L3 gate (0071 resolve): SDL_HINT_DOS_PIXTONE_IRQ_MIX flips from
+1. L3 gate (0071 resolve): SDL_HINT_DOS_SFX_SYNTH_IRQ_MIX flips from
    strict-"1" (default OFF) to killswitch (default ON; only literal "0"
    disables). The backend-organya gate is UNCHANGED -- L3 is still forced
    OFF under AUDIO_BACKEND=organya (Bug 5 interlock holds at default-ON).
-   L3 is a CROSS-SIDE AND: the engine's pixtone_irq_mix_active() ANDs its
-   own env parse with SDL_DOSPixtoneIRQMixActive(); nxengine-evo/0170
+   L3 is a CROSS-SIDE AND: the engine's sfx_synth_irq_mix_active() ANDs its
+   own env parse with SDL_DOSSfxSynthIRQMixActive(); nxengine-evo/0170
    flips the engine half. BOTH must flip or L3 stays off -- they're
    coordinated (cross-link-unit lock with nx-engine).
 
@@ -49,7 +49,7 @@ stay in the code (the =0 regression path).
 
 Smoke gate (tests/run-gameplay-smoke.sh, doskutsu repo -- not in this
 patch): two NEW required-on-default-boot assertions added --
-"audio: SDL/0071 pixtone IRQ-mix: ENABLED" + "audio: SDL/0072 midi tick
+"audio: SDL/0071 sfx_synth IRQ-mix: ENABLED" + "audio: SDL/0072 midi tick
 from ISR: ENABLED" (severity required) -- so a zero-env smoke FAILS if
 the default-flip regresses (or half-flips). The engine 0167/0168 banner
 regexes are retargeted to nxengine-evo/0170's new default-ON wording
@@ -59,7 +59,7 @@ BOOT.md L3/L2b/FM_VOL entries updated to default-ON / default-28 + the
 
 Byte-identity: v1.0.1's default path is INTENTIONALLY no longer
 byte-identical to v1.0.0 -- it's the new ship config. The byte-identical
-fallbacks remain: SDL_HINT_DOS_PIXTONE_IRQ_MIX=0 (L3 off ->
+fallbacks remain: SDL_HINT_DOS_SFX_SYNTH_IRQ_MIX=0 (L3 off ->
 SDL3_mixer path), SDL_HINT_DOS_MIDI_ISR_TICK=0 (L2b off ->
 main-loop tick), SDL_HINT_DOS_SB16_MIXER_PROGRAM=0 (CT1745
 untouched). All killswitches preserved.
@@ -86,13 +86,13 @@ index 2f73af135..1a9617653 100644
 @@ -1662,8 +1662,15 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
         case which is the relevant safety boundary. */
      {
-         const char *l3_hint = SDL_GetHint("SDL_HINT_DOS_PIXTONE_IRQ_MIX");
+         const char *l3_hint = SDL_GetHint("SDL_HINT_DOS_SFX_SYNTH_IRQ_MIX");
 +        /* DOSKUTSU patch (Phase 11 patch 0075): v1.0.1 default-flip --
 +         * L3 default-ON; killswitch literal "0" disables (was strict-"1"
 +         * opt-in). The backend-organya gate below is UNCHANGED, so L3 is
 +         * still forced OFF under AUDIO_BACKEND=organya (Bug 5 interlock
 +         * holds at default-ON). Operator-validated ship config; the engine
-+         * ANDs this via SDL_DOSPixtoneIRQMixActive() (nxengine-evo/0170
++         * ANDs this via SDL_DOSSfxSynthIRQMixActive() (nxengine-evo/0170
 +         * flips its half -- both must flip or L3 stays off). */
          const bool hint_set =
 -            (l3_hint && l3_hint[0] == '1' && l3_hint[1] == 0);
@@ -102,8 +102,8 @@ index 2f73af135..1a9617653 100644
          const bool backend_organya =
 @@ -1672,10 +1679,11 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
          if (hint_set && backend_organya) {
-             g_dos_pixtone_irq_mix_active = false;
-             dos_port_dbg_log("audio: SDL/0071 pixtone IRQ-mix: REQUESTED but "
+             g_dos_sfx_synth_irq_mix_active = false;
+             dos_port_dbg_log("audio: SDL/0071 sfx_synth IRQ-mix: REQUESTED but "
 -                             "Organya backend active; skipping (Lever 3 "
 -                             "requires OPL3/WB/midi-stub backend for clean "
 -                             "SFX-vs-music separation; SDL_HINT_DOS_"
@@ -114,26 +114,26 @@ index 2f73af135..1a9617653 100644
 +                             "SDL_HINT_DOS_AUDIO_BACKEND=organya forces "
 +                             "L3 off -- Bug 5 interlock)");
          } else if (hint_set) {
-             g_dos_pixtone_irq_mix_active = true;
+             g_dos_sfx_synth_irq_mix_active = true;
              /* Initialize channel pool to all-free. Memory is already
 @@ -1730,7 +1738,8 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
                  const unsigned hr_db = hr_bits * 6u;
                  const unsigned hr_concurrent = 2u << hr_bits; /* 2^(N+1) */
-                 dos_port_dbg_log("audio: SDL/0071 pixtone IRQ-mix: ENABLED "
--                                 "(opt-in via SDL_HINT_DOS_PIXTONE_IRQ_MIX=1; "
+                 dos_port_dbg_log("audio: SDL/0071 sfx_synth IRQ-mix: ENABLED "
+-                                 "(opt-in via SDL_HINT_DOS_SFX_SYNTH_IRQ_MIX=1; "
 +                                 "(default-ON since v1.0.1; set SDL_HINT_DOS_"
-+                                 "PIXTONE_IRQ_MIX=0 to disable; "
-                                  "Pixtone PCM mixed directly in IRQ-5 ISR; "
++                                 "SFX_SYNTH_IRQ_MIX=0 to disable; "
+                                  "SfxSynth PCM mixed directly in IRQ-5 ISR; "
                                   "cooperative-scheduler bypassed for SFX path; "
                                   "Bug 2 hypothesis-C structural fix per "
 @@ -1744,9 +1753,9 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
          } else {
-             g_dos_pixtone_irq_mix_active = false;
-             dos_port_dbg_log("audio: SDL/0071 pixtone IRQ-mix: DISABLED "
--                             "(default; set SDL_HINT_DOS_PIXTONE_IRQ_MIX"
+             g_dos_sfx_synth_irq_mix_active = false;
+             dos_port_dbg_log("audio: SDL/0071 sfx_synth IRQ-mix: DISABLED "
+-                             "(default; set SDL_HINT_DOS_SFX_SYNTH_IRQ_MIX"
 -                             "=1 to engage; off-path cost is one cached-bool "
 -                             "test per IRQ-5; SDL3_mixer SFX path unchanged)");
-+                             "(killswitch SDL_HINT_DOS_PIXTONE_IRQ_MIX=0; "
++                             "(killswitch SDL_HINT_DOS_SFX_SYNTH_IRQ_MIX=0; "
 +                             "SFX revert to the SDL3_mixer cooperative path; "
 +                             "off-path cost is one cached-bool test per IRQ-5)");
          }

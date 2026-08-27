@@ -54,7 +54,7 @@
  *   Source: tests/probes/qhexitp.c  Binary: QHEXITP.EXE
  *   Logs:   QHEXITU.LOG (cell U) / QHEXITB.LOG (cell B)
  *
- * Pure DJGPP (no SDL link, no g_pixtone stub). minstack 512k (PROBES_MINSTK).
+ * Pure DJGPP (no SDL link, no g_sfx_synth stub). minstack 512k (PROBES_MINSTK).
  *
  * License: MIT.
  */

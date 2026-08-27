@@ -104,7 +104,7 @@ index 327260a8b..7f44cbfc6 100644
 +     sets g_dos_audio_pause_request to be serviced by non-IRQ context.
 +
 +   IDLE_PAUSE_THRESHOLD: 4 IRQs ~ 92 ms at 43 Hz IRQ rate. Long enough
-+     to avoid pausing during brief Pixtone gaps; short enough that bulk
++     to avoid pausing during brief SfxSynth gaps; short enough that bulk
 +     silent gameplay gets the savings. Per sec. E.2 design.
 +
 +   Per audio_mix_zero_is_not_audio_off.md: the IRQ entry/exit wall-clock
@@ -293,7 +293,7 @@ index 327260a8b..7f44cbfc6 100644
 +    /* DOSKUTSU patch (Phase 10 patch 0038): if DSP is paused (no music
 +       backend was streaming + ring went idle), this PlayDevice call
 +       means the audio writer has fresh data to play -- almost certainly
-+       a Pixtone SFX trigger. Request resume; service it now so the new
++       a SfxSynth SFX trigger. Request resume; service it now so the new
 +       data starts playing immediately rather than after the next
 +       WaitDevice cycle. */
 +    if (isr_dsp_paused) {

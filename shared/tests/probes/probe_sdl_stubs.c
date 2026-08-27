@@ -2,7 +2,7 @@
  * probe_sdl_stubs.c -- shared engine-symbol stubs for SDL-linked probes.
  *
  * The SDL3 DOS audio backend (vendor/SDL/src/audio/dos/SDL_dosaudio_sb.c, as
- * of patch SDL/0071 "Lever 3 Pixtone IRQ-mix") references engine-owned externs.
+ * of patch SDL/0071 "Lever 3 SfxSynth IRQ-mix") references engine-owned externs.
  * The engine (NXEngine-evo) defines them; standalone DJGPP probes link
  * libSDL3.a WITHOUT any engine object files, so any probe that pulls
  * SDL_dosaudio_sb.obj (i.e. opens an audio device) gets an unresolved-symbol
@@ -20,7 +20,7 @@
  * per probe.
  *
  * Values: held at the engine's power-on default. None of these is meaningfully
- * read by a probe (no probe starts a Pixtone channel), so the value only has
+ * read by a probe (no probe starts a SfxSynth channel), so the value only has
  * to make the link resolve.
  *
  * NOT linked into the production game binary -- the engine provides the real
@@ -31,8 +31,8 @@
 
 #include <stdint.h>
 
-/* SDL/0071 Lever-3 Pixtone IRQ-mix: engine-owned active-source counter.
+/* SDL/0071 Lever-3 SfxSynth IRQ-mix: engine-owned active-source counter.
  * Engine def (C linkage): vendor/nxengine-evo/src/sound/Pixtone.cpp:51
- *   volatile std::uint32_t g_pixtone_active_count = 0;
+ *   volatile std::uint32_t g_dos_sfx_synth_active_count = 0;
  * SDL ref: vendor/SDL/src/audio/dos/SDL_dosaudio_sb.c:234 (extern). */
-volatile uint32_t g_pixtone_active_count = 0;
+volatile uint32_t g_dos_sfx_synth_active_count = 0;

@@ -53,7 +53,7 @@ Other Phase-0 scope:
   0-255->4-bit pan). 28 voices (~22050 Hz) at Init.
 - IRQ-SAFE voice pool: AllocVoice/StartVoice/StopVoice mutate the shared
   busy-list inside cli/sti -- the pool is driven from BOTH the main loop
-  (Pixtone SFX) AND the IRQ-0 music pump, so a preempting note_on must not
+  (SfxSynth SFX) AND the IRQ-0 music pump, so a preempting note_on must not
   double-claim a slot.
 - SDL_DOSGusResetDram(keep_bytes) rewinds the DRAM bump cursor preserving a low
   keep region (persistent SFX bank survives per-song .pat swaps).
@@ -337,7 +337,7 @@ index 000000000..ae67412f5
 + * Sets the allocator high-water back to `keep_bytes`: subsequent uploads
 + * reuse DRAM above it, while [0, keep_bytes) is preserved. Intended for
 + * per-song .pat residency swaps that must NOT wipe a persistent low region
-+ * (e.g. the resident Pixtone SFX bank). Pass 0 to drop everything.
++ * (e.g. the resident SfxSynth SFX bank). Pass 0 to drop everything.
 + *
 + * Does NOT stop voices: the caller must first stop any voice still reading
 + * the region being freed (the engine owns voice lifecycle).
@@ -1649,7 +1649,7 @@ index 000000000..064773e28
 +    if (!g_gus_active) {
 +        return -1;
 +    }
-+    /* IRQ-SAFE: the voice pool is shared between main-loop SFX (Pixtone
++    /* IRQ-SAFE: the voice pool is shared between main-loop SFX (SfxSynth
 +       playSfx -> AllocVoice) and IRQ-0-pump music note_on (MidiBackendGus ->
 +       AllocVoice). A main-loop AllocVoice can be preempted mid-scan by the
 +       pump IRQ firing a note_on that also allocates; without a critical

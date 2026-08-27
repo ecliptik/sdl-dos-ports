@@ -1,22 +1,22 @@
 From d385d136985a6c03b7c67afcd797f283ed2550df Mon Sep 17 00:00:00 2001
 From: Micheal Waltz <micheal@ecliptik.com>
 Date: Sat, 20 Jun 2026 22:14:26 -0700
-Subject: [PATCH] dos: patch 0108 -- format-aware Pixtone IRQ-mix on the 8-bit
+Subject: [PATCH] dos: patch 0108 -- format-aware SfxSynth IRQ-mix on the 8-bit
  U8 path
 
 SDL/0107 made the pre-SB16 8-bit device open U8 (mono by default). But the
-Lever-3 Pixtone IRQ-mix (PixtoneISRMix, SDL_HINT_DOS_PIXTONE_IRQ_MIX,
+Lever-3 SfxSynth IRQ-mix (SfxSynthISRMix, SDL_HINT_DOS_SFX_SYNTH_IRQ_MIX,
 default ON) unconditionally treated the DMA ring as S16 stereo: it cast
 dma_dst to int16_t*, computed stereo pairs as dma_len/4, and wrote 2-byte
 signed samples to dst[2p]/dst[2p+1]. On the 8-bit U8 device that is both a
 format mismatch (S16 vs U8) and a stride mismatch (2 bytes/sample, 2
-samples/frame vs 1 byte/sample) -- so Pixtone SFX came out garbled on g2k
+samples/frame vs 1 byte/sample) -- so SfxSynth SFX came out garbled on g2k
 (PLAY2 opl3 + PLAY3 wb, both 8-bit). Under OPL3/WB the ISR mix is the only
 SFX path (music is MIDI-offloaded, the ring carries silence), so the whole
 SFX output was corrupted.
 
 Why DOS needs this: the IRQ-mix must encode SFX in the device's actual DMA
-format. PixtoneISRMix now branches on isr_is_16bit:
+format. SfxSynthISRMix now branches on isr_is_16bit:
 
   - SB16 (is_sb16): the existing S16-stereo mix, BYTE-IDENTICAL. The branch
     keeps the same bound (out_pairs = min(remaining<<shift_div,
@@ -24,7 +24,7 @@ format. PixtoneISRMix now branches on isr_is_16bit:
     and the same pos advance ((frames>>shift_div)*2 with frames==out_pairs).
   - Pre-SB16 8-bit (U8): a new U8 mixer. One output frame is isr_channels
     bytes (1 = SDL/0107 mono default; 2 = SB-Pro stereo killswitch). Each
-    Pixtone mono S16 source sample is converted to the U8 amplitude domain
+    SfxSynth mono S16 source sample is converted to the U8 amplitude domain
     (an extra >> 8 on top of the >> shift headroom), then ADDED to the
     unsigned-biased ring content (silence = 0x80 == signed 0) with clamp to
     [-128,127] and re-bias by +128. Mono writes one byte/frame; stereo
@@ -38,7 +38,7 @@ not gating Lever-3 off on the 8-bit path. Rationale: keeps Lever-3's
 low-latency IRQ-driven SFX path engaged on the 8-bit device (avoids the
 cooperative-scheduler SFX latency Lever-3 was built to remove), and the
 change is self-contained in SDL with no engine-routing coordination. The
-U8 mixer mirrors the proven S16 structure; it is DPMI-locked (PixtoneISRMix
+U8 mixer mirrors the proven S16 structure; it is DPMI-locked (SfxSynthISRMix
 is already in the DOS_LockCode set), allocation-free, FPU-free.
 
 isr_channels (new ISR-cached static) holds device->spec.channels, set at
@@ -51,13 +51,13 @@ unchanged (same variables, bound, inner loop, clamp constants, pos
 advance); isr_channels is written but not read there. DOSBox-X emulates an
 SB16 so default smoke audio is unchanged.
 
-No new env var (rides the existing PIXTONE_IRQ_MIX killswitch). Diagnostics:
+No new env var (rides the existing SFX_SYNTH_IRQ_MIX killswitch). Diagnostics:
 a new OpenDevice banner (emitted only when Lever-3 is active)
-  audio: SDL/0108 pixtone IRQ-mix format: (S16-stereo|U8-stereo|U8-mono)
+  audio: SDL/0108 sfx_synth IRQ-mix format: (S16-stereo|U8-stereo|U8-mono)
   (device is_16bit=N channels=M) ...
 lets build-qa/g2k witness the chosen SFX-mix format (S16-stereo under DOSBox
 SB16; U8-mono on g2k PicoGUS-SB). OPTIONAL smoke entry (absent under
-AUDIO_BACKEND=organya / PIXTONE_IRQ_MIX=0).
+AUDIO_BACKEND=organya / SFX_SYNTH_IRQ_MIX=0).
 
 Workspace-local patch; not upstreamed (sdl_ai_policy).
 
@@ -74,8 +74,8 @@ index c72d4cf1a..7b666b21f 100644
  static int isr_dma_halfdma = 0;       // half the DMA buffer size, in bytes
  static int isr_dma_channel = 0;
  static bool isr_is_16bit = false;
-+/* DOSKUTSU patch (SDL/0108): device channel count cached for the Pixtone
-+   IRQ-mix (PixtoneISRMix). On the SB16 path this is always 2 (and the mix
++/* DOSKUTSU patch (SDL/0108): device channel count cached for the SfxSynth
++   IRQ-mix (SfxSynthISRMix). On the SB16 path this is always 2 (and the mix
 +   takes the byte-identical S16-stereo branch that does not read it); on the
 +   pre-SB16 8-bit U8 path it is 1 (SDL/0107 mono default) or 2 (the SB-Pro
 +   stereo killswitch), and selects the U8 mono-vs-stereo write stride. Set
@@ -85,17 +85,17 @@ index c72d4cf1a..7b666b21f 100644
  static Uint8 isr_silence_value = 0;
  
  // Copy `len` bytes from the ring buffer at position `pos` into `dst`,
-@@ -1300,29 +1308,69 @@ static void PixtoneISRMix(Uint8 *dma_dst, int dma_len)
+@@ -1300,29 +1308,69 @@ static void SfxSynthISRMix(Uint8 *dma_dst, int dma_len)
           * out_pairs == min(remaining_samples, n_stereo_pairs) == old to_mix,
           * reads src[0..to_mix-1], pos advances exactly to_mix*2. */
-         const int shift_div = (int)g_dos_pixtone_irq_ratediv_shift;
+         const int shift_div = (int)g_dos_sfx_synth_irq_ratediv_shift;
 -        const int avail_pairs = remaining_samples << shift_div;
 -        const int out_pairs = (avail_pairs < n_stereo_pairs)
 -                              ? avail_pairs : n_stereo_pairs;
 -        for (int p = 0; p < out_pairs; ++p) {
 -            const int idx = p >> shift_div;
 -            const int32_t scaled = ((int32_t)src[idx] * gain_x256) >> shift;
--            /* Stereo-duplicate: one Pixtone mono sample -> L + R of
+-            /* Stereo-duplicate: one SfxSynth mono sample -> L + R of
 -             * the same stereo pair. Centered (no pan); v2 candidate
 -             * to wire differential gain_x256 for positional audio. */
 -            const int32_t mixed_L = (int32_t)dst[2 * p    ] + scaled;
@@ -126,7 +126,7 @@ index c72d4cf1a..7b666b21f 100644
 +            for (int p = 0; p < out_pairs; ++p) {
 +                const int idx = p >> shift_div;
 +                const int32_t scaled = ((int32_t)src[idx] * gain_x256) >> shift;
-+                /* Stereo-duplicate: one Pixtone mono sample -> L + R of
++                /* Stereo-duplicate: one SfxSynth mono sample -> L + R of
 +                 * the same stereo pair. Centered (no pan). */
 +                const int32_t mixed_L = (int32_t)dst[2 * p    ] + scaled;
 +                const int32_t mixed_R = (int32_t)dst[2 * p + 1] + scaled;
@@ -141,7 +141,7 @@ index c72d4cf1a..7b666b21f 100644
 +        } else {
 +            /* Pre-SB16 8-bit U8 device. One output frame = isr_channels bytes
 +               (1 = SDL/0107 mono default; 2 = SB-Pro stereo killswitch). The
-+               Pixtone source is mono S16; convert to the U8 amplitude domain
++               SfxSynth source is mono S16; convert to the U8 amplitude domain
 +               by an extra >> 8 on top of the >> shift headroom, then ADD to the
 +               unsigned-biased ring content (silence = 0x80 == signed 0) with
 +               clamp to the signed-U8 range and re-bias by +128. Mono writes one
@@ -180,7 +180,7 @@ index c72d4cf1a..7b666b21f 100644
      isr_dma_halfdma = hidden->dma_buflen / 2;
      isr_dma_channel = hidden->dma_channel;
      isr_is_16bit = is_sb16;
-+    isr_channels = device->spec.channels; /* SDL/0108: Pixtone IRQ-mix write stride */
++    isr_channels = device->spec.channels; /* SDL/0108: SfxSynth IRQ-mix write stride */
      isr_silence_value = soundblaster_silence_value;
  
      /* DOSKUTSU patch (SDL/0107): silence-prime the software ring buffer on the
@@ -188,7 +188,7 @@ index c72d4cf1a..7b666b21f 100644
          SDL_memset(hidden->ring_buffer, soundblaster_silence_value, hidden->ring_size);
      }
  
-+    /* DOSKUTSU patch (SDL/0108): Pixtone IRQ-mix (Lever 3) format witness. The
++    /* DOSKUTSU patch (SDL/0108): SfxSynth IRQ-mix (Lever 3) format witness. The
 +       ISR mix is now device-format-aware -- it writes S16-stereo into the SB16
 +       DMA ring (byte-identical original path) but U8 mono/stereo into the
 +       pre-SB16 8-bit ring (the SDL/0107 mono default, or the SB-Pro stereo
@@ -197,14 +197,14 @@ index c72d4cf1a..7b666b21f 100644
 +       PLAY3 wb, both 8-bit). Emitted only when Lever 3 is active (it is moot
 +       otherwise). DOSBox-X (SB16) emits the S16-stereo variant; g2k PicoGUS-SB
 +       emits U8-mono -- the decisive witness for the SFX-distortion fix. */
-+    if (g_dos_pixtone_irq_mix_active) {
-+        dos_port_dbg_log("audio: SDL/0108 pixtone IRQ-mix format: %s "
++    if (g_dos_sfx_synth_irq_mix_active) {
++        dos_port_dbg_log("audio: SDL/0108 sfx_synth IRQ-mix format: %s "
 +                         "(device is_16bit=%d channels=%d)%s",
 +                         isr_is_16bit ? "S16-stereo"
 +                                      : (isr_channels == 2 ? "U8-stereo" : "U8-mono"),
 +                         isr_is_16bit ? 1 : 0, isr_channels,
 +                         isr_is_16bit ? ""
-+                                      : " -- 8-bit path: Pixtone PCM converted to "
++                                      : " -- 8-bit path: SfxSynth PCM converted to "
 +                                        "U8 centered on 0x80 (SDL/0108 fix)");
 +    }
 +

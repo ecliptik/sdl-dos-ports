@@ -23,7 +23,7 @@ present rule-out half of the combined diagnostic binary.
 
 Armed by the engine latch g_title_diag_armed (defined + set true at title_init
 in nxengine 0194 main.cpp; MUST have extern "C" linkage engine-side so this C
-extern resolves -- same cross-link pattern as g_pixtone_active_count) so the
+extern resolves -- same cross-link pattern as g_dos_sfx_synth_active_count) so the
 intro's ~488 presents do not log, AND gated on SDL_HINT_DOS_STARVE_DIAG=1
 (shared with patch 0082, carried for cb_fills corroboration). Markers-only;
 read-only w.r.t. the displayed frame. Default OFF. Workspace-local; never

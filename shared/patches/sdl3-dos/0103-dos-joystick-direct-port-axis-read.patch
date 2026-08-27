@@ -16,7 +16,7 @@ frame time the throttle never gates.
 Read only the two connected joystick-1 one-shots (port 0x201 bits 0/1)
 in a single tight timing loop with a hard iteration cap, so the open
 axes are never waited on. Interrupts are masked around the loop so the
-in-ISR mixer (PIXTONE_IRQ_MIX) cannot preempt mid-count and corrupt the
+in-ISR mixer (SFX_SYNTH_IRQ_MIX) cannot preempt mid-count and corrupt the
 discharge timing; the cap bounds the masked window.
 
 Killswitch SDL_HINT_DOS_JOY_DIRECTREAD default ON; strict "0"
@@ -75,7 +75,7 @@ index 8d5497059..76c88b136 100644
 + * domain (coordinate any change to this loop with the SETUP side).
 + *
 + * Interrupts are masked around the tight loop (a few hundred us .. ~1 ms) so an
-+ * SB16 IRQ -- which under PIXTONE_IRQ_MIX runs the mixer in-ISR and can be long
++ * SB16 IRQ -- which under SFX_SYNTH_IRQ_MIX runs the mixer in-ISR and can be long
 + * -- cannot preempt mid-count and corrupt the discharge timing. The masked
 + * window is far inside the DMA buffer slack; the cap bounds the worst case.
 + */

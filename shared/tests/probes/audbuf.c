@@ -28,7 +28,7 @@
  *
  * This probe opens an audio stream + resumes but never calls
  * SDL_PutAudioStreamData; the ring underruns continuously, so the ISR
- * exclusively hits the memset path. The real engine (Pixtone+Organya
+ * exclusively hits the memset path. The real engine (SfxSynth+Organya
  * feeding the mixer on the audio thread) hits the memcpy path. memcpy
  * stresses cache more than memset (touches src cache lines as well as
  * dst), so the cache-pressure regime at 1024+ chunks would show stronger
@@ -285,7 +285,7 @@ int main(int argc, char **argv)
     plog("ISR-branch caveat (sdl-engine 2026-05-07): probe runs the IRQ-5 ISR's");
     plog("silence-fill memset path (no SDL_PutAudioStreamData calls -> ring");
     plog("underruns -> ISR exclusively memsets DMA buffer with silence). The");
-    plog("real engine runs the memcpy path (Pixtone/Organya feed ring -> ISR");
+    plog("real engine runs the memcpy path (SfxSynth/Organya feed ring -> ISR");
     plog("RingCopyOut(ring -> DMA)). memcpy stresses cache more than memset;");
     plog("probe wall_pct is therefore a LOWER BOUND on engine ISR wall_pct in");
     plog("the cache-pollution regime. Argmin across chunk sizes is still the");

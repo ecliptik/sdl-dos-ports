@@ -1,12 +1,12 @@
 From a6b2ccaf1627d84084c3526126df2a0c11bc6c8d Mon Sep 17 00:00:00 2001
 From: Micheal Waltz <services.claude@accounts.ecliptik.com>
 Date: Wed, 20 May 2026 14:33:53 -0700
-Subject: [PATCH] dos: Phase 11 patch 0069 -- Pixtone probe cumulative
+Subject: [PATCH] dos: Phase 11 patch 0069 -- SfxSynth probe cumulative
  silent-IRQ counter export
 
 Why DOS needs this:
 
-The Pixtone multi-source probe (docs/internal/PIXTONE-MULTISOURCE-DESIGN.md
+The SfxSynth multi-source probe (docs/internal/PIXTONE-MULTISOURCE-DESIGN.md
 hypothesis C: cooperative-scheduler audio-thread starvation during
 rapid-fire SFX) needs the cumulative-over-time silent-IRQ rate. The
 existing isr_consecutive_silent_irqs counter gives current consecutive-
@@ -58,7 +58,7 @@ index d8a4a73dd..0d11dafec 100644
             the actual DSP command. */
          isr_consecutive_silent_irqs++;
 +        /* DOSKUTSU patch (Phase 11 patch 0069): cumulative silent-IRQ
-+           counter for the Pixtone multi-source probe. Single 32-bit
++           counter for the SfxSynth multi-source probe. Single 32-bit
 +           volatile increment alongside the existing consecutive-depth
 +           gauge; same atomicity precedent as patches 0023+0025+0037+
 +           0038 (single-bus-cycle inc on x86). Never reset; engine reads
@@ -78,11 +78,11 @@ index d8a4a73dd..0d11dafec 100644
 +       SDL_dos_audio_synth.c, incremented in the IRQ silent-branch
 +       above) is always live. Banner is emitted unconditionally so the
 +       smoke gate can verify the export is wired and the engine-side
-+       Pixtone probe can read dos_port_audio_silent_irq_count via
++       SfxSynth probe can read dos_port_audio_silent_irq_count via
 +       extern. See docs/internal/PIXTONE-MULTISOURCE-DESIGN.md sec.2.1
 +       #2 + sec.4 #4. */
 +    dos_port_dbg_log("audio: SDL/0069 cumulative silent-IRQ counter export: ENABLED "
-+                     "(dos_port_audio_silent_irq_count; monotonic; Pixtone "
++                     "(dos_port_audio_silent_irq_count; monotonic; SfxSynth "
 +                     "multi-source probe hypothesis-C signal)");
 +
      /* DOSKUTSU patch (Phase 11 patch 0050): resolve quiescence-gate
@@ -109,7 +109,7 @@ index 765f8eec7..211e3cdac 100644
  volatile uint32_t dos_port_audio_sfx_active_count = 0;
  
 +/* DOSKUTSU patch (Phase 11 patch 0069): cumulative silent-IRQ counter
-+   for the Pixtone multi-source probe (hypothesis C: cooperative-
++   for the SfxSynth multi-source probe (hypothesis C: cooperative-
 +   scheduler audio-thread starvation during rapid-fire SFX). The
 +   existing isr_consecutive_silent_irqs (sb.c:621) is a depth gauge
 +   that resets on any non-silent IRQ (sb.c:750) and on DSP-resume
@@ -134,7 +134,7 @@ index 596b8a028..f602051df 100644
  extern volatile uint32_t dos_port_audio_irq_count;
  extern volatile uint32_t dos_port_audio_sfx_active_count;
  
-+/* Phase 11 patch 0069: cumulative silent-IRQ counter for the Pixtone
++/* Phase 11 patch 0069: cumulative silent-IRQ counter for the SfxSynth
 +   multi-source probe (hypothesis C). Monotonic; never reset. Engine
 +   reads via this extern at audit-flush boundary and computes block-
 +   over-block delta. See SDL_dos_audio_synth.c for the rationale and

@@ -15,7 +15,7 @@
  *
  * Per perf_predictions_unreliable.md: "audio IRQ at 80 Hz × 100 us/IRQ ≈
  * 8 ms/sec ≈ 0.13 ms/flip" is theory; the actual cost includes IRQ-5 ISR
- * body work (DMA refill, ring buffer ops), Pixtone/Organya IRQ-driven mix,
+ * body work (DMA refill, ring buffer ops), SfxSynth/Organya IRQ-driven mix,
  * and DPMI overhead per IRQ. The probe MEASURES the integrated cost via
  * direct wall-clock comparison of an identical synthetic engine loop with
  * audio active vs paused.

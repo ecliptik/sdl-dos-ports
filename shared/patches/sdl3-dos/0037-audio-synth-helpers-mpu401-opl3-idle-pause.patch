@@ -661,7 +661,7 @@ index 000000000..a6faebeca
 + * ------------------------------------------------------------------------
 + *
 + * When music is offloaded to OPL3/WB, the SB16 DMA stream becomes idle
-+ * except during Pixtone SFX windows. The IRQ-5 handler entry/exit
++ * except during SfxSynth SFX windows. The IRQ-5 handler entry/exit
 + * accounts for ~13.5 ms / flip wall-clock on real HW per the W20A2
 + * ablation (memory `audio_mix_zero_is_not_audio_off.md`); pausing the
 + * DSP when no SFX is in flight eliminates that cost.
@@ -688,7 +688,7 @@ index 000000000..a6faebeca
 +
 +// Enables or disables the idle-pause mechanism. Default OFF. Engine
 +// should flip ON only when music backend is hardware-offload (WB/OPL3)
-+// AND Pixtone SFX continues through SB16 DAC. Disabling cancels any
++// AND SfxSynth SFX continues through SB16 DAC. Disabling cancels any
 +// pending pause request and resumes DMA if currently paused.
 +extern void SDL_DOSAudioSetIdlePauseEnabled(bool enabled);
 +

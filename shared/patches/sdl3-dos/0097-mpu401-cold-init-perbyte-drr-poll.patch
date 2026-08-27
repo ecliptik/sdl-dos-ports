@@ -300,7 +300,7 @@ index db7a81098..030965e31 100644
 +volatile uint32_t dos_port_mpu_drr_cap = 10000;
 +
  /* DOSKUTSU patch (Phase 11 patch 0069): cumulative silent-IRQ counter
-    for the Pixtone multi-source probe (hypothesis C: cooperative-
+    for the SfxSynth multi-source probe (hypothesis C: cooperative-
     scheduler audio-thread starvation during rapid-fire SFX). The
 diff --git a/src/core/dos/SDL_dos_audio_synth.h b/src/core/dos/SDL_dos_audio_synth.h
 index 4a4b4818a..c34669240 100644
@@ -323,7 +323,7 @@ index 4a4b4818a..c34669240 100644
 +extern volatile uint32_t dos_port_mpu_drr_cap;
 +
  /* ------------------------------------------------------------------------
-  * Phase 11 patch 0071 -- SDL_DOSPixtone* channel-pool API for Lever 3
+  * Phase 11 patch 0071 -- SDL_DOSSfxSynth* channel-pool API for Lever 3
   * ------------------------------------------------------------------------
 -- 
 2.47.3

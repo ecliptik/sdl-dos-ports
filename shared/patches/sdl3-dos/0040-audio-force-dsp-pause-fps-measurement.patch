@@ -14,7 +14,7 @@ DSP pause command at init (immediately after auto-init DMA starts +
 IRQ hook installs) and PlayDevice's auto-resume on subsequent ring
 writes is gated off. Result: DSP stays paused for the entire run;
 IRQ-5 stops firing; gameplay is silent (no music synthesis, no
-Pixtone SFX through the DAC).
+SfxSynth SFX through the DAC).
 
 Purpose: fps-upper-bound data point for the W22-WB-A-r2 PLAY4 iter.
 Measures the absolute fps headroom the future Stage 3 (WB) + Stage 4
@@ -150,7 +150,7 @@ index dabeddb34..3856acc43 100644
  
 @@ -698,8 +743,13 @@ static bool DOSSOUNDBLASTER_PlayDevice(SDL_AudioDevice *device, const Uint8 *buf
         means the audio writer has fresh data to play -- almost certainly
-        a Pixtone SFX trigger. Request resume; service it now so the new
+        a SfxSynth SFX trigger. Request resume; service it now so the new
         data starts playing immediately rather than after the next
 -       WaitDevice cycle. */
 -    if (isr_dsp_paused) {
@@ -159,7 +159,7 @@ index dabeddb34..3856acc43 100644
 +       DOSKUTSU patch (Phase 10 patch 0040): suppress auto-resume when
 +       force-DSP-pause is active. Force-pause is the fps-upper-bound
 +       measurement mode; gameplay is silent; ring writes from any
-+       source (including Pixtone) are dropped on the floor. */
++       source (including SfxSynth) are dropped on the floor. */
 +    if (isr_dsp_paused && !g_dos_audio_force_dsp_pause) {
          g_dos_audio_resume_request = true;
          MaybeServiceIdlePauseRequests();

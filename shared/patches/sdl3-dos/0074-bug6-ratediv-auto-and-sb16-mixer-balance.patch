@@ -13,7 +13,7 @@ PART 1 -- RATEDIV auto-default (bakes the proven Tier-2 fix):
 
 The bug6-confirm iter (0073 rate-diag) MEASURED device->spec.freq = 44100
 in ALL tiers: the SB16 opens at 44100 regardless of the Tier-2
-SAMPLE_RATE=11025, which only sets the Pixtone MASTER render rate. The
+SAMPLE_RATE=11025, which only sets the SfxSynth MASTER render rate. The
 IRQ-5 ISR consumes the master at the device frame rate (one int16 per
 output stereo pair = 44100/s) while the master represents only
 master_int16_rate int16/s, so Tier-2 SFX play 4x too fast (2 octaves);
@@ -21,8 +21,8 @@ RATEDIV=4 corrects (operator-confirmed). The earlier "2x chip over-drain"
 guess was overturned by the measurement.
 
 0074 makes the divider automatic + tier-aware:
-  - New export SDL_DOSPixtoneSetMasterRate(int master_int16_rate),
-    declared in include/SDL3/SDL_dospixtone.h (single source of truth for
+  - New export SDL_DOSSfxSynthSetMasterRate(int master_int16_rate),
+    declared in include/SDL3/SDL_dossfx_synth.h (single source of truth for
     the cross-link-unit symbol; mirrored into SDL_dos_audio_synth.h),
     implemented in sb.c. The engine (nxengine-evo, separate patch) calls
     it with SAMPLE_RATE*AUDIO_CHANNELS in SoundManager::init BEFORE
@@ -33,7 +33,7 @@ guess was overturned by the measurement.
     divider = round(device->spec.freq / master_rate); shift_div = ctz(d)
     for power-of-2 d (Tier-2 44100/11025=4 -> 2; Tier-1 44100/44100=1 ->
     0); non-power-of-2 -> nearest power of 2 + a warning. The
-    SDL_HINT_DOS_PIXTONE_IRQ_RATEDIV env knob (0073) is now a DEBUG
+    SDL_HINT_DOS_SFX_SYNTH_IRQ_RATEDIV env knob (0073) is now a DEBUG
     OVERRIDE that wins when set ("1"/"2"/"4").
   - The 0073 RATEDIV env-resolve is RELOCATED out of the 0071 Lever-3
     hint block (which runs before the spec is finalized) to the rate-diag
@@ -76,7 +76,7 @@ Byte-identity: SDL_HINT_DOS_SB16_MIXER_PROGRAM=0 -> the CT1745 block
 is skipped -> mixer untouched == pre-0074. The auto-RATEDIV ship default
 is intentionally NOT byte-identical to pre-0074 (it bakes RATEDIV=4 for
 Tier-2); the byte-identical fallbacks are MIXER_PROGRAM=0 (mixer) and
-Lever-3-off OR PIXTONE_IRQ_RATEDIV=1 (divider).
+Lever-3-off OR SFX_SYNTH_IRQ_RATEDIV=1 (divider).
 
 0073's rate-diag + rate-meas instrumentation is kept intact. The smoke
 BANNER_REGEX gets the RATEDIV-auto + SB16-balance banners (the superseded
@@ -87,7 +87,7 @@ DOSBox-X smoke confirms the banners / boot path but NOT the audible pitch
 or balance per [[dosbox_not_proxy]]; both validate only on real DX2-66
 hardware (the SB16 balance-sweep verify iter dials in voice/fm).
 
-Cross-link-unit: SDL_DOSPixtoneSetMasterRate is engine->SDL (defined in
+Cross-link-unit: SDL_DOSSfxSynthSetMasterRate is engine->SDL (defined in
 libSDL3.a, called from the engine), so it adds no unresolved extern to
 the SDL test exes. Signature locked with nx-engine: int arg, C linkage,
 declared in the public header that the engine #includes.
@@ -99,26 +99,26 @@ See docs/internal/BUG6-BALANCE-AND-SHIP-FIX-DESIGN.md (flush-instr spec)
 
 Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 ---
- include/SDL3/SDL_dospixtone.h      |  35 +++++
+ include/SDL3/SDL_dossfx_synth.h      |  35 +++++
  src/audio/dos/SDL_dosaudio_sb.c    | 220 ++++++++++++++++++++++++-----
  src/core/dos/SDL_dos_audio_synth.h |  10 ++
  3 files changed, 226 insertions(+), 39 deletions(-)
 
-diff --git a/include/SDL3/SDL_dospixtone.h b/include/SDL3/SDL_dospixtone.h
+diff --git a/include/SDL3/SDL_dossfx_synth.h b/include/SDL3/SDL_dossfx_synth.h
 index 4b4d2ad65..0b3bd0cf9 100644
---- a/include/SDL3/SDL_dospixtone.h
-+++ b/include/SDL3/SDL_dospixtone.h
-@@ -286,6 +286,41 @@ extern SDL_DECLSPEC void SDLCALL SDL_DOSPixtoneSetGain(int32_t channel_id,
+--- a/include/SDL3/SDL_dossfx_synth.h
++++ b/include/SDL3/SDL_dossfx_synth.h
+@@ -286,6 +286,41 @@ extern SDL_DECLSPEC void SDLCALL SDL_DOSSfxSynthSetGain(int32_t channel_id,
   */
- extern SDL_DECLSPEC bool SDLCALL SDL_DOSPixtoneIRQMixActive(void);
+ extern SDL_DECLSPEC bool SDLCALL SDL_DOSSfxSynthIRQMixActive(void);
  
 +/**
-+ * Tell the SDL backend the Pixtone master content rate so it can compute
++ * Tell the SDL backend the SfxSynth master content rate so it can compute
 + * the Lever 3 ISR consumption rate-divider automatically (patch 0074).
 + *
 + * The bug6-confirm iter measured device->spec.freq = 44100 Hz in ALL
 + * audio tiers; under Tier-2 the engine's SAMPLE_RATE=11025 only sets the
-+ * Pixtone MASTER render rate, not the device. The IRQ-5 ISR consumes the
++ * SfxSynth MASTER render rate, not the device. The IRQ-5 ISR consumes the
 + * master at the device frame rate (one int16 sample per output stereo
 + * pair), so when the master represents fewer int16/sec than the device
 + * drains, the SFX play too fast (~an octave per factor of 2). The fix is
@@ -135,7 +135,7 @@ index 4b4d2ad65..0b3bd0cf9 100644
 + * before MIX_CreateMixerDevice), so the cached value is present when
 + * DOSSOUNDBLASTER_OpenDevice computes the auto-divider. A late call is
 + * tolerated (the divider is recomputed if the device freq is already
-+ * cached). The SDL_HINT_DOS_PIXTONE_IRQ_RATEDIV env var, if set,
++ * cached). The SDL_HINT_DOS_SFX_SYNTH_IRQ_RATEDIV env var, if set,
 + * overrides this auto-default (debug knob). Safe to call unconditionally
 + * (harmless when Lever 3 is off -- the value is just cached).
 + *
@@ -143,9 +143,9 @@ index 4b4d2ad65..0b3bd0cf9 100644
 + *
 + * \since SDL 3 -- doskutsu workspace-local patch 0074, 2026-05-22.
 + *
-+ * \sa SDL_DOSPixtoneIRQMixActive
++ * \sa SDL_DOSSfxSynthIRQMixActive
 + */
-+extern SDL_DECLSPEC void SDLCALL SDL_DOSPixtoneSetMasterRate(int master_int16_rate);
++extern SDL_DECLSPEC void SDLCALL SDL_DOSSfxSynthSetMasterRate(int master_int16_rate);
 +
  /**
   * Engine-visible counter: number of currently active ISR-channel
@@ -154,56 +154,56 @@ diff --git a/src/audio/dos/SDL_dosaudio_sb.c b/src/audio/dos/SDL_dosaudio_sb.c
 index 3cb332d8d..2f73af135 100644
 --- a/src/audio/dos/SDL_dosaudio_sb.c
 +++ b/src/audio/dos/SDL_dosaudio_sb.c
-@@ -834,6 +834,57 @@ static volatile Uint8 g_dos_pixtone_irq_mix_shift = 9;
+@@ -834,6 +834,57 @@ static volatile Uint8 g_dos_sfx_synth_irq_mix_shift = 9;
   * OpenDevice. Per docs/internal/BUG6-RATE-CONFIRMED-INSTR-AND-FIX-DESIGN.md
   * + bug6_sfx_clip_pitch_mechanism. */
- static volatile Uint8 g_dos_pixtone_irq_ratediv_shift = 0;
+ static volatile Uint8 g_dos_sfx_synth_irq_ratediv_shift = 0;
 +
 +/* DOSKUTSU patch (Phase 11 patch 0074 Part 1): RATEDIV auto-default
 + * inputs. The bug6-confirm iter measured device->spec.freq = 44100 in
-+ * ALL tiers; Tier-2 SAMPLE_RATE=11025 only sets the Pixtone MASTER render
++ * ALL tiers; Tier-2 SAMPLE_RATE=11025 only sets the SfxSynth MASTER render
 + * rate, NOT the device. So the ISR consumes the master at the device
 + * frame rate (one int16 per output stereo pair = 44100/s) while the
 + * master represents only master_int16_rate int16/s -> divider =
 + * round(dev_freq / master_rate) (Tier-2: 44100/11025=4; Tier-1:
 + * 44100/(22050*2)=1). The engine supplies master_int16_rate via
-+ * SDL_DOSPixtoneSetMasterRate (= SAMPLE_RATE*AUDIO_CHANNELS) before the
++ * SDL_DOSSfxSynthSetMasterRate (= SAMPLE_RATE*AUDIO_CHANNELS) before the
 + * device opens; dev_freq is cached at OpenDevice. The 0073 env knob
-+ * SDL_HINT_DOS_PIXTONE_IRQ_RATEDIV becomes a DEBUG OVERRIDE on top.
++ * SDL_HINT_DOS_SFX_SYNTH_IRQ_RATEDIV becomes a DEBUG OVERRIDE on top.
 + * None of these are ISR-read (only the resulting shift is), so no DPMI
 + * lock is needed for them. Per BUG6-BALANCE-AND-SHIP-FIX-DESIGN.md Part 1. */
-+static int g_dos_pixtone_master_int16_rate = 0;  /* engine: SAMPLE_RATE*AUDIO_CHANNELS */
-+static int g_dos_pixtone_dev_freq = 0;           /* device->spec.freq, cached at OpenDevice */
-+static int g_dos_pixtone_ratediv_env_shift = -1; /* env override; -1 = unset (auto applies) */
++static int g_dos_sfx_synth_master_int16_rate = 0;  /* engine: SAMPLE_RATE*AUDIO_CHANNELS */
++static int g_dos_sfx_synth_dev_freq = 0;           /* device->spec.freq, cached at OpenDevice */
++static int g_dos_sfx_synth_ratediv_env_shift = -1; /* env override; -1 = unset (auto applies) */
 +
 +/* Recompute the ISR rate-divider shift from the cached master rate +
 + * device freq. The env override (>= 0) always wins. Called from
-+ * SDL_DOSPixtoneSetMasterRate (engine init) AND from OpenDevice (after
++ * SDL_DOSSfxSynthSetMasterRate (engine init) AND from OpenDevice (after
 + * dev_freq + the env hint are resolved); whoever runs last wins, so a
 + * late setter call is safe. Pure integer; the resulting Uint8 is the
 + * only ISR-read (DPMI-locked) field -- a single-byte store is atomic. */
-+static void dos_pixtone_recompute_ratediv(void)
++static void dos_sfx_synth_recompute_ratediv(void)
 +{
-+    if (g_dos_pixtone_ratediv_env_shift >= 0) {
-+        g_dos_pixtone_irq_ratediv_shift = (Uint8)g_dos_pixtone_ratediv_env_shift;
++    if (g_dos_sfx_synth_ratediv_env_shift >= 0) {
++        g_dos_sfx_synth_irq_ratediv_shift = (Uint8)g_dos_sfx_synth_ratediv_env_shift;
 +        return;
 +    }
-+    const int master = g_dos_pixtone_master_int16_rate;
-+    const int devf   = g_dos_pixtone_dev_freq;
++    const int master = g_dos_sfx_synth_master_int16_rate;
++    const int devf   = g_dos_sfx_synth_dev_freq;
 +    if (master <= 0 || devf <= 0) {
-+        g_dos_pixtone_irq_ratediv_shift = 0; /* fallback RATEDIV=1 */
++        g_dos_sfx_synth_irq_ratediv_shift = 0; /* fallback RATEDIV=1 */
 +        return;
 +    }
 +    const int d = (devf + master / 2) / master; /* round to nearest int */
 +    if (d >= 1 && (d & (d - 1)) == 0) {
-+        g_dos_pixtone_irq_ratediv_shift = (Uint8)__builtin_ctz((unsigned)d);
++        g_dos_sfx_synth_irq_ratediv_shift = (Uint8)__builtin_ctz((unsigned)d);
 +    } else {
 +        /* non-power-of-2 (not expected for shipped tiers): nearest power
 +         * of 2 in log space + a warning. */
 +        int p = 1, e = 0;
 +        while ((p << 1) <= d) { p <<= 1; ++e; }
 +        if ((d - p) > ((p << 1) - d)) ++e; /* round toward the larger pow2 */
-+        g_dos_pixtone_irq_ratediv_shift = (Uint8)e;
++        g_dos_sfx_synth_irq_ratediv_shift = (Uint8)e;
 +        dos_port_dbg_log("audio: SDL/0074 RATEDIV auto: WARNING non-power-of-2 "
 +                         "divider=%d (dev_freq=%d master_rate=%d) -> nearest "
 +                         "shift_div=%d", d, devf, master, e);
@@ -212,12 +212,12 @@ index 3cb332d8d..2f73af135 100644
  /* ========================================================================
   * DOSKUTSU patch (Phase 11 patch 0072): Lever 2b -- MidiScheduler tick
   * from the SB16 IRQ-5 ISR
-@@ -1022,6 +1073,21 @@ bool SDL_DOSPixtoneIRQMixActive(void)
-     return g_dos_pixtone_irq_mix_active;
+@@ -1022,6 +1073,21 @@ bool SDL_DOSSfxSynthIRQMixActive(void)
+     return g_dos_sfx_synth_irq_mix_active;
  }
  
 +/* DOSKUTSU patch (Phase 11 patch 0074 Part 1): engine setter for the
-+ * Pixtone master content rate (SAMPLE_RATE * AUDIO_CHANNELS int16/sec).
++ * SfxSynth master content rate (SAMPLE_RATE * AUDIO_CHANNELS int16/sec).
 + * The engine calls this once in SoundManager::init BEFORE
 + * MIX_CreateMixerDevice (= before the SDL audio device opens), so the
 + * cached value is available when OpenDevice computes the auto-RATEDIV
@@ -225,21 +225,21 @@ index 3cb332d8d..2f73af135 100644
 + * cached). Harmless when Lever 3 is off (the value is just cached; the
 + * ISR never runs). Engine main thread. Per BUG6-BALANCE-AND-SHIP-FIX-
 + * DESIGN.md Part 1. */
-+void SDL_DOSPixtoneSetMasterRate(int master_int16_rate)
++void SDL_DOSSfxSynthSetMasterRate(int master_int16_rate)
 +{
-+    g_dos_pixtone_master_int16_rate = master_int16_rate;
-+    dos_pixtone_recompute_ratediv();
++    g_dos_sfx_synth_master_int16_rate = master_int16_rate;
++    dos_sfx_synth_recompute_ratediv();
 +}
 +
- /* Start a Pixtone SFX on a channel-pool slot. Returns the channel id
+ /* Start a SfxSynth SFX on a channel-pool slot. Returns the channel id
   * (>= 0) on success, or -1 if no free channel.
   *
 @@ -1640,45 +1706,12 @@ static bool DOSSOUNDBLASTER_OpenDevice(SDL_AudioDevice *device)
-                 g_dos_pixtone_irq_mix_shift = (Uint8)(8 + add);
+                 g_dos_sfx_synth_irq_mix_shift = (Uint8)(8 + add);
              }
  
 -            /* DOSKUTSU patch (Phase 11 patch 0073): Bug 6 rate-divider
--             * resolution. SDL_HINT_DOS_PIXTONE_IRQ_RATEDIV strict
+-             * resolution. SDL_HINT_DOS_SFX_SYNTH_IRQ_RATEDIV strict
 -             * "1"/"2"/"4"; cached as a log2 shift (0/1/2). Default "1"
 -             * (shift_div=0) keeps ISR consumption byte-identical to
 -             * pre-0073. RATEDIV=2 corrects the Tier-2 octave-high SFX (the
@@ -250,30 +250,30 @@ index 3cb332d8d..2f73af135 100644
 -             * DESIGN.md. */
 -            {
 -                const char *rd_hint =
--                    SDL_GetHint("SDL_HINT_DOS_PIXTONE_IRQ_RATEDIV");
+-                    SDL_GetHint("SDL_HINT_DOS_SFX_SYNTH_IRQ_RATEDIV");
 -                Uint8 rd_shift = 0; /* default: RATEDIV=1, byte-identical */
 -                if (rd_hint && rd_hint[0] != '\0' && rd_hint[1] == '\0') {
 -                    if (rd_hint[0] == '1') rd_shift = 0;
 -                    else if (rd_hint[0] == '2') rd_shift = 1;
 -                    else if (rd_hint[0] == '4') rd_shift = 2;
 -                }
--                g_dos_pixtone_irq_ratediv_shift = rd_shift;
+-                g_dos_sfx_synth_irq_ratediv_shift = rd_shift;
 -                if (rd_shift != 0) {
--                    dos_port_dbg_log("audio: SDL/0073 pixtone IRQ rate-divider: "
+-                    dos_port_dbg_log("audio: SDL/0073 sfx_synth IRQ rate-divider: "
 -                                     "ENGAGED RATEDIV=%d (shift_div=%d; each "
--                                     "Pixtone source sample held for %d output "
+-                                     "SfxSynth source sample held for %d output "
 -                                     "stereo pairs; ISR consumption slowed %dx "
 -                                     "= down %d octave(s); Bug 6 Tier-2 pitch "
--                                     "fix; tune via SDL_HINT_DOS_PIXTONE_"
+-                                     "fix; tune via SDL_HINT_DOS_SFX_SYNTH_"
 -                                     "IRQ_RATEDIV=1|2|4)",
 -                                     (1 << rd_shift), (int)rd_shift,
 -                                     (1 << rd_shift), (1 << rd_shift),
 -                                     (int)rd_shift);
 -                } else {
--                    dos_port_dbg_log("audio: SDL/0073 pixtone IRQ rate-divider: "
+-                    dos_port_dbg_log("audio: SDL/0073 sfx_synth IRQ rate-divider: "
 -                                     "RATEDIV=1 (default; ISR consumption "
 -                                     "byte-identical to pre-0073; set "
--                                     "SDL_HINT_DOS_PIXTONE_IRQ_RATEDIV=2 "
+-                                     "SDL_HINT_DOS_SFX_SYNTH_IRQ_RATEDIV=2 "
 -                                     "to correct the Tier-2 octave-high SFX)");
 -                }
 -            }
@@ -294,27 +294,27 @@ index 3cb332d8d..2f73af135 100644
 +       SDL_UpdatedAudioDeviceFormat has finalized device->spec.freq, so
 +       cache it + (when Lever 3 is engaged) resolve the env OVERRIDE and
 +       recompute the ISR rate-divider shift. The engine set the master
-+       content rate via SDL_DOSPixtoneSetMasterRate before the device
++       content rate via SDL_DOSSfxSynthSetMasterRate before the device
 +       opened; divider = round(dev_freq/master_rate) (measured dev_freq=
 +       44100 -> Tier-2 44100/11025=4 -> shift 2; Tier-1 44100/44100=1 ->
-+       shift 0). The 0073 env knob SDL_HINT_DOS_PIXTONE_IRQ_RATEDIV
++       shift 0). The 0073 env knob SDL_HINT_DOS_SFX_SYNTH_IRQ_RATEDIV
 +       is now a DEBUG OVERRIDE that wins when set ("1"/"2"/"4"). dev_freq
 +       is cached unconditionally so a late SetMasterRate call can still
 +       recompute. Per BUG6-BALANCE-AND-SHIP-FIX-DESIGN.md Part 1. */
-+    g_dos_pixtone_dev_freq = device->spec.freq;
-+    if (g_dos_pixtone_irq_mix_active) {
++    g_dos_sfx_synth_dev_freq = device->spec.freq;
++    if (g_dos_sfx_synth_irq_mix_active) {
 +        const char *rd_hint =
-+            SDL_GetHint("SDL_HINT_DOS_PIXTONE_IRQ_RATEDIV");
++            SDL_GetHint("SDL_HINT_DOS_SFX_SYNTH_IRQ_RATEDIV");
 +        int rd_env_shift = -1; /* unset -> auto-default applies */
 +        if (rd_hint && rd_hint[0] != '\0' && rd_hint[1] == '\0') {
 +            if (rd_hint[0] == '1') rd_env_shift = 0;
 +            else if (rd_hint[0] == '2') rd_env_shift = 1;
 +            else if (rd_hint[0] == '4') rd_env_shift = 2;
 +        }
-+        g_dos_pixtone_ratediv_env_shift = rd_env_shift;
-+        dos_pixtone_recompute_ratediv();
++        g_dos_sfx_synth_ratediv_env_shift = rd_env_shift;
++        dos_sfx_synth_recompute_ratediv();
 +
-+        const int rd_master  = g_dos_pixtone_master_int16_rate;
++        const int rd_master  = g_dos_sfx_synth_master_int16_rate;
 +        const int rd_divider = (rd_master > 0)
 +            ? (device->spec.freq + rd_master / 2) / rd_master : 0;
 +        char rd_envdesc[24];
@@ -326,9 +326,9 @@ index 3cb332d8d..2f73af135 100644
 +                         "master_rate=%d divider=%d shift_div=%d "
 +                         "(env override=%s)",
 +                         device->spec.freq, rd_master, rd_divider,
-+                         (int)g_dos_pixtone_irq_ratediv_shift, rd_envdesc);
++                         (int)g_dos_sfx_synth_irq_ratediv_shift, rd_envdesc);
 +        /* Cross-unit failure witness (flush-instr ask): master_rate==0 with
-+           Lever 3 ON means the engine never called SDL_DOSPixtoneSetMasterRate
++           Lever 3 ON means the engine never called SDL_DOSSfxSynthSetMasterRate
 +           before the device opened (nxengine-evo/0169 missing or mis-ordered),
 +           OR no env override is set -- so the auto-divider fell back to
 +           shift_div=0 (RATEDIV=1) and Tier-2 SFX will SILENTLY play ~an octave
@@ -336,11 +336,11 @@ index 3cb332d8d..2f73af135 100644
 +           reader noticing master_rate=0. */
 +        if (rd_master == 0 && rd_env_shift < 0) {
 +            dos_port_dbg_log("audio: SDL/0074 RATEDIV auto: WARNING master_rate=0 "
-+                             "+ no env override -- engine SDL_DOSPixtoneSetMasterRate "
++                             "+ no env override -- engine SDL_DOSSfxSynthSetMasterRate "
 +                             "(nxengine-evo/0169) did not run before device open; "
 +                             "shift_div fell back to 0 (RATEDIV=1), so Tier-2 SFX "
 +                             "will play ~an octave high. Fix the engine setter call "
-+                             "or set SDL_HINT_DOS_PIXTONE_IRQ_RATEDIV=4 to "
++                             "or set SDL_HINT_DOS_SFX_SYNTH_IRQ_RATEDIV=4 to "
 +                             "force the Tier-2 divider.");
 +        }
 +    }
@@ -413,23 +413,23 @@ diff --git a/src/core/dos/SDL_dos_audio_synth.h b/src/core/dos/SDL_dos_audio_syn
 index dbd727b0c..4ffe72614 100644
 --- a/src/core/dos/SDL_dos_audio_synth.h
 +++ b/src/core/dos/SDL_dos_audio_synth.h
-@@ -423,6 +423,16 @@ extern SDL_DECLSPEC void SDLCALL SDL_DOSPixtoneSetGain(int32_t channel_id,
-  * to gate its Pixtone::play routing branch (sec.4 of the design). */
- extern SDL_DECLSPEC bool SDLCALL SDL_DOSPixtoneIRQMixActive(void);
+@@ -423,6 +423,16 @@ extern SDL_DECLSPEC void SDLCALL SDL_DOSSfxSynthSetGain(int32_t channel_id,
+  * to gate its SfxSynth::play routing branch (sec.4 of the design). */
+ extern SDL_DECLSPEC bool SDLCALL SDL_DOSSfxSynthIRQMixActive(void);
  
-+/* Engine setter (patch 0074): supply the Pixtone master content rate
++/* Engine setter (patch 0074): supply the SfxSynth master content rate
 + * (SAMPLE_RATE * AUDIO_CHANNELS int16/sec) so the SDL backend computes
 + * the Lever 3 ISR consumption rate-divider automatically (= round(
 + * device->spec.freq / master_int16_rate)). Call once at engine init
-+ * BEFORE MIX_CreateMixerDevice. The SDL_HINT_DOS_PIXTONE_IRQ_RATEDIV
-+ * env var overrides when set. See <SDL3/SDL_dospixtone.h> for the full
++ * BEFORE MIX_CreateMixerDevice. The SDL_HINT_DOS_SFX_SYNTH_IRQ_RATEDIV
++ * env var overrides when set. See <SDL3/SDL_dossfx_synth.h> for the full
 + * contract. (Single source of truth is the public header; mirrored here
-+ * alongside the other SDL_DOSPixtone* externs.) */
-+extern SDL_DECLSPEC void SDLCALL SDL_DOSPixtoneSetMasterRate(int master_int16_rate);
++ * alongside the other SDL_DOSSfxSynth* externs.) */
++extern SDL_DECLSPEC void SDLCALL SDL_DOSSfxSynthSetMasterRate(int master_int16_rate);
 +
  /* Engine-visible counter: number of currently active ISR-channel
   * pool slots. Engine 0165 probe reads SUM of this +
-  * g_pixtone_active_count under Lever 3 ON (per the L3-Q5 Shape B
+  * g_dos_sfx_synth_active_count under Lever 3 ON (per the L3-Q5 Shape B
 -- 
 2.47.3
 

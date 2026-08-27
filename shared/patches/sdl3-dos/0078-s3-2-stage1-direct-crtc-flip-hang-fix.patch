@@ -8,7 +8,7 @@ Fixes the Mimiga Village hang in the patch-0077 VRAM-resident page-flip
 lever (ON path only; OFF ran the full TAS clean). Root cause: the
 per-frame VBE 0x4F07 display-start flip is a DPMI protected-mode ->
 real-mode (__dpmi_int 0x10) transition. The first SFX in a new scene
-triggers an INT 21h Pixtone-sample disk-load; with the SB16 IRQ-5 audio
+triggers an INT 21h SfxSynth-sample disk-load; with the SB16 IRQ-5 audio
 ISR also async, three users contend for the single non-re-entrant DPMI
 real-mode state -> deadlock (operator: hung MIDI note + frozen screen).
 Baseline (no per-frame INT) is safe; the lever's added per-frame INT 0x10

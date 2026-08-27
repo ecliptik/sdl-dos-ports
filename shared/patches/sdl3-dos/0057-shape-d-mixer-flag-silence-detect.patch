@@ -96,7 +96,7 @@ driver) and the real cost lives elsewhere; SDL/0058's mechanism
 histogram backstop reveals where for wave-37 picks.
 
 SFX-correctness gate: the mixer's actual_mixed_bytes captures track-
-output-stream byte counts; when a Pixtone SFX fires via MIX_PlayTrack,
+output-stream byte counts; when a SfxSynth SFX fires via MIX_PlayTrack,
 the track's TrackGetCallback puts non-zero data into the per-track
 output_stream during MixerCallback, mixer->actual_mixed_bytes
 increments, Shape D PlayDevice takes the audible-write path, ring
@@ -147,7 +147,7 @@ Coexistence with the patch family:
                 gates the silence-detect block via
                 g_dos_audio_quiescence_gate_disabled; same code path
                 under Shape D as Shape A)
-  - SDL/0054 -- Shape A silent-Pixtone-SFX fix (this patch's
+  - SDL/0054 -- Shape A silent-SfxSynth-SFX fix (this patch's
                 fallback; remains default-ON; PlayDevice's silence-
                 detect dispatch lands here when SHAPE != "D")
   - SDL/0055 -- P12 SDL-side audio brackets (independent
