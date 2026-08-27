@@ -138,6 +138,23 @@ someone can act on ("+3.0 fps, large win, ship it") instead of a number
 nobody can defend. Full methodology, verdict table shape, and the A-to-A
 stability check in `references/abba-methodology.md`.
 
+## A stale rig configuration can fake a hardware defect
+
+A rig configuration change that isn't fully re-verified — a video card
+swap without re-running its VESA driver setup, or a config-writing step
+that got interrupted mid-write — can produce a result indistinguishable
+from a genuine defect in the port under test: wrong geometry, wrong
+colors, a mode that silently fails to engage. This has cost a real
+investigation cycle on this hub's own rig before the actual cause was
+found (see `docs/video.md`'s video-correctness hazards for the worked
+example and citations). Before trusting a defect hypothesis on a symptom
+that could plausibly be a config problem, re-verify the rig's own
+configuration independently rather than assuming it's still what it was
+set to — vcctrl's own rig-hazards material has the mechanics for the
+config surface in question; this hub's job is knowing that "re-verify
+config before trusting a defect hypothesis" is the rule to reach for, not
+re-deriving vcctrl's own tool-specific steps.
+
 ## A harness bug is a bug, not a workaround
 
 If something in the harness or the collection path behaves wrong mid-
