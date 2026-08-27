@@ -3,29 +3,48 @@
 A single grep-able block a DOS port's engine emits once per run, carrying
 every metric a validation cell needs -- so collection is "grep the block"
 instead of manual log archaeology or hand arithmetic across scattered log
-lines. Doskutsu's implementation is the reference; this describes the
-pattern so another port can add its own equivalent rather than copying
-doskutsu's specific field names verbatim.
+lines. `shared/include/runmanifest.h` is a ready-to-use, header-only
+implementation of this -- schema v1, 18 fields, environment auto-detect,
+an `env_block_sha12` config fingerprint -- adapted from doskutsu's own
+`include/runmanifest.h` (MIT-licensed for `shared/`; doskutsu's own copy
+stays GPL-3.0). Include it and call `runmanifest_emit()` at clean
+shutdown rather than reimplementing the pattern from scratch.
 
-## Shape
+## Shape (schema v1, exact field set from `shared/include/runmanifest.h`)
 
 ```
 [RUNMANIFEST-BEGIN]
+schema_version=1
 environment=realhw
-build_sha12=04388290f735
-per_loop_fps=58.3
+binary_sha12=04388290f735
+wave_tag=PLAY0
+scene=title
+env_block_sha=a1b2c3d4e5f6
+started_utc=2026-05-14T00:42:05Z
+duration_s=58
 exit_code=0
+fps_p50=58.30
+fps_p95=54.10
+audio_vital_status=NA
+regime=NA
+banner_required_hit=12
+banner_required_total=12
+banner_forbidden_hit=0
+banner_optional_hit=3
 critical_count=0
 warn_count=1
-stage_title_fps=61.0
-stage_gameplay_fps=57.9
 [RUNMANIFEST-END]
 ```
 
-Exact field set is per-port -- add whatever a validation campaign for that
-port actually needs (per-stage breakdowns, a PRNG seed if the run used
-deterministic replay, a TAS-replay identifier). The properties that matter
-are:
+This is the actual shared schema now, not an illustrative example --
+match these field names for any port using `shared/include/runmanifest.h`
+directly. A port with genuinely different needs (per-stage fps
+breakdowns beyond `fps_p50`/`fps_p95`, a PRNG seed for deterministic
+replay, a TAS-replay identifier) can still add its own extra `key=value`
+lines inside the same `BEGIN`/`END` block -- the header's `runmanifest_t`
+covers the common core, not an exhaustive or closed set. The properties
+that matter, whether using the shared header or a from-scratch
+equivalent, are:
 
 - **One block, emitted unconditionally at a defined point** (e.g. clean
   exit or a specific milestone), so collection doesn't need to guess
@@ -47,19 +66,25 @@ are:
 
 ## Wiring `environment=` via this hub's shared/ hooks
 
-This hub's `shared/tools/dosbox-launch.sh` sets `DOS_PORT_ENVIRONMENT` as
-its neutral default. A port whose engine reads its own differently-named
-var for this (doskutsu's engine patches read `DOS_PORT_ENVIRONMENT`
-specifically -- see `shared/patches/sdl3-dos/README.md`'s "Known naming
-debt" section for why that wasn't renamed) should pass
+`shared/include/runmanifest.h`'s `runmanifest_env_override()` reads
+`DOS_PORT_ENVIRONMENT` directly -- the same neutral variable
+`shared/tools/dosbox-launch.sh` already sets as its default, so a port
+using the shared header gets correct `environment=` classification for
+free, with no extra wiring, as long as launches go through
+`dosbox-launch.sh` (DOSBox-X) or set `DOS_PORT_ENVIRONMENT` directly in
+the rig's own launch profile for real hardware. (doskutsu's own,
+separate, pre-shared-header `include/runmanifest.h` reads its legacy
+`DOSKUTSU_ENVIRONMENT` instead -- that's specific to doskutsu's own repo,
+unrelated to the shared header described here.)
+
+If a port's engine can't use the shared header directly and hand-rolls
+its own environment detection reading some other variable name, pass
 `LAUNCH_EXTRA_SET="<PORT>_ENVIRONMENT=dosbox-x"` (or the real-hardware
-equivalent, set directly in the rig's launch profile rather than through
-`dosbox-launch.sh`, which is DOSBox-X-specific) so the manifest's
-`environment=` field reads correctly regardless of which var name the
-engine itself was built to read. Don't leave this to the engine's
-auto-detect default -- auto-detect defaulting to "realhw" when unset is a
-correct fallback for actual real hardware but silently wrong for an
-emulator run that forgot to set the override.
+equivalent, set directly in the rig's launch profile) so the manifest's
+`environment=` field still reads correctly. Don't leave this to an
+auto-detect default in either case -- defaulting to "realhw" when unset
+is the correct fallback for actual real hardware but silently wrong for
+an emulator run that forgot to set the override.
 
 ## Wiring `build_sha12=` via `RUNMANIFEST_FLAGS`
 
@@ -73,6 +98,20 @@ engine-stage recipe, where `RUNMANIFEST_FLAGS` is that port's own make
 variable defining the fingerprint macro (e.g.
 `-DPORT_BUILD_SHA12=$(shell ...)`), not something this shared fragment
 exports for you.
+
+## Wiring `env_block_sha=` via your own allowlist
+
+`runmanifest_compute_env_block_sha12()` takes a NULL-terminated,
+alphabetically-sorted array of env-var names as a parameter -- it
+deliberately does not ship a built-in list, because every port has its
+own set of measurement-affecting hints. Build your own covering whatever
+`SDL_HINT_*`/`DOS_PORT_*`/engine-specific env vars your own port actually
+varies across cells, pass it in, and the field lets cross-cell analysis
+catch "two cells claiming the same config produced different env blocks"
+without grepping each variable by hand. A port with no such vars yet can
+pass an allowlist of just the ones it expects to eventually need --
+`env_block_sha=000000000000` (the documented empty-block sentinel) is a
+valid, honest answer, not an error.
 
 ## Extraction
 

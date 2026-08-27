@@ -41,6 +41,15 @@ nothing. Before trusting a timing measurement that looks surprising,
 check whether anything active during that window reprograms a PIT channel
 DJGPP's clock depends on.
 
+A related but distinct `uclock()` hazard: it is **not monotonic** on this
+platform — real-hardware logs have shown the unsigned-subtraction wraparound
+that produces when two `uclock()` reads are subtracted in the wrong order
+(a duration coming out near `2^32`, i.e. ~1.8×10^19 in a wider integer
+type, instead of the small positive number expected). Clamp any
+`uclock()`-derived duration to a sane range before trusting it, and treat
+a single wildly-anomalous timing sample as a suspect measurement to
+discard, not as a finding to explain.
+
 ## Add debug output for
 
 ```

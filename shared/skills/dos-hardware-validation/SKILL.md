@@ -123,10 +123,30 @@ If the engine emits one grep-able block per run --
 `build_sha12=`, `per_loop_fps=`, `exit_code=`, `critical_count=`/
 `warn_count=`, per-stage breakdowns -- collection becomes "grep the block,"
 not manual log archaeology or hand arithmetic across scattered log lines.
-This is worth porting to any engine that doesn't already have it. See
-`references/runmanifest-log.md` for the field set and how it ties into
-this hub's `shared/build/sdl3-dos.mk` (`RUNMANIFEST_FLAGS`) and
+`shared/include/runmanifest.h` is a ready-to-use, header-only
+implementation (schema v1, 18 fields, three-signal environment
+auto-detect) any port's engine can call at clean shutdown -- not just a
+pattern to reimplement. See `references/runmanifest-log.md` for the field
+set, how to wire your own env-var allowlist, and how it ties into this
+hub's `shared/build/sdl3-dos.mk` (`RUNMANIFEST_FLAGS`) and
 `shared/tools/dosbox-launch.sh` (`LAUNCH_EXTRA_SET`) hooks.
+
+## Harness invariants: why a check is a check
+
+Before writing a new gate, witness, or automated verdict of any kind,
+read `references/harness-invariants.md`. It's the formal backbone this
+whole skill's specific rules are instances of -- the three invariants
+(attest don't recall, witness the state not the artifact, audit for the
+effect not the syntax), the "a check that can't distinguish success from
+failure is not a check" family (why a watch can be blind to its own
+event, why a retained reading can belong to the wrong epoch, why
+verification has to be routine rather than reserved for doubtful-looking
+claims), the two noise-floor bands, single-mechanism-per-build
+attribution discipline, and why an emulator is a correctness instrument,
+never a performance proxy. Distilled from a platform-agnostic standard
+doskutsu wrote with explicit intent for reuse beyond its own project --
+read it once, then recognize its shape everywhere else in this hub's
+skills.
 
 ## ABBA with pre-registered thresholds
 
