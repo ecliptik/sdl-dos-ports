@@ -91,6 +91,79 @@ emulator-only escape hatch.** See
 is an instance of, and why setting it on real hardware would actively
 mask a real regression rather than just being redundant.
 
+## Driving and screenshotting DOSBox-X with `xdotool`/`scrot`
+
+Sourced from doskutsu's own hardened harnesses (`tests/run-gameplay-smoke.sh`,
+`tests/setup-review-walk.sh`) and confirmed the hard way a second time by
+dossage hitting the same trap independently -- worth having here instead of
+re-derived per port.
+
+- **Focus once, then send keys with no `--window`.** `xdotool key --window
+  <id>` / `type --window <id>` uses XSendEvent, which SDL2 (and therefore
+  DOSBox-X) ignores -- it can silently no-op even against a valid, current
+  window ID. This is not a staleness problem, it's the wrong event type for
+  an SDL2 app. Use plain `xdotool key`/`type` (no `--window`) so events go
+  via XTEST to whatever holds real keyboard focus, and focus the window
+  once up front rather than per keystroke -- re-focusing before every key
+  introduces a window-manager round-trip that desynchronizes keystroke
+  timing (`run-gameplay-smoke.sh`'s `key()` does exactly this: focus once,
+  then bare `xdotool key --delay 60 "$name"` for every subsequent send).
+- **`xdotool search --name DOSBox windowactivate --sync` can race** if other
+  clients also have "DOSBox" somewhere in their title -- loop/retry it
+  rather than treating a single failure as fatal (`run-gameplay-smoke.sh`
+  retries up to 10 times with a short sleep).
+- **Cache the window ID once you have it; don't re-search by name after a
+  video mode change.** The underlying X window survives a DOS text-mode ->
+  VESA graphics-mode switch (it isn't destroyed/recreated), but its
+  `WM_NAME` title goes blank on the switch, so a later `--name DOSBox`
+  re-search stops matching anything. `setup-review-walk.sh`'s
+  `focus_dosbox()` caches the id in `DBX_WIN` on first success and reuses
+  it for every later `windowactivate`/`windowfocus` call. On a real
+  (non-headless) window manager, `windowactivate` alone raises the window
+  *without* granting it keyboard focus -- call `windowfocus` too, and
+  re-assert both before each input batch since focus can drift on a live
+  desktop with other windows.
+- **`scrot -u` (capture the focused window) needs a window that's actually
+  focused** -- if focus silently failed, this degrades straight into "failed
+  to grab image" rather than a clear error; check the exit code rather than
+  assuming a screenshot attempt succeeded. `scrot` also **appends
+  `_000`/`_001` instead of overwriting** an existing target path -- `rm -f`
+  the target before every shot, or a later diff/comparison silently runs
+  against a stale frame from a prior run (this shipped a false "the patch
+  didn't land" finding in doskutsu at least once). Fallback when `scrot`
+  fails: `import -window "$(xdotool getactivewindow)" out.png`.
+- **Prefer a private Xvfb for automated/headless gates over the operator's
+  real `:0`.** Two independent reasons: an Xvfb doesn't touch whatever the
+  operator is actually looking at on their real desktop, and a shared `:0`
+  can end up in a state where `xdotool`/`xdpyinfo` block indefinitely --
+  which reads exactly like a boot wedge in the port under test, not a
+  display problem, and costs real debugging time until you think to check
+  the display itself. doskutsu's automated gates default to
+  `DOSBOX_DISPLAY=:88` with `--own-xvfb`; reserve the real `:0` for
+  genuinely manual/interactive sessions where a human needs to see the
+  window.
+
+## Audio pre-buffering under `cycles=max` can make a working runtime change look unresponsive
+
+Under `dosbox-x-fast.conf`, CPU emulation runs far faster than real time,
+but the emulated DAC still drains its buffer at a fixed real-time rate --
+so SDL's audio callback can pre-buffer far more audio than real-time
+playback has actually consumed yet. Concretely: the callback can fire
+many times immediately after stream-open, filling a large buffer, then go
+quiet for tens of real seconds even though a keypress changed some
+audio-affecting variable (e.g. a loudness/volume flag) moments later in
+wall-clock time -- because everything already sitting in the buffer was
+committed before the variable changed, and nothing is requesting more
+audio yet to pick up the new value.
+
+**Consequence:** testing "did a runtime audio-parameter change take
+effect" by watching callback behavior under `cycles=max` can show a long,
+misleading lag -- or apparent total non-response -- that has nothing to do
+with the port's own logic being wrong. Either test audio-reactivity under
+the parity config (`dosbox-x.conf`, not `-fast`), or budget a real
+wall-clock wait proportional to however much audio is likely pre-buffered,
+not to game-logic/CPU time, before concluding a change had no effect.
+
 ## The global-`pkill` hazard
 
 `dosbox-teardown.sh` exists because a global `pkill -x dosbox-x` kills

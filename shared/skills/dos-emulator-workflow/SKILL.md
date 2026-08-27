@@ -43,7 +43,11 @@ the emulator/hardware boundary below starts to matter.
 
 Full mechanics, flags, and env-var hooks (`LAUNCH_LOG_VERBOSE_VAR`,
 `LAUNCH_EXTRA_SET`, `DOSBOX_CONF`, the three `.conf` variants) are in
-`references/tooling.md`.
+`references/tooling.md`, which also covers driving DOSBox-X with
+`xdotool`/`scrot` (focus-once-no-`--window`, window-ID caching across a
+video mode switch, `scrot` overwrite/fallback traps) and a `cycles=max`
+gotcha where audio pre-buffering can make a working runtime change look
+unresponsive.
 
 ## The boundary: what DOSBox-X can and cannot prove
 
