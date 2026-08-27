@@ -1,12 +1,14 @@
 # Harness invariants: why a check is a check
 
-Distilled from doskutsu's own `docs/internal/HARNESS-STANDARD.md` -- a
-formal, platform-agnostic "agent-driven test harness standard" doskutsu
-wrote with explicit public-release framing ("nothing in the normative
-text should assume any particular project"). The concrete incidents below
-happen to involve DOS/FTP/BIOS mechanics because that's where they were
-found; the rules themselves apply to any agent-driven or automated test
-harness on any platform. Read this alongside `cell-protocol.md` and
+Distilled from this hub's own `/HARNESS-STANDARD.md` (adopted from
+doskutsu, where it originated) -- a formal, platform-agnostic
+"agent-driven test harness standard" written with explicit public-release
+framing ("nothing in the normative text should assume any particular
+project"). Read `/HARNESS-STANDARD.md` itself for the normative spec (the
+I1-I3 invariants, the L1-L3 conformance ladder, and the full section-by-
+section contract); this file is the *practice* layer -- how those rules
+apply concretely on this hub's own vcctrl-driven rig, with this hub's own
+worked examples. Read this alongside `cell-protocol.md` and
 `abba-methodology.md` -- those cover the DOS-rig-specific mechanics this
 file's rules apply to.
 

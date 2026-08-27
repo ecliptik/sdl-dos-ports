@@ -63,7 +63,11 @@ milestone (title screen, playable, etc.) reached.
 DOSBox-X and 86Box are automation, not proof. Real hardware determines
 actual performance and device compatibility — see `docs/hardware-testing.md`
 for how that's currently done via vcctrl, and `HARDWARE.md` for the
-reference machine matrix.
+reference machine matrix. `/HARNESS-STANDARD.md` at this hub's root is
+the formal contract underneath all of this tiering — what a test harness
+run must be able to prove about itself before anyone trusts it, agent or
+human. `shared/skills/dos-hardware-validation` and `dos-realhw-verification`
+are its practical application on this hub's own vcctrl-driven rig.
 
 Passing DOSBox-X (or even 86Box) is not proof a build is actually correct
 on real hardware — a clean smoke can pass while never exercising the

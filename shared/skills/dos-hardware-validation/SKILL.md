@@ -143,9 +143,11 @@ event, why a retained reading can belong to the wrong epoch, why
 verification has to be routine rather than reserved for doubtful-looking
 claims), the two noise-floor bands, single-mechanism-per-build
 attribution discipline, and why an emulator is a correctness instrument,
-never a performance proxy. Distilled from a platform-agnostic standard
-doskutsu wrote with explicit intent for reuse beyond its own project --
-read it once, then recognize its shape everywhere else in this hub's
+never a performance proxy. Distilled from `/HARNESS-STANDARD.md` at this
+hub's own root -- a platform-agnostic standard, originally doskutsu's,
+adopted here once this hub became its own graduation trigger ("move to
+its own repository once a second project adopts it"). Read the standard
+itself once, then recognize its shape everywhere else in this hub's
 skills.
 
 ## ABBA with pre-registered thresholds
