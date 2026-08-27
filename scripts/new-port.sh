@@ -50,11 +50,17 @@ git submodule add -q "$HUB_REMOTE" .sdl-dos-ports || {
 }
 
 echo "==> Creating directory skeleton"
-mkdir -p vendor patches scripts tests qa-results setup .claude/agents .claude/skills
+mkdir -p vendor patches scripts tests qa-results setup profiles .claude/agents .claude/skills
 
 echo "==> Wiring shared SDL3-DOS patch series into patches/ (symlinks)"
 ln -s ../.sdl-dos-ports/shared/patches/sdl3-dos patches/SDL
 ln -s ../.sdl-dos-ports/shared/patches/sdl3-mixer patches/SDL_mixer
+
+echo "==> Symlinking shared skills into .claude/skills/"
+for skill_dir in .sdl-dos-ports/shared/skills/*/; do
+  skill_name="$(basename "$skill_dir")"
+  ln -s "../../.sdl-dos-ports/shared/skills/${skill_name}" ".claude/skills/${skill_name}"
+done
 
 echo "==> Filling in templates"
 NAME_UPPER="$(echo "$NAME" | tr '[:lower:]-' '[:upper:]_')"
@@ -95,6 +101,13 @@ echo "  1. Fill in README.md, STATUS.md, PLAN.md, LICENSE-REVIEW.md, and"
 echo "     profiles/${NAME}.yaml (placeholders are marked <...>)."
 echo "  2. Locate the canonical upstream repo and pin a revision in"
 echo "     vendor/sources.manifest -- never guess."
-echo "  3. Set this repo's own git remote and push when ready."
-echo "  4. In the sdl-dos-ports hub repo, update ports.yaml: set"
+echo "  3. Copy .sdl-dos-ports/shared/agents/*.md into .claude/agents/ and"
+echo "     fill in the placeholders (see shared/agents/README.md's table)."
+echo "  4. Set this repo's own git remote and push when ready."
+echo "  5. In the sdl-dos-ports hub repo, update ports.yaml: set"
 echo "     dos_status: RESEARCH and port_repo_url for '${NAME}'."
+echo ""
+echo "(Steps 1-3 plus the upstream/license research and the handoff to a"
+echo "porting agent are exactly what the sdl-dos-ports hub's 'new-port'"
+echo "skill automates -- run this script directly only if you want just"
+echo "the mechanical scaffold.)"
