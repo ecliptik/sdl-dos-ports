@@ -16,6 +16,26 @@ DJGPP + CWSDPMI
 MS-DOS 6.22
 ```
 
+## The cooperative-scheduler model
+
+There is no preemptive multitasking underneath any of this -- DOS has no
+threads in the modern sense, and the SDL3 DOS backend's audio, timing, and
+I/O all interleave cooperatively: a subsystem callback that doesn't yield
+back promptly can monopolize the scheduler and starve everything else
+sharing it, not just its own subsystem. This has a real, load-bearing
+consequence for validation: **whether a cooperative-scheduler starvation
+bug actually manifests is gated by CPU speed, not by which physical
+machine it is.** A callback that reliably yields in time on a fast CPU can
+fail to on a slow one running the identical code, on the identical
+motherboard/chipset, with only the CPU swapped -- see `audio.md`'s
+architecture-wide hazards for the concrete confirmed case (a starvation
+bug that reproduced 100% on a 486DX2-66 and never on a faster Pentium
+OverDrive on the same board). **Validate any cooperative-scheduler-
+sensitive code on the slowest target tier a port claims to support, not
+just the fastest/reference machine** -- a fast box can fail to exhibit a
+real starvation bug at all, which reads as "fixed" rather than
+"untested at the tier where it matters."
+
 `shared/` in this repo owns everything from the SDL3 DOS backend down, plus
 the build/test/QA tooling that operates at that layer. A port repo owns
 everything from the game engine up, plus the DOS-specific patches that are

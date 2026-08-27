@@ -23,9 +23,23 @@ this skill's reference files, and it's worth applying explicitly, out
 loud, before trusting any of the following as confirmation of anything:
 a clean compile, a clean DOSBox-X smoke, a source trace that looks
 compelling, a `strings` grep that finds the expected symbol embedded in
-the binary. Each of these can be true on a run that is *wrong* in exactly
-the way you're trying to rule out -- see the reference files for concrete
-cases where each one was.
+the binary, **a mode/capability table listing a resolution or feature**
+(a card's mode table naming a resolution is not the same claim as the
+card being able to actually produce it correctly -- confirmed as a real
+gap in doskutsu's own history, distinct from the Mach64 no-320x240
+finding already in `docs/video.md`). Each of these can
+be true on a run that is *wrong* in exactly the way you're trying to rule
+out -- see the reference files for concrete cases where each one was.
+
+This is a named, recurring failure shape worth recognizing on sight
+across every check in this skill, not just build verification: a signal
+that's genuinely observed and causally downstream of the thing you
+actually want to know stays correlated with it right up until the one
+case that matters, then silently isn't. `shared/skills/dos-hardware-
+validation/references/harness-invariants.md` has the fuller catalog (why
+a watch can be blind to its own event, why a retained reading can belong
+to the wrong epoch, and more) -- worth reading once, since its shape
+recurs throughout this skill's own material too.
 
 ## Two-witness build verification
 

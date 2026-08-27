@@ -183,14 +183,28 @@ silently declines at boot and every subsequent run is quietly on the new
 card's bare ROM VBE instead (far fewer modes, no LFB on some cards). This
 can read exactly like a hang (a stalled, unchanging frame) rather than
 what it actually is: the port crawling under a much worse video path than
-intended. Two checks, cheapest first: `MEM /C | FIND "UNIVBE"` on the DOS
-side (a match with a nonzero conventional-memory figure is a true-positive
-confirmation; a non-match is *not* proof of absence, don't over-read it).
-The stronger, zero-cost, cannot-fabricate check is the SDL3-DOS backend's
-own boot log line — `DOSVESA-CTRL: oem_string='...'` (from
-`shared/patches/sdl3-dos/0003`) reading `'Universal VESA VBE 6.70'` (or
-whatever UniVBE version is in use) confirms real UniVBE; anything else
-means bare ROM VBE regardless of what the config *should* say.
+intended -- confirmed to cost a full real-hardware measurement round once
+for exactly this reason (a screen pushing 307200 bytes/flip through a 64K
+banked window reads identically to a genuine hang from the outside). Two
+checks, cheapest first: `MEM /C | FIND "UNIVBE"` on the DOS side (a match
+with a nonzero conventional-memory figure is a true-positive confirmation;
+a non-match is *not* proof of absence, don't over-read it -- UniVBE
+loading into high/upper memory rather than conventional memory has
+produced a false "not installed" reading from this exact check at least
+once, retracting an otherwise-correct diagnosis). The stronger, zero-cost,
+cannot-fabricate check is the SDL3-DOS backend's own boot log line --
+`DOSVESA-CTRL: oem_string='...'` (from `shared/patches/sdl3-dos/0003`)
+reading `'Universal VESA VBE 6.70'` (or whatever UniVBE version is in
+use), alongside `has_lfb=1 use_lfb=1 banked=0` if the mode you expect
+should have LFB; anything else means bare ROM VBE regardless of what the
+config *should* say. Never wire a UNIVBE check as a run-abort condition --
+its absence-side has this false-negative risk, so it's only trustworthy
+as a positive confirmation, not a gate. This is also the concrete DOS
+instance of `harness-invariants.md`'s "a precondition verified after the
+run is a receipt" -- the VBE-provider assertion existed as a documented
+precondition here too, but was being checked against returned logs
+*after* the round instead of before it, which can tell you the data was
+junk but can't get the round back.
 
 ## A harness bug is a bug, not a workaround
 

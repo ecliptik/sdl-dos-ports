@@ -26,6 +26,22 @@ device initializes, an asset loads, the game reaches its title/first room,
 a save file writes and reloads, clean exit. If the game has deterministic
 input, a replay-based smoke test is worth the investment.
 
+**Anchor a smoke/logback stop condition to a full, unique line format,
+never a bare substring.** A smoke runner's stop condition grepped for
+`calib-exit`; a diagnostic's own boot-time help text, describing what its
+markers mean to a human reader, happened to contain that literal
+substring too. The runner matched the help text ~6 seconds after boot and
+killed the session -- the resulting truncated run looked exactly like a
+real hang at a specific tick, and cost real debugging time (including a
+binary flip-flop) before the actual cause (the runner's own stop
+condition, not the binary) was found. Fix: match a full, distinctive line
+shape (e.g. `[calib-exit] tick=`), never a bare word or phrase that
+unrelated banner/help text could also contain. Corollary for anyone
+writing a diagnostic's own boot banner: don't put a bracketed
+marker-name literal inside its *help text* at all -- describe it in
+prose instead, so the help text can't accidentally become grep bait for
+a later stop condition or content-validity check.
+
 For the day-to-day mechanics and judgment calls of working in this tier
 -- which of the three DOSBox-X tools to reach for, the emulator-only
 escape hatches already baked into the shipped confs and why they must

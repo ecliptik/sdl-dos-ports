@@ -35,6 +35,34 @@ emulator" as a blanket rule.
   something DOSBox-X's own DPMI implementation can answer on a real
   target's behalf.
 
+## A "declines / falls back" log line is not automatically benign emulator divergence
+
+It's tempting to read a boot-time "device already open, declining,
+falling back" line under DOSBox-X as "the emulator has no such peripheral
+to probe, this is expected degradation, real hardware has the chip and
+won't hit this" -- and sometimes that's correct. It was wrong at least
+once: the actual cause was a real ship-gating logic bug, an init-order
+guard that always declined the legitimate cold-init path, not just the
+wedge case it was written to prevent. The tell that was ignored: the
+decline *reason* was an init-order statement ("already open"), not a
+hardware-absence statement ("not detected") -- those are different
+failure classes, and only the hardware-absence one is safe to shrug off
+as emulator divergence. Before waving off a decline/fallback line as
+"DOSBox-X just doesn't have this," read the actual reason string and
+classify it as one or the other explicitly.
+
+The second half of this lesson generalizes past DOSBox-X entirely: a
+defensive guard added mid-ship to fix one bad case can silently break the
+good case it was never re-tested against. **Prove a new guard is FALSE
+on the happy path, not just TRUE on the bad path it was written for** --
+verifying only that the guard fires when it should leaves its
+false-positive rate on legitimate input completely unchecked. The test
+that actually caught this: a binary-vs-binary A/B in the identical
+environment, only the binary differing -- which is also the reason it's
+worth freezing the last known-good binary specifically, so that
+comparison is always available on short notice rather than needing a
+fresh "known good" rebuild under time pressure.
+
 ## Emulator-only escape hatches: track them, never let them leak
 
 Sometimes the only way to get useful signal out of DOSBox-X for a given
