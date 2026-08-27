@@ -148,6 +148,33 @@ above is a different story: it's not chip-specific at all, and can occur
 on any card whose auto-selected mode's format doesn't match what a port's
 rendering code assumes.
 
+**For contrast: Cirrus's one confirmed genuine hardware defect.** Not
+every real-hardware-only video symptom traces back to port-side or
+caching bugs — on the g2k rig's Cirrus card (labeled CL-GD5434 throughout
+most of `shared/`'s own patch history, though the physical silkscreen
+confirms CL-GD5430; HWiNFO's chip-ID misdetects it, and no prior
+measurement is invalidated by the mislabel, just the name used for it),
+the LFB aperture and the VRAM region the display generator actually reads
+from are genuinely decoupled at the hardware level under UniVBE 6.7:
+writes through the LFB aperture land in VRAM cells the display generator
+never reads, while every BIOS-level readback (display-start GET/SET,
+the mode-set return code) reports correctly — the corruption is below the
+BIOS interface, invisible to any check phrased in terms of BIOS state.
+Confirmed via 100+ post-flush LFB writes producing zero visible screen
+change. Fixed in `shared/patches/sdl3-dos/0019` (auto-detect Cirrus,
+force-disable LFB, route through the banked `A000:0` window instead).
+
+`0019` itself needed a follow-up, `0020`: it flipped the framebuffer
+layer's write path to banked but left the BIOS-level mode-set still
+requesting LFB, so the BIOS programmed LFB hardware while the FB layer
+wrote through the banked window — the two layers disagreed, producing a
+blank screen rather than even partial rendering. The general lesson: a
+two-layer decision (BIOS mode-set choice vs. FB-layer write-path choice)
+has to be gated on the *same* condition, checked at *both* layers, or you
+get exactly this shape of defect — everything reports correctly at the
+BIOS level, the screen is still wrong. Both patches are closed at the
+shared layer; no port needs to re-derive this.
+
 ## Reduced color depth
 
 8-bit or 16-bit software surfaces are strongly preferred over 32-bit on

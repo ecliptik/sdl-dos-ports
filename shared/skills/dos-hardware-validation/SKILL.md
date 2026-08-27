@@ -155,6 +155,23 @@ config surface in question; this hub's job is knowing that "re-verify
 config before trusting a defect hypothesis" is the rule to reach for, not
 re-deriving vcctrl's own tool-specific steps.
 
+One specific instance worth checking *before trusting any pitch/LFB/mode-
+list diagnosis on this rig, on any card*: `UNIVBE.EXE` prints nothing
+when it declines to install, so swapping video cards without re-running
+its setup leaves `UNIVBE.DRV` describing the *previous* card — UniVBE
+silently declines at boot and every subsequent run is quietly on the new
+card's bare ROM VBE instead (far fewer modes, no LFB on some cards). This
+can read exactly like a hang (a stalled, unchanging frame) rather than
+what it actually is: the port crawling under a much worse video path than
+intended. Two checks, cheapest first: `MEM /C | FIND "UNIVBE"` on the DOS
+side (a match with a nonzero conventional-memory figure is a true-positive
+confirmation; a non-match is *not* proof of absence, don't over-read it).
+The stronger, zero-cost, cannot-fabricate check is the SDL3-DOS backend's
+own boot log line — `DOSVESA-CTRL: oem_string='...'` (from
+`shared/patches/sdl3-dos/0003`) reading `'Universal VESA VBE 6.70'` (or
+whatever UniVBE version is in use) confirms real UniVBE; anything else
+means bare ROM VBE regardless of what the config *should* say.
+
 ## A harness bug is a bug, not a workaround
 
 If something in the harness or the collection path behaves wrong mid-
