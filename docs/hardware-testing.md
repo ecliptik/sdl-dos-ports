@@ -16,8 +16,12 @@ agent control), or a browser KVM. It provides:
   agent or script can drive the DOS machine as if typing at the console.
 - **Screen capture** via a USB VGA capture stick, with a scrub-ring buffer
   (still/burst/timed recording).
-- **Audio capture** as a coarse liveness signal (silence vs. music), not a
-  quality judgment.
+- **Audio capture**, historically a coarse liveness signal (silence vs.
+  music) via raw level alone, not a quality judgment. Now also exposes
+  frequency-aware content detection (below) that distinguishes real
+  music/SFX from a steady tone/hum at the same volume — level alone
+  can't tell those apart, since it only proves *something* is on the
+  wire.
 - **Power control** via a smart plug, scoped so a power action can't hit
   the wrong machine.
 - **File transfer** over FTP, always initiated from the DOS side via mTCP
@@ -84,7 +88,41 @@ vcctrl get-file <RESULT> --return    # fetch a result/log/save file back
 ```
 
 Screenshots/video: `vcctrl shot` / `lastgood` / `frame` / `burst` / `record`.
-Audio liveness: `vcctrl level`.
+
+Audio liveness: `vcctrl level` (raw dB, tells you *something* is on the
+wire, nothing about what). For content-aware checks, vcctrl now also
+exposes frequency-based MCP tools — no human listener required to confirm
+music/SFX is actually playing:
+
+- `vcctrl_audio_verdict(ms=3000)` — the default reach-for-first tool.
+  Answers NO_SIGNAL / SILENT / AUDIO_PRESENT, plus `tone_like` (true =
+  steady tone/hum, false = real content, null = couldn't tell).
+- `vcctrl_audio_match(file_path, ms=3000)` — control-mode only. Compares
+  the live signal's frequency shape against a local reference audio file
+  (a port's own music/SFX asset) and returns a similarity score. **Coarse
+  by construction** — 8 bands can't distinguish two tracks with similar
+  broad frequency balance, verifies nothing about tempo/melody/timing, and
+  has no calibrated match/no-match threshold yet. Read it as "does the
+  live signal's frequency balance resemble the reference's," never as
+  "this exact track is playing right now."
+- `vcctrl_spectrum(ms=3000)` — the raw 8-band (100Hz-12.8kHz octave-spaced)
+  numbers underneath both of the above, plus `active_bands`. Compares
+  bands to each other rather than to an absolute level, so it stays
+  meaningful regardless of where a volume knob sits in the signal path.
+
+Full detail/caveats: `vcctrl-common-workflows` skill, "Checking audio."
+One sequencing trap worth knowing up front: on a title-screen-gated game, a
+SILENT verdict (or a low match score) may just mean the start-music
+keypress hasn't landed yet, not that audio is broken — confirm the
+keypress registered (a visible on-screen change) before concluding a
+fault. The underlying measurement is FFT-based (a per-band Hz *range*
+sum) — an earlier single-frequency Goertzel-probe version passed every
+synthetic-tone test but read real captured game music as complete
+silence, because a multi-second analysis window has sub-Hz resolution and
+real music essentially never sits on an exact probe frequency. If a port
+ever extends this measurement further, validate against real captured
+rig audio, not just synthetic tones, before trusting a new result (see
+vcctrl's own `docs/FINDINGS.md` sec. 42 for the full writeup).
 
 ## What a port should record
 
