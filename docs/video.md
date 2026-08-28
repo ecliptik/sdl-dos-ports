@@ -30,7 +30,14 @@ game software framebuffer
 Avoid multiple software scaling stages. Prefer native resolution, no
 filtering, integer pixels, direct blit, and dirty rectangles where the
 game's redraw pattern benefits from them (a mostly-static-screen game like
-an adventure engine benefits far more than a scrolling action game).
+an adventure engine benefits far more than a scrolling action game). If
+your engine renders a small image into a larger surface (e.g. a centered
+sub-image), **rect-limit every stage that touches the surface, not just
+one** — a blit call and a present/window-update call are separate APIs
+each needing their own rect argument; limiting only one still leaves the
+other doing full-surface work every frame. See `optimization.md`'s
+rect-limiting note for a real-hardware measurement of just how much this
+costs when missed.
 
 Upstream's own backend documentation
 ([README-dos](https://wiki.libsdl.org/SDL3/README-dos)) is explicit that
@@ -104,6 +111,34 @@ the whole frame — so this was a real bug with a real fix, not a
 non-issue. No second video hazard was involved; see the triage note
 below for how that got clarified.)
 
+**A faster alternative to render-then-blit-convert: write directly in the
+window surface's real, queried format.** The render-into-known-format-
+then-blit-convert path above is safe, but the blit-conversion pass turned
+out to be the single largest per-frame cost in dossage/Passage's later
+performance investigation on the same real Mach64 hardware (~145-160ms/
+frame before rect-limiting, still ~25-37ms/frame after — see
+`optimization.md`'s rect-limiting note). The actual bug in the original
+XRGB8888 finding was never "writing directly into the window surface" —
+it was writing an *unverified, assumed* format. Querying the window
+surface's real pixel format at runtime (`SDL_GetPixelFormatDetails`) and
+packing each pixel directly into *that* format (`SDL_MapSurfaceRGB`),
+writing straight into the window surface with no intermediate surface or
+blit pass, is equally safe — because it's format-aware instead of
+format-assuming — and eliminates the blit entirely. Confirmed against
+SDL's own reference behavior before trusting it: the 3-bytes-per-pixel
+byte-order convention was checked against `SDL_FillSurfaceRect3`
+(`SDL_fillrect.c`) rather than assumed (little-endian, low-byte-first,
+matching a plain memcpy of a `Uint32`'s low N bytes on x86). Real-hardware
+confirmed clean via careful multi-checkpoint color scrutiny, no
+corruption, and delivered a real ~38% flip-cost reduction on its own
+(6.90 → 8.18fps). Fall back to the render+blit path above for any pixel
+format this direct-write approach doesn't explicitly handle (non-2/3/4
+bytes-per-pixel, e.g. indexed) — **this is an alternative for a port
+that wants to avoid the blit cost, not a replacement recommendation**;
+either approach is correctness-safe, so the choice is a performance
+trade-off, not a correctness one, unlike the original raw-`Uint32`-write
+bug that started this thread.
+
 **Diff against the known-good reference before reaching for hardware
 register diagnostics.** After the XRGB8888 fix above landed, a real-hardware
 Mach64 retest still showed a banded, non-uniform region on the right side
@@ -156,6 +191,32 @@ a port's *own* engine code separately caches a pitch/stride value outside
 of what SDL3-DOS itself tracks. (0125 fixes the shear/correctness only —
 it does not make an undersized composed surface fill an oversized mode;
 that's a separate, unrelated concern.)
+
+**A closest-mode-match result is not a fixed fact for a given chip
+model, and the mode-set log line reports the resolved mode, not the
+app's raw request — both easy to misread.** doskutsu's own Mach64
+215CT history above landed on a 512x384 closest-match for a 320x240
+request. A later, independent real-hardware measurement on nominally
+the same chip family (dossage/Passage, same "cannot do 320x200/240"
+UniVBE-confirmed constraint) landed on 640x480 for the same logical
+request instead — a different result on nominally the same hardware
+class, most likely because a different enumerated-mode list (different
+BIOS/VBE version, different configured mode table) changed which
+mode SDL's closest-match algorithm considered "closest." **Treat one
+measurement's closest-match result as a data point for that specific
+config, not a universal fact about the chip model** — re-verify rather
+than assuming a prior measurement still holds when hardware, BIOS
+version, or UniVBE config differs even slightly.
+Separately: `DOSVESA_SetDisplayMode` (`SDL_dosmodes.c`) logs the
+`SDL_DisplayMode*` it resolved to *after* SDL's own closest-match
+algorithm already ran — so a log line reading e.g. "requested
+id=... 640x480" does **not** mean the app asked for 640x480, it means
+closest-match landed there for whatever the app actually requested.
+This tripped up real-hardware round-trips on dossage/Passage more than
+once before being caught by reading the source instead of assuming the
+log line's plain-English reading was literal. Read that log line as
+"resolved mode," never as "requested mode," and check the source at
+that call site if the distinction matters for a specific investigation.
 
 **The diagnostic technique that actually broke the case, worth reusing
 directly rather than re-deriving:** the investigating session's first
