@@ -56,11 +56,31 @@ echo "==> Wiring shared SDL3-DOS patch series into patches/ (symlinks)"
 ln -s ../.sdl-dos-ports/shared/patches/sdl3-dos patches/SDL
 ln -s ../.sdl-dos-ports/shared/patches/sdl3-mixer patches/SDL_mixer
 
-echo "==> Symlinking shared skills into .claude/skills/"
-for skill_dir in .sdl-dos-ports/shared/skills/*/; do
-  skill_name="$(basename "$skill_dir")"
-  ln -s "../../.sdl-dos-ports/shared/skills/${skill_name}" ".claude/skills/${skill_name}"
-done
+# VCCTRL_REMOTE follows the same override convention as other hub-location
+# vars in this codebase (EMULATORS_ROOT, SDL_DOS_PORT_ROOT) -- set it if
+# vcctrl lives somewhere other than the default forgejo location.
+VCCTRL_REMOTE="${VCCTRL_REMOTE:-https://forgejo.ecliptik.com/ecliptik/vcctrl.git}"
+
+echo "==> Installing skills (sdl-dos-ports + vcctrl) via npx skills"
+NPX_SKILLS_OK=1
+if ! command -v npx >/dev/null 2>&1; then
+  echo "    npx not found -- skipping, falling back to the hub-only symlink method." >&2
+  NPX_SKILLS_OK=0
+elif ! npx --yes skills@latest add "$HUB_REMOTE" --full-depth --all -a claude-code -y >/dev/null 2>&1; then
+  echo "    npx skills add failed for sdl-dos-ports (offline?) -- falling back to the hub-only symlink method." >&2
+  NPX_SKILLS_OK=0
+elif ! npx --yes skills@latest add "$VCCTRL_REMOTE" --full-depth --all -a claude-code -y >/dev/null 2>&1; then
+  echo "    warning: sdl-dos-ports skills installed, but vcctrl skills failed (offline? VCCTRL_REMOTE wrong?)." >&2
+  echo "             Re-run manually: npx skills add $VCCTRL_REMOTE --full-depth --all -a claude-code" >&2
+fi
+
+if [ "$NPX_SKILLS_OK" -eq 0 ]; then
+  echo "==> Symlinking shared skills into .claude/skills/ (hub only -- no vcctrl skills this way)"
+  for skill_dir in .sdl-dos-ports/shared/skills/*/; do
+    skill_name="$(basename "$skill_dir")"
+    ln -s "../../.sdl-dos-ports/shared/skills/${skill_name}" ".claude/skills/${skill_name}"
+  done
+fi
 
 echo "==> Filling in templates"
 NAME_UPPER="$(echo "$NAME" | tr '[:lower:]-' '[:upper:]_')"

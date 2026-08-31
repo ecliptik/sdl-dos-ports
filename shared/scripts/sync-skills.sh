@@ -2,12 +2,19 @@
 # sync-skills.sh -- symlink any shared/skills/ entry a port repo doesn't
 # have yet into its own .claude/skills/.
 #
-# scripts/new-port.sh does this once, at scaffold time. A port repo
-# scaffolded before a new skill was added to shared/skills/ (e.g.
-# `review`, `benchmark`) has no way to pick it up automatically -- this
-# script closes that gap. Safe to re-run any time; only creates symlinks
-# that don't already exist and never touches a real (non-symlink) file
-# or directory a port may have deliberately substituted.
+# FALLBACK METHOD: scripts/new-port.sh now prefers `npx skills add`
+# (self-contained, pulls in vcctrl's skills too -- see
+# shared/skills/README.md). This script is for a port that can't use
+# that (no npx/network) or was scaffolded with the older symlink-only
+# method -- it only covers this hub's own skills, not vcctrl's. If npx
+# is available, prefer `npx skills update` instead.
+#
+# A port repo scaffolded before a new skill was added to shared/skills/
+# (e.g. `review`, `benchmark`) has no way to pick it up automatically via
+# the symlink method -- this script closes that gap. Safe to re-run any
+# time; only creates symlinks that don't already exist and never touches
+# a real (non-symlink) file or directory a port may have deliberately
+# substituted.
 #
 # Usage (from a port repo's own root, with .sdl-dos-ports/ as the
 # submodule):

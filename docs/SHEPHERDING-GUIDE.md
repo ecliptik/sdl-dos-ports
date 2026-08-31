@@ -81,6 +81,17 @@ handles upstream/license verification (never guess — see
 instantiation, vendor pinning, and the `ports.yaml` claim commit. See its
 own `SKILL.md` for the full step list; this guide doesn't repeat it.
 
+The new port repo comes out **self-contained for skill knowledge from
+minute one** — the scaffold installs every skill from both this hub and
+vcctrl via `npx skills add` (verified against both over Forgejo), not
+just this hub's own. That doesn't eliminate the need for a dedicated
+rig-operator session during an active real-hardware campaign (see "Team
+shape" below) — it means a port session no longer has to *learn* vcctrl's
+conventions from a peer session, it already has that knowledge locally.
+Actually driving hardware still requires vcctrl's MCP connection to be
+registered in whichever session is doing that, which `npx skills` does
+not set up.
+
 ### Research
 
 Follow `PORTING.md`'s step 3 and `plans/SDL_DOS_PORTING_PROGRAM.md`'s

@@ -21,11 +21,30 @@ from day to day.
 
 ## Adopting a skill into a port repo
 
-New port repos get every current entry automatically -- `scripts/new-port.sh`
-symlinks the whole directory at scaffold time. A port scaffolded *before* a
-skill was added here won't pick it up on its own; re-run
-`.sdl-dos-ports/shared/scripts/sync-skills.sh` from that port's own root to
-add any missing symlinks (idempotent, safe to re-run, never touches an
+**Preferred, self-contained: `npx skills`.** New port repos get every
+current entry from this hub *and* vcctrl automatically --
+`scripts/new-port.sh` runs `npx skills add <repo> --full-depth --all -a
+claude-code` against both at scaffold time (verified working over Forgejo,
+HTTPS or SSH; `--full-depth` is required since neither repo has a
+root-level `SKILL.md`). No submodule symlink needed for skills specifically
+-- only the actual platform code (`shared/patches/`, `shared/build/`,
+`shared/include/runmanifest.h`, `shared/agents/`) still needs the
+`.sdl-dos-ports/` submodule, since `npx skills` only moves `SKILL.md`
+content. A port that already has skills installed this way picks up new
+ones with `npx skills update`.
+
+A port scaffolded *before* this existed (or before a skill was added here)
+can adopt it the same way, from that port's own root:
+
+```sh
+npx skills add https://forgejo.ecliptik.com/ecliptik/sdl-dos-ports.git --full-depth --all -a claude-code
+npx skills add https://forgejo.ecliptik.com/ecliptik/vcctrl.git --full-depth --all -a claude-code
+```
+
+**Fallback, if `npx`/network isn't available: the old symlink method.**
+Re-run `.sdl-dos-ports/shared/scripts/sync-skills.sh` from that port's own
+root to add any missing symlinks for this hub's own skills only (no
+vcctrl skills this way; idempotent, safe to re-run, never touches an
 existing symlink or a deliberate copy). Equivalent by hand for one skill:
 
 ```sh

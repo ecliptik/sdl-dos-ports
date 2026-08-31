@@ -52,9 +52,12 @@ the process from docs:
 | `/review` | This hub, or any port repo | Check a patch against this hub's own landing conventions before committing it (provenance, DJGPP constraints, naming, numbering). |
 | `/benchmark` | This hub, or any port repo | Run or record a real-hardware performance KPI campaign. |
 
-`review` and `benchmark` live in `shared/skills/` and get symlinked into
-every new port repo automatically. A port scaffolded before one was added
-won't have it yet — see `shared/skills/README.md` for the one-command fix.
+`review` and `benchmark` live in `shared/skills/` and get installed into
+every new port repo automatically via `npx skills add` (self-contained —
+along with every vcctrl skill too, so a port doesn't need a separate
+session just to know vcctrl's own conventions). A port scaffolded before
+one was added won't have it yet — see `shared/skills/README.md` for the
+one-command fix.
 
 Deeper reference, only when a skill points you at it: [`PORTING.md`](PORTING.md)
 (the full slice-by-slice porting process) and

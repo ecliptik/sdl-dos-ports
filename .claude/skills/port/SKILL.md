@@ -4,7 +4,8 @@ description: >
   Bootstrapping a new DOS port from a ports.yaml BACKLOG candidate all the
   way to "a real, wired-up repo with a porting agent ready to start the
   compile slice" -- upstream/license verification, scripts/new-port.sh's
-  mechanical scaffold, shared/skills symlinks, shared/agents charter
+  mechanical scaffold, self-contained skill install (both this hub's and
+  vcctrl's skills via npx skills) shared/agents charter
   instantiation, vendor/sources.manifest pins, the ports.yaml claim commit,
   and a concrete handoff message to the port repo's own agent. Use this
   whenever claiming a new port candidate, starting a new port repo, or
@@ -79,11 +80,14 @@ scripts/new-port.sh <name> [target-dir]
 
 This creates the repo (or, if the operator already created one, see the
 adaptation note above -- run the equivalent steps by hand: submodule add,
-directory skeleton, `patches/SDL`+`patches/SDL_mixer` symlinks,
-`.claude/skills/*` symlinks, and the template fills), all wired to this
-hub via `.sdl-dos-ports/`. This step already includes symlinking every
-`shared/skills/*` entry into the new repo's `.claude/skills/` -- don't
-redo that by hand.
+directory skeleton, `patches/SDL`+`patches/SDL_mixer` symlinks, skill
+install, and the template fills), all wired to this hub via
+`.sdl-dos-ports/`. This step already installs every skill from both this
+hub and vcctrl into the new repo's `.claude/skills/` via
+`npx skills add <repo> --full-depth --all -a claude-code` (self-contained
+-- no submodule symlink needed for skills, only for the actual platform
+code), falling back to the older hub-only symlink method if `npx`/network
+isn't available. Don't redo either by hand.
 
 ## Step 3: Instantiate agent charters
 
@@ -112,7 +116,8 @@ haven't yet), not guessed at a conventional structure. Leave
 only gets stood up once the port is actually doing profiling-driven
 optimization, which is nowhere close to true yet.
 
-These charters and the `.claude/skills/` symlinks are gitignored in every
+These charters and the `.claude/skills/`/`.agents/skills/` skill install
+output are gitignored in every
 port repo (matching doskutsu's own convention) -- don't fight that by
 trying to force-add them.
 
