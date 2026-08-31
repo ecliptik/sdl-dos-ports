@@ -197,6 +197,11 @@ independent witness. "Solid," not just "clears the average."
    the moved intermediate metric alone would have been true, verifiable,
    and real-hardware-measured, and still a materially misleading way to
    close out the campaign.
+9. **A temporary diagnostic patch landed in `shared/` needs its removal
+   planned at landing time, not left as an unscheduled follow-up** — see
+   `docs/patch-conventions.md`. It becomes a silent, permanent tax on
+   every port that pins past it the moment its investigation concludes
+   and nobody schedules the strip.
 
 #### Coordination playbook (investigator ↔ rig operator ↔ hub)
 

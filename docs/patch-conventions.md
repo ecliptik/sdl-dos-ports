@@ -173,6 +173,32 @@ peer-authored patch in `shared/patches/`:
   instance of this caught a text-mode-`fopen` bug that every prior patch
   in the same series had avoided.
 
+## A temporary diagnostic patch needs its removal planned at landing time
+
+A diagnostic patch landed in `shared/` — gated or not, cheap or not —
+becomes a permanent, silent tax on every port that pins past it the
+moment its investigation concludes and nobody schedules its removal. A
+real instance: a temporary `DOS_Yield()` cost diagnostic, landed with its
+own commit message stating "temporary, to be reverted once the
+investigation concludes," measured a genuine per-frame cost
+(~0.70ms/frame). The investigation concluded — the diagnostic had done
+its job — but the removal patch wasn't authored in the same pass. Every
+port pinning past that commit inherits the cost with nobody having
+decided to pay it, and a rebuild that suddenly runs measurably slower has
+no obvious reason to suspect the patch series rather than the change
+someone just made.
+
+The convention: when landing a temporary diagnostic, either land its
+removal in the same session once the measurement is in hand (this hub's
+own patch `0028` is precedent — land, measure, strip, all as part of one
+investigation's patch sequence), or explicitly note in the landing
+commit's message that a removal patch is still owed and by what
+condition ("once X is measured" / "once Y concludes") — never leave it as
+an implicit, unscheduled follow-up. A reverted diagnostic's own removal
+patch should confirm (not just claim) that the resulting binary is
+byte-identical to what the pin produced before the diagnostic ever
+landed.
+
 ## Negative results are worth keeping
 
 `shared/patches/sdl2-compat-notes/` carries forward doskutsu's write-up of
