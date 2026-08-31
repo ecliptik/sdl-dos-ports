@@ -16,8 +16,17 @@ from day to day.
 | `dos-rig-operations/` | Day-to-day rig mechanics independent of a full campaign: input-injection landed-vs-dropped detection, screen-capture evidence discipline, file transfer + packaging/handoff, log collection, power management, and multi-agent coordination (a spawned specialist doesn't inherit rig access; single-coordinator-per-campaign to prevent double-dispatch) | Reusable as-is -- mostly points at vcctrl's own `vcctrl-rig-hazards`/`vcctrl-common-workflows` for mechanics and adds the port-session framing/hazard classes on top |
 | `dos-realhw-verification/` | Knowing a build/fix/diagnosis is actually correct on real hardware, not just apparently correct: two-witness build verification, stale-cache failure shapes, DOSBox-X/86Box tiering, build-host tooling traps, real-hardware-vs-emulator divergence debugging | Reusable as-is -- the epistemics (what a check's failure would look like) and failure-shape catalog are port-agnostic; the worked examples are illustrative, not something to copy literally |
 | `dos-emulator-workflow/` | Local, no-rig-required DOSBox-X development: which of the three `shared/tools/dosbox-*.sh` scripts to reach for, the emulator-only escape hatches already baked into the shipped confs (and why they must never reach real hardware), the "necessary but not sufficient" pattern for a probe that can only partially answer a hardware question locally, and local-timing observation vs. an actual performance claim | Reusable as-is for the tooling/mechanics and the DOSBox-X/hardware boundary; the shipped `.conf` files' own `cycles=`/video/sound calibration is one port's reference-machine numbers, not a universal setting -- re-calibrate for your own port |
+| `review/` | Checking a patch (`shared/patches/` or a port's own `patches/<engine>/`) against this hub's landing conventions before committing: provenance verification, DJGPP hard constraints, neutral naming, slot numbering, temporary-diagnostic removal planning | Reusable as-is -- invoke as `/review` once symlinked in |
+| `benchmark/` | Tight-checklist version of `docs/SHEPHERDING-GUIDE.md`'s performance-campaign section: KPI writing, team shape, investigation/rig discipline, recording the result | Reusable as-is -- invoke as `/benchmark` once symlinked in |
 
 ## Adopting a skill into a port repo
+
+New port repos get every current entry automatically -- `scripts/new-port.sh`
+symlinks the whole directory at scaffold time. A port scaffolded *before* a
+skill was added here won't pick it up on its own; re-run
+`.sdl-dos-ports/shared/scripts/sync-skills.sh` from that port's own root to
+add any missing symlinks (idempotent, safe to re-run, never touches an
+existing symlink or a deliberate copy). Equivalent by hand for one skill:
 
 ```sh
 mkdir -p .claude/skills
@@ -25,6 +34,8 @@ ln -s ../.sdl-dos-ports/shared/skills/dos-hardware-validation .claude/skills/dos
 ln -s ../.sdl-dos-ports/shared/skills/dos-rig-operations .claude/skills/dos-rig-operations
 ln -s ../.sdl-dos-ports/shared/skills/dos-realhw-verification .claude/skills/dos-realhw-verification
 ln -s ../.sdl-dos-ports/shared/skills/dos-emulator-workflow .claude/skills/dos-emulator-workflow
+ln -s ../.sdl-dos-ports/shared/skills/review .claude/skills/review
+ln -s ../.sdl-dos-ports/shared/skills/benchmark .claude/skills/benchmark
 ```
 
 Symlinking (rather than copying) keeps the skill in sync with this hub the
