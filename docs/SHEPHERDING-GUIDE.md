@@ -206,6 +206,19 @@ independent witness. "Solid," not just "clears the average."
    `docs/patch-conventions.md`. It becomes a silent, permanent tax on
    every port that pins past it the moment its investigation concludes
    and nobody schedules the strip.
+10. **Turn working-tree vendor edits into a numbered patch at the end of
+    each investigation slice, not at the end of the campaign.**
+    `apply-patches.sh` hard-resets a vendor tree to its pinned SHA before
+    applying the patch series — routine, and destructive to anything
+    sitting uncommitted there. A port's real work (hours of pacer fixes,
+    say) can live in an uncommitted vendor-tree edit while someone runs
+    `apply-patches.sh` for a completely unrelated reason (verifying a
+    `shared/` patch) and destroys it without either side intending harm.
+    `apply-patches.sh` now refuses to reset a dirty vendor tree by default
+    (`APPLY_PATCHES_FORCE=1` to override) — a safety net, not a substitute
+    for committing your own work promptly. Don't let real investigation
+    work live in an uncommitted vendor tree for hours; turn it into a
+    patch as soon as a slice is done.
 
 #### Coordination playbook (investigator ↔ rig operator ↔ hub)
 

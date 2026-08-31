@@ -131,6 +131,19 @@ while working on its own engine, not about promoting engine code itself.
   before generating the new patch, or the resulting file will fail to
   apply cleanly (or worse, apply with silently wrong context) for the
   next person who runs the series from scratch.
+- **Uncommitted vendor-tree work is one `apply-patches.sh` run away from
+  gone.** `apply-patches.sh` hard-resets a vendor tree to its pinned SHA
+  before applying the patch series -- routine, and destructive to
+  anything sitting uncommitted there, including hours of real
+  investigation work that hasn't been turned into a patch yet. The
+  destructive run is often invoked for a completely unrelated reason (a
+  different vendor's patch, or someone else verifying a `shared/` patch
+  applies cleanly), so it can destroy work nobody intended to touch.
+  `apply-patches.sh` refuses to reset a dirty vendor tree by default
+  (`APPLY_PATCHES_FORCE=1` to override) as a safety net -- but the actual
+  fix is discipline: commit (even to a scratch branch) or turn working-tree
+  edits into a numbered patch at the end of each investigation slice,
+  don't let real work live uncommitted in a vendor tree for hours.
 
 ## A patch series' stated rationale is not evidence
 

@@ -13,12 +13,24 @@
 #   3. If a patch fails to apply, abort the `git am` cleanly, print the
 #      failing path, and exit non-zero.
 #
+# SAFETY: step 1's `git reset --hard` is destructive to anything sitting
+# uncommitted in that vendor tree -- including hours of real investigation
+# work, not just patch-series churn (a real incident: uncommitted
+# vendor-tree edits were nearly lost to a routine `apply-patches.sh` run
+# invoked for an unrelated vendor's patch review). Before resetting a
+# vendor tree, this script refuses if that tree has uncommitted changes,
+# unless APPLY_PATCHES_FORCE=1 is set. Commit (even to a scratch branch)
+# or stash before running this against a vendor tree you're actively
+# editing by hand.
+#
 # Run AFTER scripts/fetch-sources.sh (the patches assume the vendor tree
 # is populated and at the pinned SHA).
 #
 # Usage:
-#   ./scripts/apply-patches.sh             # apply to all vendors
-#   ./scripts/apply-patches.sh nxengine-evo # only the named vendor
+#   ./scripts/apply-patches.sh                    # apply to all vendors
+#   ./scripts/apply-patches.sh nxengine-evo        # only the named vendor
+#   APPLY_PATCHES_FORCE=1 ./scripts/apply-patches.sh nxengine-evo
+#                                                   # override the uncommitted-changes refusal
 
 set -euo pipefail
 
@@ -83,6 +95,16 @@ apply_one() {
 
     # Reset to pinned SHA so patch application is idempotent.
     if [[ "$sha" != "PIN_ME" ]]; then
+        if [[ "${APPLY_PATCHES_FORCE:-0}" != "1" ]]; then
+            local dirty
+            dirty="$(cd "$vendor_path" && git status --porcelain)"
+            if [[ -n "$dirty" ]]; then
+                log "$name: REFUSING to reset -- vendor/$name has uncommitted changes:"
+                echo "$dirty" | sed 's/^/[apply-patches]   /' >&2
+                log "$name: commit or stash them first, or set APPLY_PATCHES_FORCE=1 to discard them"
+                return 1
+            fi
+        fi
         log "$name: resetting to pinned SHA $sha"
         (cd "$vendor_path" && git reset --hard "$sha") >/dev/null
     else
