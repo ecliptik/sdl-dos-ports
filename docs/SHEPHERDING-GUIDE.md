@@ -184,6 +184,19 @@ independent witness. "Solid," not just "clears the average."
    `docs/patch-conventions.md`'s provenance section. A patch handed over
    through chat can lose fidelity (stripped whitespace on blank context
    lines is a real, documented case) without any visible sign.
+7. **A stall-dominated residual can't be fixed by tightening the pacer's
+   target — stalls are the binding constraint, and squeezing the budget
+   just manufactures more of them.** See `docs/optimization.md`'s
+   corresponding entry for a real case where the tightened target moved
+   steady-state fps exactly as predicted while the actual KPI (run-average
+   fps) didn't move at all, because the tightening also converted more
+   ordinary frames into losses of the same total size.
+8. **A change whose mechanism verifiably works can still be worthless —
+   always confirm it moved the KPI itself, not just the intermediate
+   quantity it was designed to influence.** The same case above: reporting
+   the moved intermediate metric alone would have been true, verifiable,
+   and real-hardware-measured, and still a materially misleading way to
+   close out the campaign.
 
 #### Coordination playbook (investigator ↔ rig operator ↔ hub)
 

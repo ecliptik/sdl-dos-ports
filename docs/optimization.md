@@ -91,14 +91,48 @@ double/float on every reuse — the x87 `fldcw`/`fistp`/`fldcw`
 rounding-mode-change dance behind a naive C truncation is real,
 measurable cost on this CPU class independent of the arithmetic itself.
 
-**486DX2-66 + S3 ViRGE result, after the video-corruption investigation in
-`docs/video.md` closed out.** dossage/Passage now runs at 14.16-14.5fps on
-this config, with real audio and zero video corruption (patches 0027-0029).
-The residual gap to a 15fps target was bisected and found to be
-`SDL_Delay()` timer-precision overshoot, not a rendering bottleneck -- real
-per-frame work has plenty of headroom (~45.6ms measured against a 66.7ms
-frame budget at 15fps). See `docs/timing.md` for an untested hypothesis on
-why `SDL_Delay()` overshoot specifically shows up on this CPU class.
+**486DX2-66 + S3 ViRGE/Cirrus result, campaign closed.** dossage/Passage's
+real-hardware fps campaign closed at **14.936/14.932fps** (measured twice
+independently), up from 13.992fps at the campaign's start -- reported
+honestly short of the 15.000fps target rather than tuned to cross it. See
+`docs/SHEPHERDING-GUIDE.md` for the full campaign (delay(1) granularity,
+`DOS_Yield()` cost, clock-rate mismatch, and audio-refill were each tested
+and eliminated in turn; the real mechanism was the frame limiter's own
+deadline-vs-actual error, fixed to land within microseconds; the residual
+gap to 15.000 is audio-buffer-refill-driven stalls, root cause not yet
+identified as of this writing).
+
+**You cannot compensate your way past stalls by tightening the pacer's
+target -- stalls are the binding constraint, and squeezing the budget
+manufactures more of them.** The last experiment in that campaign
+shortened the pacer's deadline by the measured mean overshoot (0.293ms/
+frame), on the sound argument that targeting exactly `1/lockedFrameRate`
+makes 15.000 unreachable by construction (a stalled frame is a permanent,
+unrecoverable loss). **The mechanism worked exactly as predicted** --
+steady-state rose from 14.9989fps to **15.089fps**, above target, pacer
+still landing within 0.03ms of its (tightened) deadline. **The run
+average moved 14.936 -> 14.942fps. Nothing.** Tightening the deadline
+also converts more ordinary frames into missed/stalled frames, and every
+stall is a pure, unrecoverable loss -- measured stall cost more than
+doubled (0.279 -> 0.654ms/frame), consuming exactly what the tightening
+bought. Reverted; the reverted binary is byte-identical to the
+already-validated build, and the knob is documented in-code so it isn't
+re-derived. **The general lesson: don't fight a stall-dominated residual
+by squeezing the steady-state target tighter** -- find and fix the stalls,
+or accept the average; a tighter target only trades steady-state
+performance for more frequent losses of the same total size.
+
+**A change whose mechanism verifiably works can still be worthless --
+measure the thing you actually care about, not the thing the change was
+designed to move.** The tightened-deadline experiment above is a clean
+case study: the metric the change directly targeted (steady-state fps)
+moved beautifully and exactly as predicted; the metric that actually
+mattered (run-average fps, the KPI) didn't move at all. Reporting
+"steady-state now exceeds 15fps" alone would have been true, verifiable,
+and measured on real hardware -- and would have been a materially
+misleading way to close out a campaign whose actual goal was a 15fps
+run average. Before crediting an optimization, confirm it moved the KPI
+itself, not just the intermediate quantity it was designed to influence.
 
 ## Setting a performance KPI
 
