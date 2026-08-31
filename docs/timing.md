@@ -104,7 +104,12 @@ non-BIOS-tick-quantized measurement -- the *earlier* hypothesis that
 `delay(1)` itself was coarsely quantized was correctly eliminated), but
 the loop can only re-check its exit condition *between* `delay(1)` calls
 -- so a sleep can land up to a full ~1.236ms quantum later than its
-deadline. This number was sitting in this project's very first real-
+deadline. **"Resolved" here means the overshoot *mechanism* is settled, not that
+any specific fps KPI has been hit** -- that's a separate, still-open
+question tracked in `docs/optimization.md`, since the residual gap
+between steady-state and a reported number can come from other sources
+(e.g. audio-buffer-refill windows) independent of this delay-quantum
+finding. This number was sitting in this project's very first real-
 hardware probe of the night (measuring `delay(1)`'s own granularity) for
 hours before anyone connected it to the pacer's actual behavior -- a
 reminder that eliminating a hypothesis ("delay(1) isn't BIOS-tick
