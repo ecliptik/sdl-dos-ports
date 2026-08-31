@@ -12,6 +12,30 @@ links for the how, read this for the order and the why.
 If you only read one section, read "Hour zero" below, then come back for
 the phase you're actually in.
 
+## Where these rules came from, and what that means for you
+
+Every rule below reads as a clean principle. None of them arrived that
+way. The measured-constants table exists because a real campaign ignored
+a constant it already had for hours. "Instrument the decision, not the
+neighbors" exists because four real-hardware rounds were spent
+instrumenting neighbors first. The external-witness rule exists because a
+fix shipped that made the reported metric better while making the game
+worse. **Five separate hypotheses in one night's campaign were wrong**
+(a delay-primitive BIOS-tick-quantization theory, a yield-cost theory, a
+clock-rate-mismatch theory, an audio-refill theory, an exploration-
+scaling theory) — and the campaign still converged on the real answer,
+specifically *because* each one was pre-registered as falsifiable and
+whoever was running the check was empowered to return a null instead of
+a forced answer. The nulls did the work, not the rules.
+
+If you follow this guide and it still takes several rounds of being
+wrong before you find the real mechanism, that's what a real campaign
+looks like from inside — it is not evidence you're doing it wrong. What
+this guide can do is make sure each wrong hypothesis costs one round
+instead of compounding into hours (a falsifiable hypothesis, checked
+against the measured-constants table, with an independent witness) —
+not promise you won't have any.
+
 ## Hour zero: what to set up before writing any code
 
 In priority order, per a real campaign's own retrospective:
