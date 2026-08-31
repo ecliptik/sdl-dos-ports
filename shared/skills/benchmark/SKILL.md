@@ -79,6 +79,16 @@ detail) -- non-negotiable, not just good practice when convenient:
 - Decide a dedicated capture mode before you need sub-second visual
   timing verification, not after (see `dos-rig-operations`'s
   screen-capture reference).
+- **Durable findings survive a peer session's context loss; procedural
+  know-how doesn't.** A `/clear` (or any full context reset) on the rig-
+  operator side silently erases everything that was never written down --
+  the actual run procedure, rig setup steps, practices developed over the
+  campaign -- even though `PLAN.md` and this hub's docs (which *do*
+  persist) still have every finding. Real case: a rig-operator session
+  cleared mid-campaign and had to be re-briefed from zero on setup and
+  run procedure it had already learned once. Write the operational
+  how-to-run-it down somewhere durable (a rig runbook in the port's own
+  docs), not just in a session's accumulated conversational context.
 
 If you find you've mischaracterized something mid-campaign, correct the
 record immediately and explicitly, including your own prior commits -- a
