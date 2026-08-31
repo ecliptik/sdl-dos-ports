@@ -43,6 +43,37 @@ including the porting slice order (compile -> video -> input ->
 filesystem -> audio -> gameplay -> optimization) the handed-off agent
 follows next.
 
+## Shepherding a port: quickstart
+
+Full playbook: [`docs/SHEPHERDING-GUIDE.md`](docs/SHEPHERDING-GUIDE.md).
+The essentials, before writing any code:
+
+1. **Stand up an external, program-independent way to measure elapsed
+   wall-clock time** — never trust only what the game reports about its
+   own performance. A self-reported metric computed from a clock the code
+   under test can perturb tends to fail in the *flattering* direction.
+2. **Wire in [`shared/include/runmanifest.h`](shared/include/runmanifest.h)
+   at the STARTS/TITLE_SCREEN milestone**, not deferred to OPTIMIZING —
+   don't hand-roll fps/frame-timing math from scratch.
+3. **Start a measured-constants table in the port's `PLAN.md`** (template
+   in [`templates/PORT-PLAN.md`](templates/PORT-PLAN.md)) — every number a
+   probe produces goes in it immediately, and every new hypothesis gets
+   checked against it before a new probe runs.
+4. **Team shape**: solo session + in-process subagents by default; once
+   you're doing genuine iterative real-hardware investigation, split into
+   one investigating session + one dedicated rig-operator session
+   (peer-to-peer, not a standing coordinator) — see
+   `shared/agents/README.md`.
+5. **Write the performance KPI down before chasing it** — real-hardware
+   only, percentile-based (not a single average), falsifiable in advance,
+   tied to a named build. See `docs/optimization.md`'s "Setting a
+   performance KPI" section.
+
+That's the five things that would have saved the most time on the port
+this guide was distilled from. Everything else — investigation
+discipline, the coordination playbook, phase-by-phase detail — is in the
+full guide.
+
 ## Ports
 
 | Priority | Project | Upstream | License | Port repo | Status | Difficulty |
