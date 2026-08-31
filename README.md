@@ -11,9 +11,13 @@ that shared layer, documents the porting strategy and hardware/QA process,
 and showcases finished ports.
 
 See [`CLAUDE.md`](CLAUDE.md) for the rules an AI agent (or contributor)
-should follow when working in this repo, and
+should follow when working in this repo,
 [`PORTING.md`](PORTING.md) for the full step-by-step process of starting
-a new port.
+a new port, and [`docs/SHEPHERDING-GUIDE.md`](docs/SHEPHERDING-GUIDE.md)
+for the consolidated playbook covering everything from hour zero through
+a real-hardware performance campaign — the single best starting point if
+you want to jump in and get results without re-deriving lessons a real
+campaign already paid for.
 
 ## Starting a new port
 

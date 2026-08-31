@@ -52,3 +52,22 @@ smoke-test result.
 
 <!-- e.g. audio decode cost on 486, licensing terms, engine features with
      no DOS equivalent -->
+
+## Measured constants
+
+<!--
+Every number a probe, diagnostic, or instrumented run produces, so a
+later hypothesis has to be reconciled against what's already measured
+instead of independently re-derived. This is the single highest-leverage
+habit from a real fps campaign on this hub: a probe run in the first hour
+measured a delay primitive's real cost, and that exact number turned out
+to be the answer to an unrelated-looking investigation hours later --
+sitting unused the whole time because nothing forced later hypotheses to
+be checked against it. Add a row the moment a probe/diagnostic produces a
+number; check new hypotheses against this table BEFORE running a new
+probe, not after. See docs/SHEPHERDING-GUIDE.md.
+-->
+
+| Constant | Value | Measured by | Hardware | Date |
+|---|---|---|---|---|
+<!-- e.g. | delay(1) real granularity | ~1.236ms/call | tests/probes/dlygran.c | 486DX2-66 | 2026-08-31 | -->

@@ -132,6 +132,47 @@ while working on its own engine, not about promoting engine code itself.
   apply cleanly (or worse, apply with silently wrong context) for the
   next person who runs the series from scratch.
 
+## A patch series' stated rationale is not evidence
+
+When reading another engine's patch history for precedent (e.g. citing
+doskutsu's own history to justify a design choice in a new port), read
+the actual gating/guard code the patches touch, not just the commit
+titles or the rationale prose in later patches' comments. A real case on
+this hub: a patch's own comment cited an earlier patch's stated
+motivation as if it were settled fact, when a later patch in the same
+series had already directly tested that motivation and found it false (a
+controlled A/B showed the fix bought no correctness benefit at all, only
+cost). The series' own history disproved its opening premise several
+patches later — and the disproof was recorded, but easy to miss if you
+stop reading at the first patch's comment. Trust what the code's actual
+conditionals do (what's gated behind what flag, under what real
+condition) over what any single patch's commit message claims it
+accomplishes.
+
+## Verify provenance before landing a peer-authored patch
+
+A patch handed over through a chat/message channel (another session
+pasting a diff rather than handing over a real file) can lose fidelity in
+transit — trailing whitespace on blank context lines is a documented real
+case, silently stripped by common text-transport paths, which can corrupt
+a diff without any visible sign in the pasted text. Before landing a
+peer-authored patch in `shared/patches/`:
+
+- Prefer a real `git format-patch` output (with genuine commit metadata)
+  over a hand-typed or reconstructed diff — ask the author to generate it
+  from their own working checkout rather than reconstruct it yourself
+  from a chat message, if you don't have the toolchain to verify it
+  applies cleanly.
+- If you must reconstruct one from pasted text, say so explicitly and
+  flag the reconstruction as unverified until the author (or a fresh
+  `apply-patches.sh`/`git am` run against a real checkout) confirms it
+  applies byte-for-byte.
+- Review the diff's actual content against this hub's own conventions
+  (binary `fopen` mode, ASCII-only, neutral naming) before landing it —
+  don't assume a peer session's own review caught everything; a real
+  instance of this caught a text-mode-`fopen` bug that every prior patch
+  in the same series had avoided.
+
 ## Negative results are worth keeping
 
 `shared/patches/sdl2-compat-notes/` carries forward doskutsu's write-up of

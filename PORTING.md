@@ -120,13 +120,36 @@ rig-coordination risk (see
 `shared/skills/dos-rig-operations/references/agent-coordination.md`) for
 ports that don't need it.
 
+**A validated middle shape exists for the real-hardware performance-
+campaign phase specifically**, distinct from both the solo-plus-subagents
+default and the full team-lead-plus-specialists escalation: **one
+investigating session (the port's own) plus one dedicated rig-operator
+session**, coordinating peer-to-peer rather than through a standing
+coordinator. This is not a hypothetical middle option — it's what
+actually happened during dossage/Passage's real-hardware fps campaign,
+and the split earned its keep: a dedicated rig-operator session can
+independently apply hash-verification and witness discipline (see
+`dos-hardware-validation`'s per-cell rules) without the investigating
+session having to context-switch into rig mechanics, and having a
+*separate* session doing that verification is what caught a real build
+bug (see `shared/agents/probe-engineer.md`'s stubify hazard) before it
+reached real hardware. Reach for this shape once a port is doing genuine
+iterative real-hardware investigation (repeated hypothesis-test-measure
+rounds), not for a single one-off validation run. See
+`docs/SHEPHERDING-GUIDE.md` for the full campaign playbook this shape is
+part of.
+
 ## 5. Real-hardware QA
 
 Once you reach `PLAYABLE`, follow [`docs/hardware-testing.md`](docs/hardware-testing.md)
 to validate on real hardware via vcctrl, using
 [`templates/vcctrl-profile.yaml.template`](templates/vcctrl-profile.yaml.template)
 as your project's profile. Record results with
-[`templates/BENCHMARK.md`](templates/BENCHMARK.md).
+[`templates/BENCHMARK.md`](templates/BENCHMARK.md). Once a port needs to
+chase a specific performance KPI rather than a one-off check, follow
+[`docs/SHEPHERDING-GUIDE.md`](docs/SHEPHERDING-GUIDE.md) — the
+consolidated, phase-by-phase playbook for a real-hardware performance
+campaign, distilled from a real one.
 
 ## 6. Showcase it
 

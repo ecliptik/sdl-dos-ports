@@ -227,6 +227,63 @@ fixing it directly is in scope; a bug found in DOSBox-X, 86Box, or any
 other external dependency is not -- workaround and document it here
 instead, never file it upstream.
 
+## Always pair a self-reported metric with an independent bracket, unprompted
+
+When collecting any engine-self-reported performance number, the rig
+operator reports their own independently-derived wall-clock bracket
+alongside it every time — not only when the number looks suspicious. A
+self-reported metric computed from a clock the code under test can
+perturb will tend to fail in the *flattering* direction, not an
+obviously-wrong one (see `docs/timing.md`'s self-lying-metric entry: a
+busy-wait fix starved the BIOS timer interrupt, and the game's own fps
+report went *up* as real performance collapsed). Only an independent
+witness — one genuinely outside anything the change under test could
+touch — catches this, and it has to be checked routinely, not reserved
+for results that already look wrong, because the whole danger is that a
+corrupted self-report looks *right*.
+
+**A validity check handed to an operator is itself an artifact that needs
+review before it's trusted, not just written.** A check that silently
+assumes zero startup time, or otherwise fails to bracket the exact same
+interval the in-engine measurement covers, produces a confident, wrong
+verdict — including a false failure on a genuinely healthy run, which
+costs a real round the same way a false pass does. Read a validity
+check's own interval definition against the engine's real timeline before
+handing it to whoever runs the next cell.
+
+## "Idle" is not "artifacts final"
+
+A subagent (or any spawned session) reporting idle means it finished its
+current turn, not that whatever it produced is done changing. Hashing or
+staging a binary/patch/log the moment its author goes idle — rather than
+after confirming the source is genuinely stable — has produced a
+mismatched hash more than once in real campaigns on this hub. Verify
+stability (ask directly, or wait for an explicit "this is final" rather
+than inferring it from idleness) before treating an artifact as ready to
+hand off.
+
+## Instrument the thing that produces the unexplained quantity, not its neighbors
+
+When a specific unexplained number exists (a residual fps gap, an
+unaccounted-for millisecond figure), instrument the code that *directly*
+produces that number before instrumenting adjacent systems. A real
+campaign spent four real-hardware rounds eliminating things near a frame
+pacer (delay-primitive granularity, yield cost, clock rate, audio-buffer
+refill cost) before instrumenting the pacer's own deadline-vs-actual
+decision directly, which found the answer in one round. Every elimination
+was real and worth doing eventually, but they were tested in the wrong
+order relative to how directly each one produced the quantity in question.
+
+**Keep a measured-constants table and check every new hypothesis against
+it before running a new probe.** Every number a probe or diagnostic
+produces goes in one place (a port's `PLAN.md` is a natural home) so a
+later hypothesis can be reconciled against it instead of independently
+re-derived. The clearest failure mode this prevents: a campaign's very
+first probe of the night measured a delay primitive's real granularity
+(1.236ms); that number *was* the eventual answer to an unrelated-looking
+fps investigation hours later, and it sat unused because nothing forced
+later hypotheses to be checked against constants already on record.
+
 ## Hand off raw data, not a narrated summary
 
 When reporting results to another agent or session (or back to your

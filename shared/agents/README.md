@@ -9,6 +9,19 @@ a port's real-hardware campaign has grown large enough that a single
 session genuinely can't track all the concurrent specialist work. Most
 ports, including small ones like Passage, will not need this.
 
+**There's a validated middle shape for a real-hardware performance
+campaign specifically, between solo-plus-subagents and this full team:
+one investigating session plus one dedicated rig-operator session,
+coordinating peer-to-peer.** This isn't hypothetical — it's the shape a
+real dossage/Passage fps campaign actually used, and it earned its keep:
+a dedicated rig-operator session applies hash-verification/witness
+discipline independently, without the investigator context-switching into
+rig mechanics, and that independence is what caught a real build defect
+(see `probe-engineer.md`'s stubify-stack-size hazard) before it reached
+real hardware. Reach for this once a port is doing genuine iterative
+real-hardware investigation, not a one-off validation run — see
+`docs/SHEPHERDING-GUIDE.md` for the full playbook.
+
 These are genericized versions of the AI agent-team charters doskutsu
 developed over its own porting campaign. Copy them into a port repo's
 `.claude/agents/` and fill in the placeholders — they're process templates,
