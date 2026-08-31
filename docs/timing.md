@@ -96,6 +96,52 @@ future port's startup feels janky specifically in its first second or two
 on 486-class hardware, this is a known, already-characterized cause to
 check before assuming a new bug.
 
+## Reference pacer patterns from doskutsu (deadline-based, not delta-based)
+
+dossage/Passage's frame-rate investigation (see `docs/optimization.md`)
+found real per-frame render work well under budget with no single fixable
+bottleneck -- the residual gap traced to the *pacer's own shape*, not to
+render cost. doskutsu's `nxengine-evo/src/main.cpp` has two working
+pacers worth citing directly rather than reinventing, both confirmed by
+reading the actual vendored source, not from memory:
+
+**The render/game-loop pacer** is deadline-based, not delta-based: it
+holds an absolute `nexttick` target and compares it against a fresh
+`SDL_GetTicks()` read every iteration, rather than computing a sleep
+duration once and trusting it. When time remains, it sleeps *half* the
+estimated remainder, then loops back and re-measures real elapsed time
+against the deadline again -- converging rather than committing to a
+single sleep call. `nexttick` resets from the actual current time when a
+tick fires (not additively from the previous deadline), so this path
+doesn't accumulate unlimited backlog on its own.
+
+**The gameplay simulation pacer**, `run_tick_fixed()`, is a true
+fixed-timestep accumulator: an absolute nanosecond timeline
+(`SDL_GetTicksNS()`), a fixed tick interval (`TICK_NS = 1e9/GAME_FPS`),
+and a catch-up loop that drains accumulated backlog as discrete ticks.
+**The lesson worth taking along with the pattern, not just the shape**: a
+hard `MAX_CATCHUP` clamp (5 in doskutsu's case) is not optional. Real
+incident history there (several patches) shows an unclamped catch-up
+accumulator manufacturing extra ticks out of a genuine stall (a music or
+asset load blocking the loop), including one case where an unsigned-
+subtraction wraparound turned a small delta into an enormous one and blew
+through every stall guard in place. A deadline/accumulator pacer needs an
+explicit stall guard or clamp, or a loading screen can desync the whole
+timeline.
+
+**The precedent that matters most across both mechanisms**: doskutsu
+paces and measures using SDL's own timer API throughout
+(`SDL_GetTicks()`/`SDL_GetTicksNS()`) -- never an engine-private clock
+(e.g. a separate `gettimeofday()` call) running in parallel with whatever
+clock the delay primitive itself uses. This is the same "single clock
+family end-to-end" principle a same-clock instrumentation pass can prove
+out before trusting a cross-clock measurement (see the `DOS_Yield()`/
+frame-cycle-time diagnostics above) -- and it applies to the *pacing*
+decision itself, not just to measuring it: an engine whose own frame-time
+measurement and whose delay mechanism read from different clocks has a
+second, independent source of per-frame error regardless of which pacer
+shape it uses.
+
 ## Add debug output for
 
 ```
@@ -108,3 +154,20 @@ dropped renders
 
 This instrumentation should exist before any optimization work starts —
 see `docs/optimization.md`: never optimize without numbers.
+
+**Use `shared/include/runmanifest.h` for the baseline fps/duration/exit
+numbers rather than hand-rolling them.** It's a header-only, drop-in
+library: include it and call `runmanifest_emit()` once at clean shutdown
+for a standardized, greppable `[RUNMANIFEST-BEGIN]`/`[RUNMANIFEST-END]`
+block (`fps_p50`, `fps_p95`, `duration_s`, `exit_code`, `environment`, a
+build fingerprint, and port-specific extra fields as needed). See
+`shared/skills/dos-hardware-validation/references/runmanifest-log.md`.
+Wire it in early (STARTS/TITLE_SCREEN milestone), not deferred to
+OPTIMIZING — dossage/Passage hand-rolled its own engine-side fps
+computation from the start, and a later real-hardware investigation spent
+hours chasing an fps gap before finding the actual clock bug lived inside
+that same bespoke fps math: the number being measured and the mechanism
+under suspicion were the same unreviewed code (see `docs/optimization.md`
+for the full investigation). Using the shared, already-reviewed header
+doesn't guarantee no bug, but it means the baseline measurement itself
+isn't the thing you'd later have to distrust.

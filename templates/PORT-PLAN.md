@@ -33,6 +33,12 @@ smoke-test result.
       cleanly
 - [ ] TITLE_SCREEN — native-resolution framebuffer opens, title/menu
       renders
+- [ ] RUNMANIFEST wired — `.sdl-dos-ports/shared/include/runmanifest.h`'s
+      `runmanifest_emit()` called at clean shutdown; a real
+      `[RUNMANIFEST-BEGIN]`/`[RUNMANIFEST-END]` block confirmed in a
+      captured log with real (non-placeholder) fps/duration values. Do
+      this here, not deferred to OPTIMIZING — see `PORTING.md`'s reuse
+      list for why.
 - [ ] PLAYABLE — a representative slice is playable start-to-finish
 - [ ] FULL_GAME — the complete game is playable
 - [ ] OPTIMIZING — profiling-driven optimization pass (see

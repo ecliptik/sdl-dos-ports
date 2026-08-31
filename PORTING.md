@@ -85,6 +85,20 @@ Reuse before rewriting:
   `.sdl-dos-ports/shared/tools/` and `.sdl-dos-ports/shared/tests/`.
 - Hardware diagnostics (VESA/DAC/sound-card probes) if you hit unexplained
   real-hardware behavior: `.sdl-dos-ports/shared/tests/probes/`.
+- Run telemetry: `.sdl-dos-ports/shared/include/runmanifest.h` — a
+  header-only, drop-in library for a standardized, greppable
+  `[RUNMANIFEST-BEGIN]`/`[RUNMANIFEST-END]` block (fps percentiles, build
+  fingerprint, environment, exit code) emitted once at clean shutdown. See
+  `shared/skills/dos-hardware-validation/references/runmanifest-log.md`.
+  **Wire this in at the STARTS/TITLE_SCREEN milestone, not later as part
+  of OPTIMIZING** — a port that hand-rolls its own fps/frame-timing
+  computation from the start (rather than using the shared header) risks
+  the exact trap dossage/Passage hit: its own engine-side fps math turned
+  out to be entangled with the very clock bug a later investigation spent
+  hours chasing, because the number being chased and the mechanism under
+  suspicion were the same unreviewed code. Using the shared header from
+  the start doesn't prevent every such bug, but it means your baseline
+  measurement isn't itself bespoke, unreviewed code.
 
 **Default to in-process subagents, not a multi-session agent team.** A
 single Claude Code session driving the slices above, delegating focused

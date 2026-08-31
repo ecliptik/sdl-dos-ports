@@ -52,9 +52,19 @@ changes) and bump this repo's submodule pin.
 4. Preserve upstream source: vendor pinned by SHA + a local patch series
    in `patches/<engine>/` (see `.sdl-dos-ports/docs/patch-conventions.md`),
    not unexplained direct source divergence.
-5. Do not optimize without numbers — instrument first (see
+5. Wire in `.sdl-dos-ports/shared/include/runmanifest.h` at the STARTS/
+   TITLE_SCREEN milestone — call `runmanifest_emit()` once at clean
+   shutdown rather than hand-rolling your own fps/frame-timing report.
+   Do this early, not deferred to the OPTIMIZING milestone: a
+   dossage/Passage investigation once spent hours chasing an fps gap
+   before finding the actual bug lived inside the engine's own bespoke
+   fps computation — the number being measured and the mechanism under
+   suspicion were the same unreviewed code. See
+   `.sdl-dos-ports/shared/skills/dos-hardware-validation/references/runmanifest-log.md`.
+6. Do not optimize without numbers beyond the baseline RUNMANIFEST gives
+   you — instrument further only when a specific question needs it (see
    `.sdl-dos-ports/docs/timing.md` and `optimization.md`).
-6. Real hardware (via vcctrl, see `.sdl-dos-ports/docs/hardware-testing.md`)
+7. Real hardware (via vcctrl, see `.sdl-dos-ports/docs/hardware-testing.md`)
    is authoritative for performance/compatibility claims; DOSBox-X/86Box
    are automation gates.
 
