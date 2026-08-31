@@ -50,19 +50,67 @@ type, instead of the small positive number expected). Clamp any
 a single wildly-anomalous timing sample as a suspect measurement to
 discard, not as a finding to explain.
 
-## SDL_Delay() overshoot on 486-class CPUs (untested hypothesis)
+**A busy-wait fix can starve the BIOS timer interrupt, and the fps report
+will lie about it in the flattering direction.** dossage/Passage's
+frame-limiter investigation (see `docs/optimization.md`) tried replacing a
+`delay(1)` call with a tight busy-wait poll. On real hardware this
+starved the BIOS timer interrupt chain -- `time(NULL)` lost 54% of its
+ticks during the run. Because Passage's own fps report divides frame
+count by `time(NULL)`, **the reported number went UP (14.3) as real
+performance collapsed (~6.5 actual, confirmed via vcctrl's independent
+external wall-clock bracket)**. The general rule this is a concrete case
+study for: **a metric computed from a clock the change under test can
+perturb will tend to fail in the flattering direction, not an obviously-
+wrong one** -- the busy-wait didn't just make the number noisy, it made a
+badly broken run *look healthy*. Only an external witness (a measurement
+that doesn't share the compromised clock) can catch this; nothing
+DOS-side could have, since every DOS-side clock was corrupted by the same
+busy-wait. This is precisely why this hub mandates independent/
+real-hardware verification over trusting an engine's own self-report --
+see `docs/video.md`'s triage-order note for the same discipline applied
+to a different failure class.
+
+**A corollary that cost real rig time before it was caught: an
+external-witness check has to bracket the same interval the engine is
+actually measuring, or it manufactures false failures.** The validity
+check built for the above ("wall-clock and the engine's own game-time
+should agree within a few seconds") was itself mis-specified -- it
+silently assumed zero startup time, but a 486 spends ~14-16s on DOS init,
+CWSDPMI, PicoGUS, VESA mode-set, and asset loading before the engine's
+own timer even starts. That gap made the check fire on a genuinely
+healthy run. The harness applied the check correctly; the check's own
+interval definition was wrong. Before trusting an external-witness check
+as evidence of a regression, confirm its two endpoints bracket the exact
+same span the in-engine measurement covers -- an unaccounted-for
+startup/teardown window on one side of the comparison but not the other
+produces a confident, wrong verdict in either direction.
+
+## SDL_Delay() overshoot on 486-class CPUs (resolved: delay(1) granularity, not clock rate)
 
 dossage/Passage bisected a residual fps gap on 486DX2-66 + S3 ViRGE (see
 `docs/optimization.md`) to `SDL_Delay()` timer-precision overshoot, with
 real per-frame render work well under budget (~45.6ms against a 66.7ms
-frame budget). **Not confirmed this session:** this may tie back to the
-PIT-channel-0 timebase this doc already documents above -- a 486-class
-CPU with no `RDTSC` falls back to a coarser PIT-driven wait primitive
-behind `SDL_Delay()`, which would explain overshoot scaling with CPU class
-rather than being a fixed constant. A comparison run on a Pentium
-OverDrive (which does have `RDTSC`) would settle whether this is actually
-the mechanism -- treat this as a hypothesis worth testing, not a
-documented cause, until that comparison exists.
+frame budget). The original hypothesis here -- a PIT-channel-0 clock-rate
+divergence from nominal, possibly tied to no-`RDTSC` 486-class hardware --
+was tested directly and **falsified**: `uclock()`, `time(NULL)`, and the
+CMOS RTC (read directly via ports 0x70/0x71, independent of any BIOS/PIT
+chain) all agreed to within 0.03%, nowhere near the ~1.7% a clock-rate
+mismatch would require.
+
+**Actual root cause**, found only once the frame-limiter's own decisions
+were instrumented directly: `SDL_SYS_DelayNS`'s wait loop calls DJGPP's
+`delay(1)`, which genuinely takes ~1.236ms per call (a fine-grained,
+non-BIOS-tick-quantized measurement -- the *earlier* hypothesis that
+`delay(1)` itself was coarsely quantized was correctly eliminated), but
+the loop can only re-check its exit condition *between* `delay(1)` calls
+-- so a sleep can land up to a full ~1.236ms quantum later than its
+deadline. This number was sitting in this project's very first real-
+hardware probe of the night (measuring `delay(1)`'s own granularity) for
+hours before anyone connected it to the pacer's actual behavior -- a
+reminder that eliminating a hypothesis ("delay(1) isn't BIOS-tick
+quantized") doesn't mean the measurement it produced is done being
+useful for a *different* question ("does that per-call cost still matter
+inside this specific loop structure").
 
 ## First framebuffer flush after SDL_Init can spike 50-70ms on 486-class hardware
 
