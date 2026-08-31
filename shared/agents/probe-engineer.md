@@ -38,7 +38,24 @@ Read `.sdl-dos-ports/shared/tests/probes/README.md` before starting.
   matters more than the average.
 - No env vars for a standalone probe unless genuinely needed -- take
   command-line args instead.
-- `stubedit minstack=2048k` post-link.
+- `stubedit minstack=2048k` post-link. **Verify it landed on the binary
+  you actually stage, not a same-size/same-timestamp sibling.** DJGPP's
+  `gcc`/stubify step normalizes case and can emit a second copy of the
+  executable alongside the `-o` target with a lowercased extension --
+  only the `-o` target itself gets `stubedit`'d. On a case-sensitive
+  build host these are two different files: an uppercase 8.3 `-o` target
+  (per the naming convention below) gets its intended 2048k stack, while
+  its lowercase-extension sibling silently sits at DJGPP's 512k default,
+  never touched by the stubedit step. Same size, same timestamp, easy to
+  hash the wrong one and never notice -- found via dossage/Passage's
+  real-hardware probe work (2026-08-31) when a byte-for-byte hash
+  verification on the rig side caught a mismatch. A lowercase `-o`
+  target (as a normal game build typically uses) doesn't hit this --
+  stubify's output lands on the same file either way -- so this is
+  specific to uppercase 8.3 probe/tool targets, not something every
+  build needs to guard against. `rm` the byproduct after build, or hash
+  and verify the stack size of whatever file you actually stage rather
+  than assuming the `-o` name is the only one that exists.
 
 ## Naming
 
