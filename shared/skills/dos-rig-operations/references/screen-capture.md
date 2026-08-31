@@ -53,3 +53,21 @@ runs is directly comparable; a freehand screenshot is not. If a port's
 engine supports deterministic replay at all, wire capture timing to it
 for anything meant to support a correctness claim -- reserve freehand
 screenshots for casual liveness checks, not evidence.
+
+## Sub-second visual timing needs a capture mode decided before the moment, not improvised after
+
+Verifying a specific, predicted sub-second visual event (e.g. confirming
+whether a debt-repayment fix produces a visible speed-burst right after a
+known trigger) is a different capture problem from a liveness or
+correctness check, and the general-purpose tools can fail it silently. A
+real attempt at this failed two ways in sequence: a live capture command's
+own round-trip latency couldn't hit the ~1s cadence the check needed, and
+falling back to the raw video ring's frame history arrived too late --
+the ring (a fixed, short window, e.g. 30s) had already evicted the
+window that mattered by the time the fallback was tried. **If a campaign
+is going to need sub-second visual timing verification, decide on and
+provision the dedicated capture mode for it before the moment arrives**
+(e.g. a longer/targeted ring window, a pre-armed continuous capture around
+the predicted trigger time) rather than improvising a fallback after a
+live check already missed its window -- by the time you know you need the
+fallback, the evidence it would have needed is often already gone.

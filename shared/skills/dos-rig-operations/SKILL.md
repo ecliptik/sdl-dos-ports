@@ -63,6 +63,16 @@ concrete hazards in the reference files below -- it's called out here
 once because it generalizes past all of them, not just the one it was
 first noticed in.
 
+## Batch questions into fewer, longer rounds
+
+A file-transfer round-trip typically costs a fixed reboot tax (order of
+30-90s) independent of what's actually being tested -- unavoidable
+overhead, not something to optimize away. Given that, batching several
+questions into one longer real-hardware run beats splitting them across
+multiple short ones every time; the fixed cost is paid once either way,
+so paying it more often for less information per round is pure waste.
+Plan a cell/round's scope with this in mind before staging anything.
+
 ## When something here turns out wrong
 
 If a rule in this skill (or in vcctrl's own skills) doesn't match what

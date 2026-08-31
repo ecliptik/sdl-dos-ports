@@ -186,6 +186,38 @@ independent witness. "Solid," not just "clears the average."
    entry; the next reader trusts it precisely because it's written down.
 6. **Hand off raw data, not a narrated summary**, when reporting results
    between sessions — `dos-hardware-validation`'s closing rule.
+7. **The rig session designs nothing about the game and interprets
+   nothing about the game — but investigates ambiguity with its own
+   rig-scoped tools (camera, audio-content verdict, an independent
+   env/state read) before reporting anything as a game-side symptom.**
+   A "the machine booted" signal is not proof it booted through its full
+   normal sequence — a boot that silently skipped init produced a crash
+   that read exactly like a code regression, on the same binary that had
+   run clean minutes earlier, until an independent camera check showed
+   the machine itself was in an unexpected state. See
+   `dos-hardware-validation`'s corresponding section.
+8. **Verify a staged binary's hash both before staging and again after
+   sending, every time, with no exceptions under time pressure.** This
+   isn't redundant — it's caught a build race and a real build-tooling
+   defect in one campaign, either of which a single check would have
+   missed.
+9. **Never trust a single reported summary number without an
+   independent, finer-grained internal cross-check** (a per-frame trace
+   alongside an exit-line average) — a summary figure has been
+   misleading while technically accurate more than once. An external
+   wall-clock bracket and an internal detailed log catch different
+   failure classes; neither substitutes for the other.
+10. **Batch questions into fewer, longer real-hardware rounds.** A
+    file-transfer round-trip pays a fixed reboot tax regardless of scope
+    — plan a round's questions accordingly rather than paying that tax
+    repeatedly for less information each time.
+11. **Decide a dedicated capture mode before you need sub-second visual
+    timing verification, not after.** General-purpose capture tooling
+    (live round-trip latency, a short frame-history ring) can silently
+    fail to catch a specific predicted sub-second event, and by the time
+    a fallback is needed the evidence it would require is often already
+    evicted. Provision for this ahead of the moment if a campaign's KPI
+    depends on it.
 
 ### Release
 

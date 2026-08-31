@@ -71,6 +71,15 @@ reads as a clean run, not a failure, unless you're checking the sha. Look
 up (or ask) the live install directory for the target port explicitly;
 don't assume the transfer capability infers it.
 
+**Verify the local hash before staging AND re-verify the staged hash
+after sending — both, every time, no exceptions under time pressure.**
+This isn't belt-and-suspenders: this exact discipline caught a real
+build-race hash mismatch (a hash read off a binary still being written)
+and a real DJGPP build-tooling defect (see
+`shared/agents/probe-engineer.md`'s stubify hazard) in one real campaign,
+each of which would have silently invalidated results if either check had
+been skipped "just this once" under deadline pressure.
+
 ## Per-cell discipline: three independent witnesses
 
 Every cell run needs all three, never just one:
@@ -208,6 +217,38 @@ precondition here too, but was being checked against returned logs
 *after* the round instead of before it, which can tell you the data was
 junk but can't get the round back.
 
+## A "the machine booted" signal is not proof it booted through the FULL normal sequence
+
+A second, same-shape instance of the hazard above (a rig/config-state
+problem reading exactly like a code bug): a file-transfer job's own
+return-reboot landed the target on a boot profile that silently skipped
+PicoGUS/AUTOEXEC init entirely — no init banner, straight from the DOS
+boot message to a bare prompt. The game then crashed within seconds with
+what read as a plausible code-level error (`No BLASTER environment
+variable`) on the *same binary* that had run clean minutes earlier — a
+strong, misleading "this is a regression" signal. It was not: an
+independent read (a hardware camera, since VGA capture itself also looked
+wrong at the time) showed the physical screen had genuinely skipped the
+whole init sequence — the machine, not the game, was in an unexpected
+state. **A "machine came back up" completion from a reboot is not proof
+the boot went through its full normal sequence.** Before trusting a crash
+or an unexpected-environment symptom as a code bug, independently verify
+the boot actually completed normally — an init banner via an independent
+capture channel, or an environment-variable witness (`BLASTER` or
+equivalent) — rather than assuming a returned prompt means everything
+that's supposed to run before it did.
+
+**Corollary for a rig-operator session specifically: investigate
+ambiguity with rig-scoped tools (camera, audio-content verdict, an
+independent env/state read) before reporting anything as a game-side
+symptom.** The rig session designs nothing about the game and interprets
+nothing about the game — it reports raw numbers and flags anomalies,
+leaving interpretation to the port session (see "Hand off raw data"
+below) — but when the anomaly is itself ambiguous between "rig state" and
+"game bug," resolving that ambiguity with the rig's own tools *before*
+handing it off is what keeps the port session from burning time chasing
+a phantom regression.
+
 ## A harness bug is a bug, not a workaround
 
 If something in the harness or the collection path behaves wrong mid-
@@ -241,6 +282,18 @@ witness — one genuinely outside anything the change under test could
 touch — catches this, and it has to be checked routinely, not reserved
 for results that already look wrong, because the whole danger is that a
 corrupted self-report looks *right*.
+
+**Never trust a single reported summary number without an independent
+internal cross-check, even when nothing about it looks wrong.** A
+top-line summary figure (an exit-line fps average) and a finer-grained
+internal log (a per-frame pacer trace) are two different views of the
+same run, and a real campaign found the summary number misleading twice
+in one night — the internal log is what actually resolved both cases. An
+external wall-clock bracket (above) catches the self-report lying about
+its own clock; an internal finer-grained log catches a summary number
+that's technically accurate but hides the shape of what actually
+happened (e.g. an average improving while a burst momentarily makes the
+game run visibly wrong). Neither substitutes for the other.
 
 **A validity check handed to an operator is itself an artifact that needs
 review before it's trusted, not just written.** A check that silently
