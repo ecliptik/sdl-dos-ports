@@ -69,8 +69,18 @@ patch with no removal plan — see `docs/patch-conventions.md`.
 Per `CLAUDE.md`: a change to `shared/` isn't done until validated under
 DOSBox-X. If you don't have the toolchain to do this yourself, say so
 explicitly and get the validation from whoever does (see
-`docs/SHEPHERDING-GUIDE.md`'s team-shape guidance) before landing —
-never land an unvalidated shared-layer change silently.
+`shared/agents/README.md`'s team-shape guidance) before landing — never
+land an unvalidated shared-layer change silently.
+
+## Generating the patch yourself?
+
+Commit working-tree vendor edits into a numbered patch at the end of
+each investigation slice, not at the end of a campaign — `apply-patches.sh`
+refuses to reset a dirty vendor tree by default, but that's a safety net,
+not a substitute: hours of real work sitting uncommitted in a vendor tree
+can still be lost to a routine `apply-patches.sh` run made for a
+completely unrelated reason before that check was added, or on a tree
+someone deliberately forces past it.
 
 ## What this skill does not replace
 

@@ -65,7 +65,7 @@ to be the answer to an unrelated-looking investigation hours later --
 sitting unused the whole time because nothing forced later hypotheses to
 be checked against it. Add a row the moment a probe/diagnostic produces a
 number; check new hypotheses against this table BEFORE running a new
-probe, not after. See docs/SHEPHERDING-GUIDE.md.
+probe, not after. See PORTING.md and the benchmark skill.
 -->
 
 | Constant | Value | Measured by | Hardware | Date |

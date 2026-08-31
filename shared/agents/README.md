@@ -19,8 +19,8 @@ discipline independently, without the investigator context-switching into
 rig mechanics, and that independence is what caught a real build defect
 (see `probe-engineer.md`'s stubify-stack-size hazard) before it reached
 real hardware. Reach for this once a port is doing genuine iterative
-real-hardware investigation, not a one-off validation run — see
-`docs/SHEPHERDING-GUIDE.md` for the full playbook.
+real-hardware investigation, not a one-off validation run — run the
+`benchmark` skill for the full campaign checklist.
 
 These are genericized versions of the AI agent-team charters doskutsu
 developed over its own porting campaign. Copy them into a port repo's

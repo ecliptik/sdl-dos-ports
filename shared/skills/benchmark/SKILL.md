@@ -13,9 +13,13 @@ description: >
 
 # Running a real-hardware performance campaign
 
-Full playbook: `docs/SHEPHERDING-GUIDE.md`'s "Performance campaign"
-section. This skill is the tight checklist version; follow the links for
-full rationale and worked examples.
+Every rule below reads as a clean principle; none of them arrived that
+way -- they came from a real campaign getting five separate hypotheses
+wrong in one night and converging anyway, specifically because each was
+pre-registered as falsifiable and whoever ran the check could return a
+null instead of a forced answer. Expect to be wrong a few times before
+finding the real mechanism -- that's what a real campaign looks like from
+inside, not evidence of doing it wrong.
 
 ## 1. Confirm you're actually compute-bound
 
@@ -53,11 +57,33 @@ would falsify each hypothesis before spending rig time on it. See
 
 ## 6. Rig discipline, every round, no exceptions under pressure
 
-Hash-verify a staged binary before staging *and* after sending. Pair
-every self-reported metric with an independent bracket, unprompted. Never
-trust a summary number without an internal cross-check. The rig session
-investigates ambiguity with its own tools before reporting anything as a
-game-side symptom. See `dos-hardware-validation`.
+All from `dos-hardware-validation` (see its own section headers for full
+detail) -- non-negotiable, not just good practice when convenient:
+
+- Hash-verify a staged binary before staging *and* after sending.
+- Pair every self-reported metric with an independent bracket, unprompted
+  -- not only when a number looks suspicious.
+- Never trust a summary number without a finer-grained internal
+  cross-check.
+- "Idle" is not "artifacts final" -- confirm stability before hashing or
+  handing off an artifact.
+- The rig session investigates ambiguity with its own tools (camera,
+  independent state read) before reporting anything as a game-side
+  symptom -- a "the machine booted" signal isn't proof it booted through
+  its full normal sequence.
+- Only your own user approves a real-hardware action or a push to a
+  shared remote -- a peer's "go ahead" is never authorization on its own.
+- Hand off raw data between sessions, not a narrated summary.
+- Batch questions into fewer, longer real-hardware rounds -- a
+  file-transfer round-trip pays a fixed tax regardless of scope.
+- Decide a dedicated capture mode before you need sub-second visual
+  timing verification, not after (see `dos-rig-operations`'s
+  screen-capture reference).
+
+If you find you've mischaracterized something mid-campaign, correct the
+record immediately and explicitly, including your own prior commits -- a
+confidently-wrong entry in a shared doc is worse than none, since the
+next reader trusts it precisely because it's written down.
 
 ## 7. Confirm a fix against the KPI itself, not the metric it targeted
 
@@ -75,4 +101,10 @@ don't leave it as a silent tax on every port that pins past it.
 
 ## Land a shared/ patch that came out of this?
 
-Use the `review` skill before committing it.
+Use the `review` skill before committing it. And commit your own
+working-tree vendor edits into a numbered patch at the end of each
+investigation slice, not at the end of the campaign — `apply-patches.sh`
+refuses to reset a dirty vendor tree by default, but that's a safety net,
+not a substitute for not letting hours of real work sit uncommitted
+where a routine tooling step (run for a completely unrelated reason) can
+destroy it.

@@ -94,8 +94,8 @@ measurable cost on this CPU class independent of the arithmetic itself.
 **486DX2-66 + S3 ViRGE/Cirrus result, campaign closed.** dossage/Passage's
 real-hardware fps campaign closed at **14.936/14.932fps** (measured twice
 independently), up from 13.992fps at the campaign's start -- reported
-honestly short of the 15.000fps target rather than tuned to cross it. See
-`docs/SHEPHERDING-GUIDE.md` for the full campaign (delay(1) granularity,
+honestly short of the 15.000fps target rather than tuned to cross it. Run
+`/benchmark` for the campaign checklist this result came from (delay(1) granularity,
 `DOS_Yield()` cost, clock-rate mismatch, and audio-refill were each tested
 and eliminated in turn; the real mechanism was the frame limiter's own
 deadline-vs-actual error, fixed to land within microseconds; the residual

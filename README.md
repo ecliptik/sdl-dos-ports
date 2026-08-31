@@ -41,10 +41,26 @@ See [`COMPATIBILITY.md`](COMPATIBILITY.md) for a richer boots/playable/
 hardware-target matrix as ports progress, and [`gallery/`](gallery/) for
 screenshots, performance notes, and features per finished port.
 
-## Quickstart
+## Getting started
 
-Three skills cover the full lifecycle — invoke by name, don't re-derive
-the process from docs:
+```sh
+# 1. Claim a candidate and scaffold its repo (run from this hub repo)
+Use the port skill: /port
+
+# 2. Open the new port repo -- skills from this hub AND vcctrl are
+#    already installed (npx skills, run automatically by /port)
+cd ../<name>
+ls .claude/skills/
+
+# 3. Build in narrow slices: compile -> video -> input -> filesystem
+#    -> audio -> gameplay. See PORTING.md.
+
+# 4. Chasing a real-hardware fps/perf target?
+Use the benchmark skill: /benchmark
+
+# 5. Landing a patch in shared/ or your own patches/<engine>/?
+Use the review skill: /review
+```
 
 | Skill | Runs from | Use it to |
 |---|---|---|
@@ -52,17 +68,14 @@ the process from docs:
 | `/review` | This hub, or any port repo | Check a patch against this hub's own landing conventions before committing it (provenance, DJGPP constraints, naming, numbering). |
 | `/benchmark` | This hub, or any port repo | Run or record a real-hardware performance KPI campaign. |
 
-`review` and `benchmark` live in `shared/skills/` and get installed into
-every new port repo automatically via `npx skills add` (self-contained —
-along with every vcctrl skill too, so a port doesn't need a separate
-session just to know vcctrl's own conventions). A port scaffolded before
-one was added won't have it yet — see `shared/skills/README.md` for the
+`review` and `benchmark` install into every new port repo automatically,
+alongside every vcctrl skill too — a port doesn't need a separate session
+just to know vcctrl's own conventions. A port scaffolded before one was
+added won't have it yet — see `shared/skills/README.md` for the
 one-command fix.
 
-Deeper reference, only when a skill points you at it: [`PORTING.md`](PORTING.md)
-(the full slice-by-slice porting process) and
-[`docs/SHEPHERDING-GUIDE.md`](docs/SHEPHERDING-GUIDE.md) (the campaign
-playbook the `benchmark` skill is distilled from).
+Deeper reference, only when a skill points you at it:
+[`PORTING.md`](PORTING.md) for the full slice-by-slice porting process.
 
 ## Repository layout
 

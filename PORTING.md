@@ -4,6 +4,47 @@ This describes the practical steps to take a candidate from `ports.yaml`
 through to a working DOS port, reusing everything already proven by
 doskutsu and staged in `shared/`.
 
+```
+claim -> scaffold -> research -> compile -> video -> input -> filesystem
+  -> audio -> gameplay -> real-hardware baseline -> performance campaign
+  -> release
+```
+
+## Before writing any code
+
+Four things a real campaign's own retrospective found worth setting up
+before the first line of code, in priority order:
+
+1. **Stand up an external, program-independent way to measure elapsed
+   wall-clock time** — never trust only what the game reports about its
+   own performance. A self-reported metric computed from a clock the code
+   under test can perturb tends to fail in the *flattering* direction,
+   not an obviously wrong one — see `docs/timing.md`'s self-lying-metric
+   entry for the real case this came from.
+2. **Wire in `shared/include/runmanifest.h` at the STARTS/TITLE_SCREEN
+   milestone**, not deferred to OPTIMIZING (see step 4 below) — don't
+   hand-roll fps/frame-timing math from scratch.
+3. **Start a measured-constants table in the port's own `PLAN.md`**
+   (template in `templates/PORT-PLAN.md`) — every number a probe produces
+   goes in it immediately, and every new hypothesis gets checked against
+   it before a new probe runs. The single highest-leverage habit in this
+   whole document: a real campaign's very first probe of the night
+   measured a constant that turned out to be the answer to an unrelated-
+   looking investigation hours later, sitting unused because nothing
+   forced later hypotheses to be checked against it.
+4. **Decide team shape now, not once you're already deep into a
+   campaign** — see step 4's team-shape note below.
+
+Every rule in this document reads as a clean principle; none of them
+arrived that way. They came from a real campaign getting things wrong
+repeatedly and converging anyway — five separate hypotheses in one
+night were wrong, and the campaign still converged on the real answer,
+specifically because each one was pre-registered as falsifiable and
+whoever ran the check was empowered to return a null instead of a forced
+answer. If you follow this document and it still takes several rounds of
+being wrong before you find the real mechanism, that's what a real
+campaign looks like from inside, not evidence you're doing it wrong.
+
 ## 0. Prerequisites: the DJGPP toolchain
 
 `shared/build/sdl3-dos.mk`'s `djgpp-check` target only verifies a working
@@ -135,9 +176,8 @@ session having to context-switch into rig mechanics, and having a
 bug (see `shared/agents/probe-engineer.md`'s stubify hazard) before it
 reached real hardware. Reach for this shape once a port is doing genuine
 iterative real-hardware investigation (repeated hypothesis-test-measure
-rounds), not for a single one-off validation run. See
-`docs/SHEPHERDING-GUIDE.md` for the full campaign playbook this shape is
-part of.
+rounds), not for a single one-off validation run. See the `/benchmark`
+skill for the full campaign checklist this shape is part of.
 
 ## 5. Real-hardware QA
 
@@ -146,10 +186,10 @@ to validate on real hardware via vcctrl, using
 [`templates/vcctrl-profile.yaml.template`](templates/vcctrl-profile.yaml.template)
 as your project's profile. Record results with
 [`templates/BENCHMARK.md`](templates/BENCHMARK.md). Once a port needs to
-chase a specific performance KPI rather than a one-off check, follow
-[`docs/SHEPHERDING-GUIDE.md`](docs/SHEPHERDING-GUIDE.md) — the
-consolidated, phase-by-phase playbook for a real-hardware performance
-campaign, distilled from a real one.
+chase a specific performance KPI rather than a one-off check, run
+`/benchmark` — the campaign checklist distilled from a real one, tying
+together `docs/optimization.md`'s KPI-writing policy and the
+`dos-hardware-validation` skill's investigation/rig discipline.
 
 ## 6. Showcase it
 
