@@ -171,16 +171,38 @@ doesn't accumulate unlimited backlog on its own.
 **The gameplay simulation pacer**, `run_tick_fixed()`, is a true
 fixed-timestep accumulator: an absolute nanosecond timeline
 (`SDL_GetTicksNS()`), a fixed tick interval (`TICK_NS = 1e9/GAME_FPS`),
-and a catch-up loop that drains accumulated backlog as discrete ticks.
-**The lesson worth taking along with the pattern, not just the shape**: a
-hard `MAX_CATCHUP` clamp (5 in doskutsu's case) is not optional. Real
-incident history there (several patches) shows an unclamped catch-up
-accumulator manufacturing extra ticks out of a genuine stall (a music or
-asset load blocking the loop), including one case where an unsigned-
-subtraction wraparound turned a small delta into an enormous one and blew
-through every stall guard in place. A deadline/accumulator pacer needs an
-explicit stall guard or clamp, or a loading screen can desync the whole
-timeline.
+and a catch-up loop that drains accumulated backlog as discrete ticks,
+capped at a hard `MAX_CATCHUP` of 5.
+
+**Correction to an earlier version of this note**: MAX_CATCHUP=5 is a
+real, validated precedent for a debt ceiling's *size* -- but not because
+letting a stall inflate the catch-up backlog is a general gameplay
+hazard. It isn't, in doskutsu: outside TAS replay, the accumulator delta
+is completely **unclamped** ("bit-for-bit the pre-0281 path" per the
+source's own comment) -- a stall can and does inflate `accum_ns`, and the
+catch-up loop drains it via up to 5 discrete ticks, unguarded, as normal
+shipped gameplay behavior. The stall-discount/clamp machinery (patches
+0281/0286/0288) that *does* exist is gated entirely behind
+`TAS::active()`/`TAS::replaying()` -- it protects **TAS recorded-input
+replay fidelity** specifically (each catch-up tick consumes one recorded
+input; during a genuine stall those extra ticks apply the wrong, held
+input and drift a recorded route off its path), not general simulation
+correctness. Patch 0284's own commit message goes further: 0281's
+original premise -- that tick-count inflation itself was what corrupted
+replays -- was directly tested and found **wrong** (0283 found an
+unrelated input-hold bug was the real cause; a controlled A/B with that
+fixed showed clamped and unclamped replays produce identical traces). So
+the lesson isn't "a catch-up accumulator needs a stall guard or a loading
+screen desyncs the game" -- doskutsu's own gameplay doesn't need one. The
+lesson is narrower: **only a port with a discrete-tick-consumes-one-
+recorded-input replay/TAS system inherits this specific hazard.** A port
+without one (e.g. a continuous-integration pacer where "catching up"
+means not sleeping rather than running multiple discrete world-step
+calls) has no analogous mechanism to desync in the first place. Take
+MAX_CATCHUP's *number* as precedent if useful; don't take the incident
+history as evidence that an unclamped catch-up accumulator is dangerous
+for gameplay in general -- it demonstrably isn't, in the one shipped
+engine this hub has real data on.
 
 **The precedent that matters most across both mechanisms**: doskutsu
 paces and measures using SDL's own timer API throughout
