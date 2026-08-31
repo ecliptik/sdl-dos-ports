@@ -85,10 +85,26 @@ Reuse before rewriting:
   `.sdl-dos-ports/shared/tools/` and `.sdl-dos-ports/shared/tests/`.
 - Hardware diagnostics (VESA/DAC/sound-card probes) if you hit unexplained
   real-hardware behavior: `.sdl-dos-ports/shared/tests/probes/`.
-- AI agent team charters: `.sdl-dos-ports/shared/agents/` — copy
-  `templates/PORT-CLAUDE.md` as your repo's `CLAUDE.md`, and adapt
-  `shared/agents/ENGINE-SPECIALIST.md.template` into your own engine
-  specialist charter (this is what `nx-engine.md` is for doskutsu).
+
+**Default to in-process subagents, not a multi-session agent team.** A
+single Claude Code session driving the slices above, delegating focused
+sub-tasks (a patch investigation, a build/smoke pass, a log analysis) to
+in-process subagents as needed, is the default working mode for a port of
+this scale — it doesn't need a standing coordinator or dedicated sessions
+per role. Copy `templates/PORT-CLAUDE.md` as your repo's `CLAUDE.md` to
+start.
+
+`shared/agents/` holds full AI agent-team charters (a team-lead plus five
+or six specialist roles, each meant to run as its own coordinated session)
+carried over from doskutsu's own campaign. Treat this as an **opt-in
+escalation**, not the default: stand it up only once a port's real-hardware
+campaign has grown large enough that a single session genuinely can't track
+all the concurrent specialist work (see `shared/agents/README.md`), not at
+the start of a new port. In particular, don't give each specialist its own
+separate remote environment by default — that multiplies cost and
+rig-coordination risk (see
+`shared/skills/dos-rig-operations/references/agent-coordination.md`) for
+ports that don't need it.
 
 ## 5. Real-hardware QA
 

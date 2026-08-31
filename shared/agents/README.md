@@ -1,5 +1,14 @@
 # Agent charter templates
 
+**Opt-in, not the default.** A new port's default working mode is a single
+session using in-process subagents for focused sub-tasks — see
+`PORTING.md`'s step 4. Stand up this full team (a team-lead session plus
+five or six specialist sessions, each with its own charter and — if run via
+remote environments — its own cost and rig-coordination surface) only once
+a port's real-hardware campaign has grown large enough that a single
+session genuinely can't track all the concurrent specialist work. Most
+ports, including small ones like Passage, will not need this.
+
 These are genericized versions of the AI agent-team charters doskutsu
 developed over its own porting campaign. Copy them into a port repo's
 `.claude/agents/` and fill in the placeholders — they're process templates,
