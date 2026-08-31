@@ -84,3 +84,17 @@ gameplay loop. Most DOS-era-appropriate ports don't.
   platform-independent and DOSBox-X is a faithful proxy for it; the
   hardware-timing half (the actual analog read behavior) needs real
   hardware.
+- **PicoGUS's "USB joystick support enabled" firmware feature can fool
+  any port's joystick-detection code into thinking a real gameport
+  joystick is present when none is plugged in.** This is a generic
+  PicoGUS-firmware hazard, not specific to any one port or engine --
+  found on this hub's rig via a boot-profile env var
+  (`DOSKUTSU_USE_JOYSTICK`) colliding with the phantom device and killing
+  keyboard menu input until cleared, but the underlying trigger (PicoGUS
+  presenting a USB joystick device that isn't real hardware) applies to
+  any port's own detection logic just as easily. If joystick input
+  behaves unexpectedly (menu input dies, an unplugged joystick reads as
+  present) on a PicoGUS-equipped rig, check the PicoGUS boot log for USB
+  joystick support being enabled before assuming an engine-side bug. See
+  `docs/audio.md`'s GUS/PicoGUS section for other PicoGUS-firmware
+  quirks and `shared/tests/probes/GUS-PROBES.md`.

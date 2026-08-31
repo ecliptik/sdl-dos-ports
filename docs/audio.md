@@ -200,6 +200,11 @@ verification than what's noted here. Organized architecture-wide first
 
 ### GUS / PicoGUS
 
+- **PicoGUS's "USB joystick support enabled" firmware feature can fool
+  joystick-detection code, not just audio.** See `docs/input.md`'s
+  gameport joystick hazards section -- this is a firmware-level quirk of
+  the card, filed under audio here only because that's where PicoGUS
+  facts are tracked, not because it's audio-specific.
 - **GF1 DRAM is hard-capped at 1 MB** on both real GUS hardware and
   PicoGUS (a 20-bit address space, not a driver limit). A port doing both
   streamed SFX and GM-instrument wavetable music needs an explicit budget

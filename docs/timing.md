@@ -50,6 +50,20 @@ type, instead of the small positive number expected). Clamp any
 a single wildly-anomalous timing sample as a suspect measurement to
 discard, not as a finding to explain.
 
+## SDL_Delay() overshoot on 486-class CPUs (untested hypothesis)
+
+dossage/Passage bisected a residual fps gap on 486DX2-66 + S3 ViRGE (see
+`docs/optimization.md`) to `SDL_Delay()` timer-precision overshoot, with
+real per-frame render work well under budget (~45.6ms against a 66.7ms
+frame budget). **Not confirmed this session:** this may tie back to the
+PIT-channel-0 timebase this doc already documents above -- a 486-class
+CPU with no `RDTSC` falls back to a coarser PIT-driven wait primitive
+behind `SDL_Delay()`, which would explain overshoot scaling with CPU class
+rather than being a fixed constant. A comparison run on a Pentium
+OverDrive (which does have `RDTSC`) would settle whether this is actually
+the mechanism -- treat this as a hypothesis worth testing, not a
+documented cause, until that comparison exists.
+
 ## Add debug output for
 
 ```

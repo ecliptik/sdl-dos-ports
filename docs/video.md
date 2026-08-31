@@ -291,6 +291,110 @@ get exactly this shape of defect — everything reports correctly at the
 BIOS level, the screen is still wrong. Both patches are closed at the
 shared layer; no port needs to re-derive this.
 
+## Banked-mode bank-select needs a settle delay + readback verification (open, unfixed)
+
+**A real, generalizable shared-backend gap, found via S3 ViRGE but not
+specific to that chip.** The shared backend's VESA bank-select write is
+unguarded at every call site: `SwitchBank()` (`SDL_dosframebuffer.c`) and
+the mode-set-time banked framebuffer-blank loop (`SDL_dosmodes.c` -- a
+separate, textually-duplicated far-call/`INT 10h AX=4F05` implementation
+of the same bank-select pattern) both issue the write and immediately
+trust it took effect, with zero settle delay and no post-write readback
+check at either site. `current_bank` is a fresh local initialized to `-1`
+at the top of every per-flush caller, so the first row/chunk of every
+single frame forces a genuine hardware bank-switch regardless of whether
+the hardware was already sitting on that bank from the previous frame.
+
+Found on dossage/Passage via a real-hardware S3 ViRGE (86C375 Rev B)
+round, 2026-08-30/31: on ~50-60% of launches, DOSSAGE.EXE booted into a
+garbled/static-noise title screen instead of the real title art. The
+process was confirmed NOT hung -- it was sitting in the engine's normal
+blocking input-wait exactly as designed, with audio playing throughout;
+the garbling was a bad render, not a stuck process. Mode-set was
+byte-identical between garbled and clean runs (deterministic mode
+selection, ruled out as the variable). `SDL_HINT_DOS_PREFER_LFB=1`
+(forcing LFB, which never calls `SwitchBank()` at all) fixed this symptom
+completely in a real-hardware trial -- 5/5 clean launches vs. 3/5 garbled
+on the banked-mode baseline -- strong, if indirect, evidence that the
+unguarded bank-select write is a genuine correctness gap on at least this
+chip.
+
+**Physically plausible mechanism (consistent with the evidence gathered,
+not independently proven):** posted I/O writes on this era of graphics
+hardware can be acknowledged by the bus before the target chip has
+actually latched the new bank value internally, so a write burst starting
+immediately after `SwitchBank()` returns could land some or all of its
+bytes in the *previous* bank rather than the intended one -- a misrouted
+write, not a simple failed write. This matters because it explains why the
+symptom in the section below *spreads* rather than flickers, if the same
+mechanism turns out to be involved: a misrouted write corrupts bytes
+outside the region a later, correctly-landed frame would naturally
+overwrite, so damage could accumulate in never-revisited VRAM instead of
+self-healing next frame. There is a textual precedent, verified against
+the actual patch, for "a bank-switched write doesn't land where it
+should" already in this codebase's own history: `shared/patches/sdl3-dos/0029`
+fixed a real Cirrus missing-bottom-strip regression where a bank-1
+`dosmemput` wasn't reaching VRAM in practice despite correct on-paper
+bank/offset math -- but that instance's root cause was a code-generation
+issue (`SDL_FORCE_INLINE` expansion at the call site producing a bank-1
+write that didn't land, fixed with explicit loop-carried locals instead
+of modular-arithmetic recomputed per-iteration), not a hardware timing
+race. Worth knowing the *symptom shape* isn't unprecedented here even
+though the cause differed that time -- and worth not assuming the two are
+the same bug just because the symptom rhymes.
+
+**Not yet fixed at the shared layer, and deliberately not rushed.** Worked
+around for dossage/Passage by forcing LFB (`SDL_HINT_DOS_PREFER_LFB=1`),
+which avoids the banked path entirely -- **this is a workaround, not a
+fix**; the settle-delay/readback-verification gap itself is still open in
+`shared/`, unfixed, and remains a latent correctness risk for any port or
+card that takes the banked path (see `HARDWARE.md`'s table). The
+diagnostic delay primitive a real fix would reuse already exists --
+`SDL_HINT_DOS_BANK_CHUNK_PROBE_DELAY` (patch `0131`, an `inportb(0x80)`-based
+delay) -- but it's wired only into a diagnostic chunk-probe readback,
+never into the real write path. Wiring an equivalent bounded
+readback-verify retry into production `SwitchBank()` is an open fix
+candidate needing its own review and testing before landing, rather than
+every port discovering this gap independently by forcing LFB around it.
+
+## A same-card control run is the fastest way to rule "hardware defect" in or out
+
+dossage/Passage's same 486DX2-66 + S3 ViRGE campaign also hit a second,
+separate runtime symptom: visual corruption that progressively spread
+during sustained gameplay -- a small artifact appearing roughly 45-85
+seconds in, near-total corruption by ~120 seconds, flat fps throughout the
+run (ruling out a stall/hitch as the trigger). Distinct from the
+launch-time bank-select issue above: it survived a power-cycle and
+reproduced identically under both banked *and* forced-LFB video paths --
+which by itself rules out video-mode/bank-switching as the mechanism,
+since forced LFB never calls `SwitchBank()` at all and still showed it
+equally.
+
+**Reaching for "hardware defect" here would have been wrong** -- the
+triage order this hub already documents above (port-side/stale-config
+before hardware) held. A real-hardware control run of doskutsu itself, on
+the *same physical card*, ran clean for 3.5+ minutes -- direct evidence
+the card itself is fine, without needing to fully explain the symptom
+first. Several concrete hypotheses were then chased and ruled out with
+real evidence rather than assumed: a doskutsu-config comparison (LFB +
+16bpp was a real partial mitigation, but ruled out as *the* cause), loop-
+yield timing (ruled out via A/B), a pitch-cache/window-recreation theory
+(ruled out -- no live trigger found), and audio-IRQ frequency (inconclusive,
+and if anything pointed the wrong way -- doskutsu's own organya backend
+interrupts *more* often than dossage's, not less, so higher IRQ rate alone
+doesn't explain a symptom doskutsu didn't show). The symptom eventually
+stopped reproducing after an unrelated session restart/interruption and
+stayed resolved across many subsequent real-hardware runs. **Record this
+honestly as: real, reproduced, eventually stopped reproducing, root cause
+not conclusively identified** -- neither "fixed" (the mechanism was never
+proven) nor "hardware defect" (the control run and the LFB-independence
+both argue against it). If this resurfaces on a future port or a future
+S3 ViRGE session, start from this list of ruled-out hypotheses rather than
+re-deriving them, and lean on the same-card doskutsu-control-run technique
+early -- it's cheaper than chasing the symptom's own mechanism first and
+it directly answers the one question ("is this the card?") that most
+determines where to look next.
+
 ## Reduced color depth
 
 8-bit or 16-bit software surfaces are strongly preferred over 32-bit on

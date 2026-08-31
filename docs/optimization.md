@@ -70,6 +70,15 @@ double/float on every reuse — the x87 `fldcw`/`fistp`/`fldcw`
 rounding-mode-change dance behind a naive C truncation is real,
 measurable cost on this CPU class independent of the arithmetic itself.
 
+**486DX2-66 + S3 ViRGE result, after the video-corruption investigation in
+`docs/video.md` closed out.** dossage/Passage now runs at 14.16-14.5fps on
+this config, with real audio and zero video corruption (patches 0027-0029).
+The residual gap to a 15fps target was bisected and found to be
+`SDL_Delay()` timer-precision overshoot, not a rendering bottleneck -- real
+per-frame work has plenty of headroom (~45.6ms measured against a 66.7ms
+frame budget at 15fps). See `docs/timing.md` for an untested hypothesis on
+why `SDL_Delay()` overshoot specifically shows up on this CPU class.
+
 ## Rule
 
 Do not make a performance claim without a measurement, and prefer a
