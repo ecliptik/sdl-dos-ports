@@ -64,6 +64,38 @@ OverDrive (which does have `RDTSC`) would settle whether this is actually
 the mechanism -- treat this as a hypothesis worth testing, not a
 documented cause, until that comparison exists.
 
+## First framebuffer flush after SDL_Init can spike 50-70ms on 486-class hardware
+
+**A one-time startup cost, not a per-frame one, but big enough to trip an
+unrelated safety cap.** dossage/Passage's `DOS_Yield()` cost instrumentation
+(`shared/patches/sdl3-dos/0136`, temporary) found steady-state `DOS_Yield()`
+cost cheap (~0.24-0.34ms/call), but a sharp spike in the first ~200 frames
+on real 486DX2-66 + Cirrus CL-GD5434 hardware -- up to 71ms and 52.6ms,
+16 and 12 spikes over 10ms in those two windows only, nowhere else in a
+119-second/1651-frame run. Cross-referenced against `SDLDBG.LOG` from the
+same run, this lines up precisely with the very first framebuffer flush
+(57.65ms by itself -- the first-ever DPMI mapping, first non-bank-0 write)
+and three separate `SDL_DOSAudioPump()` "cap tripped (>32 calls in one
+sequence)" warnings (`shared/patches/sdl3-dos/0067`'s runaway-caller safety
+cap) firing in that same window, right after `OpenDevice`.
+
+**Generalizable, not dossage-specific**: any port using this backend's
+frame-limiter pattern (a `SDL_Delay`/`SDL_SYS_DelayNS` wait loop yielding to
+the audio thread) plausibly pays a similar one-time cold-start cost around
+its first framebuffer flush, and that cost can be large enough to trip
+0067's runaway-caller cap and produce a `DOS_Yield()` burst -- worth
+knowing before misreading a startup-only warning burst as a steady-state
+performance problem. Plausibly concentrated in a title-screen/pre-frame-
+counting phase rather than counted gameplay: dossage logged 1700 real-sleep
+invocations against only 1651 counted frames, a gap consistent with extra
+invocations during a title-wait loop.
+
+**Not fixed, not chased further as of this note** -- flagged as real and
+reproducible, not as something needing a shared-layer change yet. If a
+future port's startup feels janky specifically in its first second or two
+on 486-class hardware, this is a known, already-characterized cause to
+check before assuming a new bug.
+
 ## Add debug output for
 
 ```
