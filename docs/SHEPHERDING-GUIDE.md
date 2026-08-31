@@ -75,8 +75,8 @@ claim -> scaffold -> research -> compile -> video -> input -> filesystem
 
 ### Claim + scaffold
 
-Run the `new-port` skill from the hub repo (not from inside the new port
-repo). It handles upstream/license verification (never guess — see
+Run `/port` from the hub repo (not from inside the new port repo). It
+handles upstream/license verification (never guess — see
 `docs/licensing.md`), the mechanical scaffold, agent-charter
 instantiation, vendor pinning, and the `ports.yaml` claim commit. See its
 own `SKILL.md` for the full step list; this guide doesn't repeat it.
@@ -118,7 +118,9 @@ campaign is even needed.
 ### Performance campaign
 
 This is the phase this guide has the most to say about, because it's the
-phase that actually took a long night to get right the first time.
+phase that actually took a long night to get right the first time. The
+`/benchmark` skill is the tight-checklist version of everything below;
+use it to run a campaign, read this section for the full rationale.
 
 #### Team shape: investigator + dedicated rig-operator session
 
@@ -183,7 +185,9 @@ independent witness. "Solid," not just "clears the average."
 6. **Verify provenance before landing a peer-authored patch** — see
    `docs/patch-conventions.md`'s provenance section. A patch handed over
    through chat can lose fidelity (stripped whitespace on blank context
-   lines is a real, documented case) without any visible sign.
+   lines is a real, documented case) without any visible sign. Run
+   `/review` on any patch before committing it, whether it came from a
+   peer session or from this session's own work.
 7. **A stall-dominated residual can't be fixed by tightening the pacer's
    target — stalls are the binding constraint, and squeezing the budget
    just manufactures more of them.** See `docs/optimization.md`'s

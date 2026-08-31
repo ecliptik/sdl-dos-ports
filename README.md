@@ -11,68 +11,7 @@ that shared layer, documents the porting strategy and hardware/QA process,
 and showcases finished ports.
 
 See [`CLAUDE.md`](CLAUDE.md) for the rules an AI agent (or contributor)
-should follow when working in this repo,
-[`PORTING.md`](PORTING.md) for the full step-by-step process of starting
-a new port, and [`docs/SHEPHERDING-GUIDE.md`](docs/SHEPHERDING-GUIDE.md)
-for the consolidated playbook covering everything from hour zero through
-a real-hardware performance campaign — the single best starting point if
-you want to jump in and get results without re-deriving lessons a real
-campaign already paid for.
-
-## Starting a new port
-
-1. Pick a `BACKLOG` candidate from the table below (or add a new one to
-   [`ports.yaml`](ports.yaml), following its existing schema — never guess
-   an upstream URL or license).
-2. From this hub repo (not from inside the new port's repo), invoke the
-   `new-port` skill (`.claude/skills/new-port/`). It verifies the
-   candidate's upstream/license if that's not already done, runs
-   `scripts/new-port.sh` to scaffold the new repo (wired to `shared/` via
-   submodule, with `shared/skills/*` symlinked in), instantiates
-   `shared/agents/*.md` charters for that port, pins
-   `vendor/sources.manifest`, claims the candidate in `ports.yaml`, and
-   hands off to a porting agent with a concrete starting brief instead of
-   an empty "go start porting."
-3. Run `scripts/new-port.sh <name>` directly instead if you only want the
-   bare mechanical scaffold (no research, charters, or handoff) — see the
-   script's own `Next steps` output for what's left to do by hand in that
-   case.
-
-See [`PORTING.md`](PORTING.md) for the full process this automates,
-including the porting slice order (compile -> video -> input ->
-filesystem -> audio -> gameplay -> optimization) the handed-off agent
-follows next.
-
-## Shepherding a port: quickstart
-
-Full playbook: [`docs/SHEPHERDING-GUIDE.md`](docs/SHEPHERDING-GUIDE.md).
-The essentials, before writing any code:
-
-1. **Stand up an external, program-independent way to measure elapsed
-   wall-clock time** — never trust only what the game reports about its
-   own performance. A self-reported metric computed from a clock the code
-   under test can perturb tends to fail in the *flattering* direction.
-2. **Wire in [`shared/include/runmanifest.h`](shared/include/runmanifest.h)
-   at the STARTS/TITLE_SCREEN milestone**, not deferred to OPTIMIZING —
-   don't hand-roll fps/frame-timing math from scratch.
-3. **Start a measured-constants table in the port's `PLAN.md`** (template
-   in [`templates/PORT-PLAN.md`](templates/PORT-PLAN.md)) — every number a
-   probe produces goes in it immediately, and every new hypothesis gets
-   checked against it before a new probe runs.
-4. **Team shape**: solo session + in-process subagents by default; once
-   you're doing genuine iterative real-hardware investigation, split into
-   one investigating session + one dedicated rig-operator session
-   (peer-to-peer, not a standing coordinator) — see
-   `shared/agents/README.md`.
-5. **Write the performance KPI down before chasing it** — real-hardware
-   only, percentile-based (not a single average), falsifiable in advance,
-   tied to a named build. See `docs/optimization.md`'s "Setting a
-   performance KPI" section.
-
-That's the five things that would have saved the most time on the port
-this guide was distilled from. Everything else — investigation
-discipline, the coordination playbook, phase-by-phase detail — is in the
-full guide.
+should follow when working in this repo.
 
 ## Ports
 
@@ -101,6 +40,22 @@ redistribution rights; see its `ports.yaml` entry before assuming anything.
 See [`COMPATIBILITY.md`](COMPATIBILITY.md) for a richer boots/playable/
 hardware-target matrix as ports progress, and [`gallery/`](gallery/) for
 screenshots, performance notes, and features per finished port.
+
+## Quickstart
+
+Three skills cover the full lifecycle — invoke by name, don't re-derive
+the process from docs:
+
+| Skill | Use it to |
+|---|---|
+| `/port` | Claim a `BACKLOG` candidate and scaffold its repo, charters, and vendor pins. |
+| `/review` | Check a patch against this hub's own landing conventions before committing it (provenance, DJGPP constraints, naming, numbering). |
+| `/benchmark` | Run or record a real-hardware performance KPI campaign. |
+
+Deeper reference, only when a skill points you at it: [`PORTING.md`](PORTING.md)
+(the full slice-by-slice porting process) and
+[`docs/SHEPHERDING-GUIDE.md`](docs/SHEPHERDING-GUIDE.md) (the campaign
+playbook the `benchmark` skill is distilled from).
 
 ## Repository layout
 

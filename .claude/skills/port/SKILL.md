@@ -1,5 +1,5 @@
 ---
-name: new-port
+name: port
 description: >
   Bootstrapping a new DOS port from a ports.yaml BACKLOG candidate all the
   way to "a real, wired-up repo with a porting agent ready to start the
