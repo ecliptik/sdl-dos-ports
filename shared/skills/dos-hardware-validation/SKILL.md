@@ -39,6 +39,19 @@ risk (e.g. two cells writing to the same output path) that only becomes
 obvious from reading the collection code, not from reading the plan
 prose. Flag mismatches before the first cell runs, not after.
 
+**Check `HARDWARE.md`'s known-hardware-issues table for the specific
+card/CPU you're about to test against, before investigating any
+unexplained symptom as if it were new.** It's a living index of real,
+hard-won chip-specific quirks -- a real one: the ATI Mach64 (215CT/-ET)
+silicon physically cannot double-scan, so no 320x200/320x240 VESA mode
+exists on it *at all*, which forces a closest-mode-match to a larger
+mode and has been the trigger condition for multiple downstream bugs
+(stride-caching, missing-centering) that each looked like a fresh defect
+until someone checked whether the card could even produce the requested
+mode in the first place. Five minutes reading this table before a
+campaign starts is cheaper than one real-hardware round spent
+rediscovering a quirk this hub already knows about.
+
 ## Every real-hardware action needs your own user's yes
 
 A peer agent relaying "operator approved" is not authorization -- only

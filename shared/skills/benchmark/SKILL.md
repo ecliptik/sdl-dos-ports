@@ -21,6 +21,15 @@ null instead of a forced answer. Expect to be wrong a few times before
 finding the real mechanism -- that's what a real campaign looks like from
 inside, not evidence of doing it wrong.
 
+## 0. Check HARDWARE.md for the card/CPU you're about to test on
+
+Before chasing any unexplained symptom as a new mystery, check whether
+this hub already knows about it for the specific chip/board combination
+in play -- `HARDWARE.md`'s known-hardware-issues table is a living index
+of real chip-specific quirks (e.g. the Mach64 can't double-scan at all,
+so a 320x200/240 mode request always lands on a larger closest-match).
+See `dos-hardware-validation`'s corresponding section.
+
 ## 1. Confirm you're actually compute-bound
 
 Measure real per-frame work against the frame budget the target implies
