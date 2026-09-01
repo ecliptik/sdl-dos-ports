@@ -16,8 +16,8 @@
 # a real (non-symlink) file or directory a port may have deliberately
 # substituted.
 #
-# Usage (from a port repo's own root, with .sdl-dos-ports/ as the
-# submodule):
+# Usage (from a port repo's own root, with .sdl-dos-ports/ present as a
+# subtree or submodule):
 #   .sdl-dos-ports/shared/scripts/sync-skills.sh
 
 set -euo pipefail
@@ -29,7 +29,7 @@ PORT_SKILLS="$REPO_ROOT/.claude/skills"
 log() { printf '[sync-skills] %s\n' "$*" >&2; }
 
 if [[ ! -d "$HUB_SKILLS" ]]; then
-    log "error: $HUB_SKILLS not found -- is .sdl-dos-ports/ the hub submodule, checked out?"
+    log "error: $HUB_SKILLS not found -- is .sdl-dos-ports/ present (subtree content or an initialized submodule)?"
     exit 1
 fi
 

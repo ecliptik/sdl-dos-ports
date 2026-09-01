@@ -16,7 +16,7 @@ description: >
 # Bootstrapping a new port
 
 This closes the gap between `scripts/new-port.sh` (which only does the
-mechanical repo/submodule/template scaffold) and an actual working session
+mechanical repo/subtree/template scaffold) and an actual working session
 in the new repo. Run this skill from the sdl-dos-ports hub, not from
 inside the new port repo -- everything it produces gets written into the
 target repo from here, and the final step hands off to whatever agent is
@@ -79,15 +79,17 @@ scripts/new-port.sh <name> [target-dir]
 ```
 
 This creates the repo (or, if the operator already created one, see the
-adaptation note above -- run the equivalent steps by hand: submodule add,
+adaptation note above -- run the equivalent steps by hand: subtree add,
 directory skeleton, `patches/SDL`+`patches/SDL_mixer` symlinks, skill
 install, and the template fills), all wired to this hub via
-`.sdl-dos-ports/`. This step already installs every skill from both this
+`.sdl-dos-ports/` (a git subtree -- no `.gitmodules`, content merged
+directly into the port's own git history, reachable immediately after a
+plain `git clone`). This step already installs every skill from both this
 hub and vcctrl into the new repo's `.claude/skills/` via
 `npx skills add <repo> --full-depth --all -a claude-code` (self-contained
--- no submodule symlink needed for skills, only for the actual platform
-code), falling back to the older hub-only symlink method if `npx`/network
-isn't available. Don't redo either by hand.
+-- no subtree/submodule symlink needed for skills, only for the actual
+platform code), falling back to the older hub-only symlink method if
+`npx`/network isn't available. Don't redo either by hand.
 
 Skill *knowledge* is auto-installed; real-hardware *access* is not, and
 that's deliberate, not a gap. If `VCCTRL_MCP_URL` is set in the

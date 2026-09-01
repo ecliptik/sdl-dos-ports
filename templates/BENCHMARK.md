@@ -27,7 +27,7 @@ Hardware ID:
 Commit:
 Upstream revision:
 SDL revision:
-shared/ submodule pin:
+shared/ (.sdl-dos-ports/) pin:
 Optimization flags:
 
 ## Scene

@@ -10,25 +10,28 @@ unless this port has a genuine reason to diverge from them.
 anything genuinely specific to it. The generic SDL3-DOS platform layer,
 build fragments, DOSBox-X/probe/smoke-test tooling, and porting docs live
 in the [sdl-dos-ports](https://github.com/ecliptik/sdl-dos-ports) hub repo,
-consumed here via git submodule at `.sdl-dos-ports/`.
+consumed here as a git subtree at `.sdl-dos-ports/` (a plain directory
+merged into this repo's own git history -- no `.gitmodules`, no separate
+checkout step; a normal `git clone` of this repo gets it immediately).
 
 Read `.sdl-dos-ports/CLAUDE.md` and `.sdl-dos-ports/docs/` before making
 platform-layer decisions — if a change would belong in `shared/` rather
 than here, make it there instead (see that repo's rules for `shared/`
-changes) and bump this repo's submodule pin.
+changes) and bump this repo's `.sdl-dos-ports/` pin (`git subtree pull
+--prefix=.sdl-dos-ports <hub-remote> main --squash`).
 
-## What lives here vs. in the hub submodule
+## What lives here vs. in the hub subtree
 
 - Here: `vendor/<engine>/` (pinned engine source), `patches/<engine>/`
   (DOS patches specific to this engine — renderer, format decoders,
   scripting VM, anything not shared platform work), `setup/` (this game's
   DOS-style setup utility, if any), game-specific tests, `qa-results/`,
   `profiles/<name>.yaml` (this port's vcctrl profile).
-- In `.sdl-dos-ports/shared/` (submodule, read-only from here except via a
-  PR to the hub repo): SDL3-DOS platform patches, MIDI/audio hardware
-  backends, the `sdl3-dos.mk` build fragment, DOSBox-X automation, the
-  probe library, and the agent-team charter templates this repo's own
-  `.claude/agents/` should be based on.
+- In `.sdl-dos-ports/shared/` (subtree-pinned, read-only from here except
+  via a PR to the hub repo): SDL3-DOS platform patches, MIDI/audio
+  hardware backends, the `sdl3-dos.mk` build fragment, DOSBox-X
+  automation, the probe library, and the agent-team charter templates
+  this repo's own `.claude/agents/` should be based on.
 
 ## DJGPP / DOS hard constraints
 

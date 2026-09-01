@@ -19,9 +19,10 @@
 set -euo pipefail
 
 # REPO_ROOT is the CALLER's repo root, not this script's own location --
-# this script lives in shared/scripts/ (a git submodule inside the calling
-# port repo) and links that port's own tools/djgpp, so it resolves against
-# $PWD. Override with SDL_DOS_PORT_ROOT=/path if invoking from elsewhere.
+# this script lives in shared/scripts/ (a git subtree or submodule inside
+# the calling port repo) and links that port's own tools/djgpp, so it
+# resolves against $PWD. Override with SDL_DOS_PORT_ROOT=/path if invoking
+# from elsewhere.
 REPO_ROOT="${SDL_DOS_PORT_ROOT:-$PWD}"
 
 EMULATORS_ROOT="${EMULATORS_ROOT:-$HOME/emulators}"

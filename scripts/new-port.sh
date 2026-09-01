@@ -1,6 +1,22 @@
 #!/usr/bin/env bash
 # Scaffold a new port repository from templates/, wired to this repo's
-# shared/ layer via a git submodule. See PORTING.md.
+# shared/ layer as a git subtree at .sdl-dos-ports/. See PORTING.md.
+#
+# Why a subtree, not a submodule (changed 2026-08-31): a subtree merges
+# the hub's content directly into the port repo's own git history at the
+# same .sdl-dos-ports/ prefix a submodule used -- every existing
+# .sdl-dos-ports/shared/..., .sdl-dos-ports/docs/... reference in this
+# hub's own skills/docs/scripts keeps working unchanged, since the path
+# doesn't move. What changes is the mechanism: no .gitmodules, no
+# separate nested checkout, no "did you run --init --recursive" class of
+# bug -- a plain `git clone` of a port repo gets .sdl-dos-ports/ content
+# immediately. The reproducibility anchor a submodule gitlink provided
+# is, if anything, more visible this way: `git subtree add/pull --squash`
+# writes the exact hub commit SHA it pulled from directly into a
+# human-readable commit message (`git log` shows it plainly), rather than
+# a gitlink object needing `git submodule status` to inspect. Verified
+# end to end (add, pull-to-update, idempotent-detection) before this
+# script was changed to use it.
 #
 # Usage:
 #   scripts/new-port.sh <name> [target-dir]
@@ -12,7 +28,7 @@
 #              own repo" model.
 #
 # This script does not push anywhere. It sets up a local repo with the
-# shared/ submodule already added and templates already filled in; review
+# shared/ subtree already added and templates already filled in; review
 # and push it yourself.
 
 set -euo pipefail
@@ -31,9 +47,9 @@ if [ -e "$TARGET_DIR" ]; then
   exit 1
 fi
 
-# Prefer this repo's own configured remote for the submodule URL, so a
-# fork or a not-yet-pushed local clone still works; fall back to the known
-# forgejo location otherwise.
+# Prefer this repo's own configured remote for the subtree source URL, so
+# a fork or a not-yet-pushed local clone still works; fall back to the
+# known forgejo location otherwise.
 HUB_REMOTE="$(git -C "$HUB_DIR" remote get-url origin 2>/dev/null || true)"
 HUB_REMOTE="${HUB_REMOTE:-ssh://git@forgejo.ecliptik.com/ecliptik/sdl-dos-ports.git}"
 
@@ -42,11 +58,17 @@ mkdir -p "$TARGET_DIR"
 cd "$TARGET_DIR"
 git init -q
 
-echo "==> Adding sdl-dos-ports as a submodule at .sdl-dos-ports/ ($HUB_REMOTE)"
-git submodule add -q "$HUB_REMOTE" .sdl-dos-ports || {
-  echo "warning: submodule add failed (offline / remote not yet pushed?)." >&2
-  echo "         Falling back to a local path submodule against $HUB_DIR." >&2
-  git submodule add -q "$HUB_DIR" .sdl-dos-ports
+# git subtree add requires at least one commit to exist in the target repo
+# (an empty tree has no HEAD to merge onto) -- this initial commit is
+# otherwise inert and gets superseded by the template/scaffold commits
+# below in the operator's own review before pushing.
+git commit -q --allow-empty -m "chore: init"
+
+echo "==> Adding sdl-dos-ports as a subtree at .sdl-dos-ports/ ($HUB_REMOTE)"
+git subtree add --prefix=.sdl-dos-ports -q "$HUB_REMOTE" main --squash || {
+  echo "warning: subtree add failed (offline / remote not yet pushed?)." >&2
+  echo "         Falling back to a local path subtree against $HUB_DIR." >&2
+  git subtree add --prefix=.sdl-dos-ports -q "$HUB_DIR" main --squash
 }
 
 echo "==> Creating directory skeleton"

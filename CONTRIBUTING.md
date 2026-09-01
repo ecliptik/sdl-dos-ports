@@ -8,8 +8,8 @@
    revision first; if you can't yet, leave `upstream_url: null` and say so
    in `notes`.
 2. Run `scripts/new-port.sh <name>` to scaffold that port's own repository,
-   wired to this repo's `shared/` via a git submodule, using
-   [`templates/`](templates/).
+   wired to this repo's `shared/` as a git subtree at `.sdl-dos-ports/`,
+   using [`templates/`](templates/).
 3. Open a PR here updating that candidate's `ports.yaml` entry
    (`dos_status: RESEARCH`, `port_repo_url` set).
 4. Do the actual porting work in the new port's own repository, following
@@ -18,8 +18,9 @@
 
 ## Changing `shared/`
 
-`shared/` is consumed by every port repo via a pinned git submodule commit,
-so a change here doesn't take effect anywhere until a port bumps its pin.
+`shared/` is consumed by every port repo via a pinned subtree commit (or
+submodule, for a port scaffolded before 2026-08-31), so a change here
+doesn't take effect anywhere until a port bumps its pin.
 Read the "Rules for changes to `shared/`" section in [`CLAUDE.md`](CLAUDE.md)
 before proposing one — in short: nothing game-specific, DOS-specific
 behavior stays explicit, patches (not direct source edits) against pinned

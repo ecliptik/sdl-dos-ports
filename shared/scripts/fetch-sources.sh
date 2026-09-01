@@ -22,10 +22,11 @@
 set -euo pipefail
 
 # REPO_ROOT is the CALLER's repo root, not this script's own location --
-# this script lives in shared/scripts/ (a git submodule inside the calling
-# port repo) and operates on the port's own vendor/ tree, so it resolves
-# against $PWD (the invocation directory: correct when run via `make` from
-# the port repo root, or via ./scripts/fetch-sources.sh from that root).
+# this script lives in shared/scripts/ (a git subtree or submodule inside
+# the calling port repo) and operates on the port's own vendor/ tree, so
+# it resolves against $PWD (the invocation directory: correct when run
+# via `make` from the port repo root, or via ./scripts/fetch-sources.sh
+# from that root).
 # Override with SDL_DOS_PORT_ROOT=/path if invoking from elsewhere.
 REPO_ROOT="${SDL_DOS_PORT_ROOT:-$PWD}"
 MANIFEST="$REPO_ROOT/vendor/sources.manifest"

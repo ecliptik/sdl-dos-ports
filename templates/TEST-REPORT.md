@@ -9,7 +9,7 @@ automation run or a real-hardware session. Use one per session/sweep.
 Date:
 Environment: <!-- DOSBox-X / 86Box / real hardware (rig + hardware ID) -->
 Build commit:
-`shared/` submodule pin:
+`shared/` (`.sdl-dos-ports/`) pin:
 
 ## Checks
 

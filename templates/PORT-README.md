@@ -14,13 +14,17 @@ platform layer from [sdl-dos-ports](https://github.com/ecliptik/sdl-dos-ports)
 
 ## Building
 
-This repo consumes `sdl-dos-ports`'s `shared/` layer as a git submodule at
-`.sdl-dos-ports/`:
+This repo consumes `sdl-dos-ports`'s `shared/` layer as a git subtree at
+`.sdl-dos-ports/` -- a plain `git clone` of this repo gets it immediately,
+no separate init step:
 
 ```sh
-git submodule update --init --recursive
 ./scripts/bootstrap.sh   # fetch pinned sources, apply patches, build
 ```
+
+(A port scaffolded before 2026-08-31 may instead have `.sdl-dos-ports/`
+as a git submodule -- if `ls .sdl-dos-ports/` comes back empty after
+cloning, run `git submodule update --init --recursive` once.)
 
 See `.sdl-dos-ports/docs/` for the shared architecture/video/audio/input/
 filesystem/timing/optimization/testing docs this port follows.

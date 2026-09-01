@@ -67,11 +67,15 @@ anything new.
 A port's own `patches/SDL` and `patches/SDL_mixer` directories are
 symlinks into `.sdl-dos-ports/shared/patches/sdl3-dos`/`sdl3-mixer` (set
 up by `scripts/new-port.sh`) — a port session editing a file under
-`patches/SDL/` is editing files inside its own local checkout of this
-hub's submodule, which is a full clone with the same remote as this repo
-itself. That checkout *can* be committed and pushed directly back to the
-hub from inside a port repo. Don't do that as a first move, for the same
-reason concurrent, uncoordinated writes to any shared resource are
+`patches/SDL/` is editing files inside the hub's own subtree content,
+merged directly into the port repo's own git history (or, for a port
+scaffolded before 2026-08-31, inside a submodule that's a full clone with
+the same remote as this repo itself). A subtree-based change can be
+pushed back to the hub with `git subtree push --prefix=.sdl-dos-ports
+<hub-remote> <branch>`; a submodule-based one can be committed and pushed
+directly from inside the submodule checkout. Don't do either as a first
+move, for the same reason concurrent, uncoordinated writes to any shared
+resource are
 risky: `shared/`'s own rules (nothing game-specific, neutral naming,
 build + validate under DOSBox-X before considering it done, fix forward
 with a new patch number rather than editing patch history for anything

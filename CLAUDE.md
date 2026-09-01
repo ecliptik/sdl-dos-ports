@@ -5,7 +5,11 @@ the SDL3 DOS backend proven by doskutsu (Cave Story on DOS). It is not a
 monolithic source tree — it tracks port status, hosts the reusable DOS
 platform layer, and documents the shared porting strategy. Each port
 (doskutsu, and future ports) lives in its **own separate git repository**
-and consumes this repo's `shared/` directory via a git submodule.
+and consumes this repo's `shared/` directory as a git subtree at
+`.sdl-dos-ports/` (a port scaffolded before 2026-08-31 may still use a
+git submodule at the same path instead -- both are valid, existing ports
+aren't forced to migrate; see `scripts/new-port.sh`'s own header comment
+for why subtree is the current default and how the two compare).
 
 Read `plans/SDL_DOS_PORTING_PROGRAM.md` for the full original porting
 program rationale before making structural changes here. `plans/` is
@@ -28,7 +32,8 @@ gitignored — it holds planning inputs, not published documentation.
    one following the existing schema — never guess an upstream URL; locate
    and pin the canonical upstream repo and revision first.
 2. Run `scripts/new-port.sh <name>` to scaffold the new port's own repo from
-   `templates/`, wired to this repo as a `shared/` submodule.
+   `templates/`, wired to this repo as a `shared/` subtree at
+   `.sdl-dos-ports/`.
 3. Flip that candidate's `dos_status` in `ports.yaml` to `RESEARCH` and set
    `port_repo_url` once the new repo exists, in a commit here.
 4. Follow the standard slice order for a new port: compile → video → input
@@ -39,8 +44,10 @@ gitignored — it holds planning inputs, not published documentation.
 
 ## Rules for changes to `shared/`
 
-`shared/` is consumed by every port repo via submodule pin, so changes here
-ripple everywhere once a port bumps its pin. Because of that:
+`shared/` is consumed by every port repo via a pinned subtree (or, for a
+port scaffolded before 2026-08-31, a submodule -- same pinning concept,
+different mechanism), so changes here ripple everywhere once a port
+bumps its pin. Because of that:
 
 1. **Nothing game-specific.** If a change only makes sense for one game's
    engine, it belongs in that port's own repo, not here.

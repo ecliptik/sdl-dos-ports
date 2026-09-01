@@ -43,7 +43,7 @@ milestone state.
 ## Specialists you coordinate
 
 - **sdl-engine** -- `shared/patches/sdl3-dos/` (the shared SDL3 DOS
-  backend, consumed via submodule).
+  backend, consumed via subtree or submodule).
 - **<engine>-engine** (from `ENGINE-SPECIALIST.md.template`) -- this
   port's own `patches/<engine>/`.
 - **build-qa** -- cross-build + DOSBox-X smoke + visual A/B.

@@ -87,9 +87,10 @@ scripts/new-port.sh <name>
 
 This creates a new sibling repository (or a local directory ready to push,
 if you haven't set up a remote for it yet), pre-populated from
-[`templates/`](templates/), with `sdl-dos-ports` added as a git submodule at
-`.sdl-dos-ports/` so the new repo can immediately reference
-`.sdl-dos-ports/shared/...` from its build.
+[`templates/`](templates/), with `sdl-dos-ports` added as a git subtree at
+`.sdl-dos-ports/` (no `.gitmodules`, no separate checkout step -- a plain
+`git clone` of the new repo gets `.sdl-dos-ports/` immediately) so the new
+repo can immediately reference `.sdl-dos-ports/shared/...` from its build.
 
 Update this repo's `ports.yaml`: set `dos_status: RESEARCH` and
 `port_repo_url` for the candidate you claimed.

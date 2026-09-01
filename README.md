@@ -6,9 +6,10 @@ real 486/Pentium-class DOS hardware via SDL3, DJGPP, and CWSDPMI).
 
 This repository does not contain the games themselves. Each port lives in
 its own git repository and pulls in the reusable platform layer from
-[`shared/`](shared/) via a git submodule. This repo tracks status, hosts
-that shared layer, documents the porting strategy and hardware/QA process,
-and showcases finished ports.
+[`shared/`](shared/) as a git subtree at `.sdl-dos-ports/` (a submodule
+for a port scaffolded before 2026-08-31 -- both are valid). This repo
+tracks status, hosts that shared layer, documents the porting strategy
+and hardware/QA process, and showcases finished ports.
 
 See [`CLAUDE.md`](CLAUDE.md) for the rules an AI agent (or contributor)
 should follow when working in this repo.
@@ -83,7 +84,7 @@ Deeper reference, only when a skill points you at it:
 sdl-dos-ports/
 ├── ports.yaml         # candidate backlog + status tracker (source of truth)
 ├── docs/              # architecture, video/audio/input/filesystem/timing, testing, licensing
-├── shared/            # the reusable SDL3-DOS platform layer -- port repos consume this via submodule
+├── shared/            # the reusable SDL3-DOS platform layer -- port repos consume this via subtree
 ├── templates/         # scaffolding for a new port repo (STATUS/PLAN/CLAUDE/benchmark/license-review templates)
 ├── gallery/            # per-port showcase: screenshots, performance, features
 └── scripts/           # scripts/new-port.sh and friends

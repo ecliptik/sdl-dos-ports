@@ -26,10 +26,11 @@ current entry from this hub *and* vcctrl automatically --
 `scripts/new-port.sh` runs `npx skills add <repo> --full-depth --all -a
 claude-code` against both at scaffold time (verified working over Forgejo,
 HTTPS or SSH; `--full-depth` is required since neither repo has a
-root-level `SKILL.md`). No submodule symlink needed for skills specifically
--- only the actual platform code (`shared/patches/`, `shared/build/`,
-`shared/include/runmanifest.h`, `shared/agents/`) still needs the
-`.sdl-dos-ports/` submodule, since `npx skills` only moves `SKILL.md`
+root-level `SKILL.md`). No subtree/submodule symlink needed for skills
+specifically -- only the actual platform code (`shared/patches/`,
+`shared/build/`, `shared/include/runmanifest.h`, `shared/agents/`) still
+needs `.sdl-dos-ports/` (a subtree by default since 2026-08-31, a
+submodule for an older port), since `npx skills` only moves `SKILL.md`
 content. A port that already has skills installed this way picks up new
 ones with `npx skills update`.
 
