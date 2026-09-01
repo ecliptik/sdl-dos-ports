@@ -45,6 +45,27 @@ binary redistribution rights
 source distribution obligations
 ```
 
+## Every distribution/staging target needs the license file, not just the release one
+
+A vendored binary's required redistribution-terms file (e.g.
+`CWSDPMI.DOC`, required alongside `CWSDPMI.EXE` per its own license) has
+to ship with *every* build target that copies the binary somewhere a
+person could end up with just that copy -- not only the final `dist`/
+release-packaging target. A real case: dossage/Passage's `make stage`
+(used for quick real-hardware iteration, and per its own comments the
+same tree pattern real-hardware CF cards get) installed `CWSDPMI.EXE`
+but not `CWSDPMI.DOC`, even though the port's own `LICENSE-REVIEW.md`
+required both -- the actual release-packaging target was compliant, this
+quicker iteration path wasn't, and it's exactly the kind of gap that
+only surfaces when someone writes down "copy these files to your DOS
+machine" and actually checks. The same shape of gap was found, unfixed,
+in doskutsu's own `stage` target during this same investigation (2026-08-31)
+-- flagged for that repo's own maintainers, not fixed here since this hub
+doesn't own that repo directly. When adding or reviewing a staging/
+install/dist target for any port, check it copies every license file a
+vendored binary's own terms require, not just whichever target happens
+to be the one currently being tested.
+
 ## Never
 
 - commit commercial game data

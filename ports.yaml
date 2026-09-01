@@ -257,7 +257,15 @@ ports:
     original_sdl_version: "1.2"
     target_sdl_version: "3"
     graphics_api: software
-    dos_status: PLAYABLE
+    dos_status: OPTIMIZING
+    # 2026-08-31: real-hardware validated end to end on 486DX2-66/PicoGUS/
+    # Cirrus CL-GD5430 (14.94fps, up from 13.992, KPI campaign closed
+    # honestly short of a 15.000 target). Not RELEASE_READY yet: no
+    # release/dist packaging step, no gallery/dossage/ entry, and Mach64
+    # unverified against the current build (patch 0029 changed MAX_BPP,
+    # which changes the VESA mode Mach64 negotiates) -- Cirrus and ViRGE
+    # are validated, Mach64 is still an assumption. See dossage-cc's own
+    # status update in this session's history for detail.
     priority: 8
     difficulty: 1
     dos_minimum_target: 486DX2-50

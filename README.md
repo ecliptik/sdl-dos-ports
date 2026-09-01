@@ -25,7 +25,7 @@ should follow when working in this repo.
 | 5 | POWDER | TBD | unverified — may not be open source, see `ports.yaml` | unclaimed | BACKLOG | 2 |
 | 6 | Kobo Deluxe | TBD | unverified | unclaimed | BACKLOG | 3-4 |
 | 7 | Blob Wars: Metal Blob Solid | TBD | unverified | unclaimed | BACKLOG | 3-4 |
-| 8 | Passage | [jasonrohrer/Passage](https://github.com/jasonrohrer/Passage) | public domain (verified) | [ecliptik/dossage](https://forgejo.ecliptik.com/ecliptik/dossage) | PLAYABLE | 1 |
+| 8 | Passage | [jasonrohrer/Passage](https://github.com/jasonrohrer/Passage) | public domain (verified) | [ecliptik/dossage](https://forgejo.ecliptik.com/ecliptik/dossage) | OPTIMIZING | 1 |
 | 9 | SuperTux 0.1.x | TBD | unverified | unclaimed | BACKLOG | 4 |
 
 This table is generated from [`ports.yaml`](ports.yaml) — the machine-
