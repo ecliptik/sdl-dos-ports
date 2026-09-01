@@ -82,6 +82,33 @@ if [ "$NPX_SKILLS_OK" -eq 0 ]; then
   done
 fi
 
+# VCCTRL_MCP_URL is intentionally NOT a hardcoded default anywhere in this
+# repo, unlike VCCTRL_REMOTE above -- the rig's real MCP endpoint is a
+# secret vcctrl's own operator deliberately keeps out of every tracked
+# file (same reason vcctrl.yaml itself stays gitignored on that side; see
+# docs/MCP-SERVER.md's usb4vc.example.ts.net placeholder). This script
+# never learns or stores the real value -- whoever runs the scaffold
+# supplies it locally in their own shell environment if they want
+# unattended registration. Registration is skipped cleanly, not an
+# error, when it's unset.
+if [ -n "${VCCTRL_MCP_URL:-}" ]; then
+  echo "==> Registering vcctrl MCP (daemon mode) via VCCTRL_MCP_URL"
+  if ! command -v claude >/dev/null 2>&1; then
+    echo "    'claude' CLI not found -- skipping. Register manually later:" >&2
+    echo "    claude mcp add --transport http vcctrl-mcp-daemon \"\$VCCTRL_MCP_URL\"" >&2
+  elif ! claude mcp add --transport http vcctrl-mcp-daemon "$VCCTRL_MCP_URL" >/dev/null 2>&1; then
+    echo "    warning: MCP registration failed -- register manually, see docs/MCP-SERVER.md sec 5." >&2
+  else
+    echo "    registered. Restart the session in this repo to pick it up (MCP doesn't hot-reload)."
+  fi
+else
+  echo "==> Skipping vcctrl MCP registration (VCCTRL_MCP_URL not set)"
+  echo "    Real-hardware rig access is not auto-granted -- this is deliberate, not a gap."
+  echo "    See .sdl-dos-ports's vcctrl MCP-SERVER.md sec 5 for the manual one-line registration"
+  echo "    once you have the rig's real MCP URL, or export VCCTRL_MCP_URL before re-running this"
+  echo "    script to register automatically next time."
+fi
+
 echo "==> Filling in templates"
 NAME_UPPER="$(echo "$NAME" | tr '[:lower:]-' '[:upper:]_')"
 

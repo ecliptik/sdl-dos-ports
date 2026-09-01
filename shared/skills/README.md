@@ -33,6 +33,20 @@ root-level `SKILL.md`). No submodule symlink needed for skills specifically
 content. A port that already has skills installed this way picks up new
 ones with `npx skills update`.
 
+**Skills are knowledge; real-hardware access is a separate, deliberate
+step.** `scripts/new-port.sh` will also register vcctrl's MCP daemon
+automatically *if* `VCCTRL_MCP_URL` is set in the environment when it
+runs -- but there is no default for that variable anywhere in this repo,
+unlike `VCCTRL_REMOTE` above, and there never will be: the rig's real
+MCP endpoint is a secret vcctrl's own operator deliberately keeps out of
+every tracked file (mirroring why `vcctrl.yaml` itself stays gitignored
+on their side), and that boundary is theirs to hold, not this hub's to
+cross by baking a literal into a committed script. Left unset (the
+default), registration is skipped cleanly -- see vcctrl's own
+`MCP-SERVER.md` sec 5 for manual registration once you actually have the
+real URL. This is intentional: a fresh port repo gets vcctrl's
+*knowledge* automatically, not ungated *access* to physical hardware.
+
 A port scaffolded *before* this existed (or before a skill was added here)
 can adopt it the same way, from that port's own root:
 

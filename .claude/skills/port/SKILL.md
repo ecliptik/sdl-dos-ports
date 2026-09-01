@@ -89,6 +89,16 @@ hub and vcctrl into the new repo's `.claude/skills/` via
 code), falling back to the older hub-only symlink method if `npx`/network
 isn't available. Don't redo either by hand.
 
+Skill *knowledge* is auto-installed; real-hardware *access* is not, and
+that's deliberate, not a gap. If `VCCTRL_MCP_URL` is set in the
+environment when this step runs, it registers vcctrl's MCP daemon
+automatically; if unset (the default), it's skipped cleanly with a
+pointer to vcctrl's own `MCP-SERVER.md` for manual registration. This
+repo never carries the rig's real MCP endpoint in tracked files --
+that's vcctrl's own operator's boundary, not this hub's to cross (see
+`shared/skills/README.md` if you're setting this up and want the why in
+full).
+
 ## Step 3: Instantiate agent charters
 
 `shared/agents/README.md` has the full table of what to copy and how
