@@ -74,6 +74,17 @@ git subtree add --prefix=.sdl-dos-ports -q "$HUB_REMOTE" main --squash || {
 echo "==> Creating directory skeleton"
 mkdir -p vendor patches scripts tests qa-results setup profiles .claude/agents .claude/skills
 
+echo "==> Wiring scripts/ convenience symlinks into .sdl-dos-ports/shared/scripts/"
+# Matches the existing convention in doskutsu and dossage: PORTING.md and
+# this script's own closing message tell an operator to run
+# ./scripts/setup-symlinks.sh and ./scripts/fetch-sources.sh directly, so
+# those need to exist from the first commit, not just be reachable via the
+# longer .sdl-dos-ports/shared/scripts/ path.
+ln -s ../.sdl-dos-ports/shared/scripts/fetch-sources.sh scripts/fetch-sources.sh
+ln -s ../.sdl-dos-ports/shared/scripts/apply-patches.sh scripts/apply-patches.sh
+ln -s ../.sdl-dos-ports/shared/scripts/setup-symlinks.sh scripts/setup-symlinks.sh
+ln -s ../.sdl-dos-ports/shared/scripts/verify-patches-applied.sh scripts/verify-patches-applied.sh
+
 echo "==> Vendoring the SDL3-DOS patch series into patches/ (real files, not symlinks)"
 # A new port gets its OWN copy of the hub's current patch series -- this is
 # a one-time seed, not an ongoing link. The copy is real, port-owned files
