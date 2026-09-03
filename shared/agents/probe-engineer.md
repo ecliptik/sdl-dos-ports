@@ -69,6 +69,13 @@ Read `.sdl-dos-ports/shared/tests/probes/README.md` before starting.
 
 ## Hard constraints
 
+  **Do not "check" the value with a bare `stubedit FILE minstack`:** a
+  key with no `=value` is treated as setting it to empty, and stubedit
+  silently writes 0 -- the binary then exits at load with no message at
+  all, on DOSBox-X and real hardware alike (hit on 2026-09-03 while
+  staging a probe for the vcctrl rig). Read the field back instead:
+  `xxd -s 0x214 -l 4 -e FILE.EXE` prints the minstack dword of the
+  go32stub header (expect `00200000` for 2048k).
 - **No SDL, no game engine, no C++.** Pure C + DJGPP libc + DPMI.
 - **8.3 filenames everywhere.**
 - **Frame predictions as hypotheses.** The probe measures; don't assert a
