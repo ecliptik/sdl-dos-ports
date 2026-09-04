@@ -216,6 +216,18 @@ considered. The PIT path costs only telemetry resolution (~838 ns per
 tick against ~12 ns) and is the path every 486-class result on this hub
 was measured with.
 
+**Real-hardware A/B of the killswitch: pending.** The OverDrive was
+swapped out of the rig for a 486DX2-50 campaign on 2026-09-03 before the
+`0138` build could be run on it, and a 486 predates `CPUID`, so nothing
+RDTSC-related can be tested until a Pentium-class CPU is back in the
+socket. The witness is `shared/tests/probes/audtimer.c` + `audtimer.bat`
+(SDL3-linked; step 1 forces the killswitch and never executes `RDTSC`,
+step 2 is the production default). Expected on the OverDrive: step 1
+logs `8253 PIT counter 0 (RDTSC disabled via
+SDL_HINT_DOS_AUDIO_TIMER_RDTSC=0; ...)`, step 2 logs `RDTSC
+(Pentium-class detected, 83 cycles/us ~= 83 MHz)`. Whoever runs it next:
+record the result here and in `HARDWARE.md`'s row.
+
 **For port-side and probe code.** Prefer `uclock()` / the PIT for timing.
 If a port or probe wants `RDTSC` from DJGPP, gate it on `CPUID` (TSC bit),
 give it a killswitch, and put the first `RDTSC` somewhere a wedge would be
