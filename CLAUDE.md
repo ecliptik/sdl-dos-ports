@@ -28,8 +28,10 @@ gitignored — it holds planning inputs, not published documentation.
   `skills/port` is the hub-only port-bootstrap skill, every other entry
   is a symlink back into `shared/skills/`, not a second copy; the hub's
   own `.claude/settings.json` enables the plugin for anyone who opens
-  this repo, and `claude --plugin-dir .` loads the working tree instead
-  when editing a skill; see `shared/skills/README.md`).
+  this repo, `claude --plugin-dir .` loads the working tree instead
+  when editing a skill, and a change to any skill must bump `version` in
+  `.claude-plugin/plugin.json` or installed copies never see it; see
+  `shared/skills/README.md`).
 - Not here: actual game source, vendored game engines, game assets, or a
   specific port's build output. Those belong in that port's own repo.
 

@@ -85,10 +85,13 @@ does the same for sessions here. To install it by hand anywhere else:
 /plugin install sdldos@sdl-dos-ports
 ```
 
-The installed plugin is a snapshot of a hub commit: `/plugin update
-sdldos` refreshes it, and `claude --plugin-dir <path-to-this-hub>` loads
-the working tree for one session instead (it overrides the installed
-copy), which is how to try a skill edit here before pushing it. vcctrl's
+The installed plugin is a snapshot keyed by the `version` in
+`.claude-plugin/plugin.json`: `/plugin update sdldos` fetches a new
+version and says "already at the latest version" otherwise, so a skill
+or layout change here must bump that version to reach installed copies.
+`claude --plugin-dir <path-to-this-hub>` loads the working tree for one
+session instead (it overrides the installed copy), which is how to try a
+skill edit here before pushing it. vcctrl's
 skills are not a plugin; `/sdldos:port` installs them flat into the new
 repo via `npx skills`. A port scaffolded before the plugin existed, or an
 agent that can't load plugins (Codex, Cursor), is covered in

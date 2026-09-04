@@ -46,8 +46,11 @@ ignored parent directory, so a bare `.claude/` line would swallow it).
 Anyone who opens and trusts the repo is offered the plugin and gets
 `/sdldos:port`, `/sdldos:review`, `/sdldos:benchmark`,
 `/sdldos:dos-hardware-validation`, ... -- no per-repo copy of any
-`SKILL.md`. The installed plugin is a snapshot of a hub commit:
-`/plugin update sdldos` refreshes it after the hub changes, and
+`SKILL.md`. The installed plugin is a snapshot keyed by the `version`
+in `.claude-plugin/plugin.json`: `/plugin update sdldos` fetches a new
+version and reports "already at the latest version" otherwise, so every
+skill or layout change here must bump that version (1.0.0 -> 1.0.1 was
+the first such bump, 2026-09-03) or it never reaches an installed copy.
 `claude --plugin-dir <path-to-this-hub>` loads the working tree for one
 session instead (it overrides the installed copy), which is how to test
 a skill edit here before pushing it. The marketplace install copies the
