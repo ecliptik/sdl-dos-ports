@@ -50,6 +50,32 @@ type, instead of the small positive number expected). Clamp any
 a single wildly-anomalous timing sample as a suspect measurement to
 discard, not as a finding to explain.
 
+**`gettimeofday()` has no sub-second resolution of its own, so a period
+measured with it collapses onto a few discrete values.** DJGPP's
+`gettimeofday()` fills `tv_usec` from DOS's own clock (INT 21h AH=2Ch,
+hour:minute:second:hundredths -- the `AH=0x2C` call is right there in
+`gettimeo.o` inside the toolchain's `libc.a`), and DJGPP's libc reference
+says so outright: "precise to less than 1/20 of a second only ... the
+underlying DOS function has 1/20 second granularity, as it is calculated
+from the 55 ms timer tick count". DOS advances its hundredths by an uneven
+mix of steps per 18.2065 Hz tick (100 does not divide by 18.2065), so a
+genuinely steady period measured this way comes out as whichever whole
+number of ticks elapsed during that frame's phase against the tick
+boundary, rounded to a hundredth. dossage/Passage saw exactly this
+(`docs/PACER-TIMING-INVESTIGATION.md` there, resolved 2026-09-03): a
+deadline pacer converging on a true ~66.67 ms period against
+`SDL_GetTicksNS()`, measured per frame with `gettimeofday()`, produced
+`fps_p50`/`fps_p95` of exactly 16.67/9.09 on every CPU and card, and every
+one of 256 raw samples checked was exactly 50, 60, 100, 110 or 330 ms --
+reproduced in complete isolation by a standalone probe with no SDL,
+audio, or rendering, so it is hardware-independent by construction.
+Never use `gettimeofday()`, or anything built on it such as an engine's
+own portable "current time" wrapper, for sub-second frame-timing
+instrumentation on this platform; use `SDL_GetTicksNS()` / `uclock()`,
+the same clock family the pacer runs on. This is a second, independently
+confirmed root cause behind the "single clock family end-to-end" rule in
+the pacer-patterns section below.
+
 **A busy-wait fix can starve the BIOS timer interrupt, and the fps report
 will lie about it in the flattering direction.** dossage/Passage's
 frame-limiter investigation (see `docs/optimization.md`) tried replacing a
@@ -234,6 +260,23 @@ give it a killswitch, and put the first `RDTSC` somewhere a wedge would be
 recognized immediately, not inside an IRQ handler. Never execute it from
 any real-mode helper without the `SMSW` check.
 
+## Open (dossage, 2026-09-05): a fixed-length run can land one second over an integer-second boundary on some CPU/card pairings and not others
+
+Unconfirmed and not chased -- recorded so the next port doing precision
+fps work recognizes the shape. Across dossage/Passage's full 3-card x
+4-CPU matrix on one build, a natural ~298 s life measured as 299 s on
+some pairings (Cirrus at both 486DX2 tiers, Mach64 on Am5x86, and Mach64
+on 486DX2-50 on two of three repeat lives) and 298 s on the rest, with
+S3 ViRGE never showing it at any tier. Neither banked-vs-LFB, framebuffer
+bytes per frame, nor CPU tier explains the table on its own. The working
+theory in `docs/benchmarks/mach64-215ct-486dx2-66-2026-09-05.md` there:
+overall per-frame margin sets how close a pairing sits to the rounding
+boundary, and ordinary run-to-run jitter (plausibly the same
+DOS-tick-phase quantization as the `gettimeofday()` finding above)
+decides which side an individual life lands on. Separating those two
+needs repeat lives per pairing or per-frame-cost instrumentation;
+nothing in that table threatened a KPI, so it stayed open.
+
 ## Reference pacer patterns from doskutsu (deadline-based, not delta-based)
 
 dossage/Passage's frame-rate investigation (see `docs/optimization.md`)
@@ -292,8 +335,9 @@ engine this hub has real data on.
 **The precedent that matters most across both mechanisms**: doskutsu
 paces and measures using SDL's own timer API throughout
 (`SDL_GetTicks()`/`SDL_GetTicksNS()`) -- never an engine-private clock
-(e.g. a separate `gettimeofday()` call) running in parallel with whatever
-clock the delay primitive itself uses. This is the same "single clock
+(e.g. a separate `gettimeofday()` call -- which on DJGPP has no
+sub-second resolution of its own anyway, see "Your clock can lie")
+running in parallel with whatever clock the delay primitive itself uses. This is the same "single clock
 family end-to-end" principle a same-clock instrumentation pass can prove
 out before trusting a cross-clock measurement (see the `DOS_Yield()`/
 frame-cycle-time diagnostics above) -- and it applies to the *pacing*
