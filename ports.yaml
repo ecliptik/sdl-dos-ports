@@ -89,7 +89,7 @@ ports:
     original_sdl_version: "2"
     target_sdl_version: "3"
     graphics_api: software
-    dos_status: RESEARCH
+    dos_status: BOOTSTRAP
     priority: 1
     difficulty: 5
     dos_minimum_target: null
