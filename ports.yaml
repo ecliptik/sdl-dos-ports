@@ -81,9 +81,9 @@ ports:
 
   - name: adventure-game-studio
     upstream_url: https://github.com/adventuregamestudio/ags
-    upstream_revision: null
-    upstream_license: null
-    upstream_license_verified: false
+    upstream_revision: 94e271df9c14484d89f4861100f643d39555dae7
+    upstream_license: Artistic License 2.0
+    upstream_license_verified: true
     port_repo_url: null
     language: C++
     original_sdl_version: "2"
@@ -101,9 +101,35 @@ ports:
       (direct port vs. compatibility shim) before kickoff -- see
       plans/SDL_DOS_PORTING_PROGRAM.md section 18. First deliverables are
       research-only (RESEARCH.md, SDL-SURFACE.md, DEPENDENCIES.md,
-      PLATFORM-SURFACE.md, LICENSE-REVIEW.md, PLAN.md). License not yet
-      verified -- read the actual LICENSE file in the pinned AGS revision
-      before assuming anything.
+      PLATFORM-SURFACE.md, LICENSE-REVIEW.md, PLAN.md). Port name chosen:
+      dosags (repo to be created at forgejo.ecliptik.com/ecliptik/dosags).
+
+      2026-09-10: upstream_revision pinned to tag v3.6.3.13 (94e271df9),
+      the current tip of the actively-maintained `ags3` stable branch
+      (dated 2026-08-16) -- deliberately not the newer `ags4` line, which
+      has far less mileage and its own parallel version history; `ags3`
+      continues the long-established 3.x series the large majority of
+      existing AGS games target. upstream_license verified by reading
+      this revision's own License.txt + Copyright.txt directly: Artistic
+      License 2.0, original author Chris Jones, various contributors
+      2011-2026. Note: the AGSBlend plugin (Plugins/agsblend/) carries its
+      own separate license file -- irrelevant unless that plugin is ever
+      whitelisted in under the AGS-DOS compatibility profile.
+
+      Dependency shape at this pin (read from CMakeLists.txt): C++11
+      throughout, SDL2 + SDL2_sound required (fetched via CMake
+      FetchContent by default -- moot for us, DJGPP needs its own
+      hand-written Makefile regardless, per doskutsu precedent), Ogg +
+      Vorbis + Theora all `REQUIRED` at the CMake level. Theora already
+      has a first-class `AGS_NO_VIDEO_PLAYER` build option (matches the
+      compatibility profile's "Theora: unsupported initially" directly --
+      no patching needed to strip it). Ogg/Vorbis have no equivalent
+      toggle yet, so whether an initial DJGPP build can exclude them is an
+      open Milestone-0 question. "Allegro" appears in ~150-240 source
+      files but only as legacy internal class/file naming (AllegroBitmap,
+      wgt2allg, etc.) inherited from AGS's early history -- there is no
+      `find_package(Allegro)` or link target in the current build, so this
+      is not a real external dependency to port.
 
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
