@@ -258,14 +258,21 @@ ports:
     target_sdl_version: "3"
     graphics_api: software
     dos_status: OPTIMIZING
-    # 2026-08-31: real-hardware validated end to end on 486DX2-66/PicoGUS/
-    # Cirrus CL-GD5430 (14.94fps, up from 13.992, KPI campaign closed
-    # honestly short of a 15.000 target). Not RELEASE_READY yet: no
-    # release/dist packaging step, no gallery/dossage/ entry, and Mach64
-    # unverified against the current build (patch 0029 changed MAX_BPP,
-    # which changes the VESA mode Mach64 negotiates) -- Cirrus and ViRGE
-    # are validated, Mach64 is still an assumption. See dossage-cc's own
-    # status update in this session's history for detail.
+    # 2026-09-05: full 3-card x 4-CPU real-hardware matrix (Mach64, ViRGE,
+    # Cirrus x 486DX2-50, 486DX2-66, Am5x86-133, Pentium OverDrive 83 --
+    # twelve pairings) CLOSED, 12/12 PASS against the 14.90fps KPI line,
+    # on the merged dx2-50-15fps fix build (build_sha12=a5e9835f12e7).
+    # Superseded the 2026-08-31 single-point figure below and resolved
+    # that entry's open Mach64-vs-current-build question -- all twelve
+    # cells, Mach64 included, now run the same current build. gallery/
+    # dossage/ entry added same day. Still not RELEASE_READY: no
+    # release/dist packaging step yet. See gallery/dossage/README.md and
+    # dossage's own docs/BENCHMARK-PLAN.md for the full campaign.
+    #
+    # 2026-08-31 (superseded above): real-hardware validated end to end on
+    # 486DX2-66/PicoGUS/Cirrus CL-GD5430 (14.94fps, up from 13.992, KPI
+    # campaign closed honestly short of a 15.000 target). Kept for
+    # history; see the 2026-09-05 note above for current status.
     priority: 8
     difficulty: 1
     dos_minimum_target: 486DX2-50
@@ -337,6 +344,25 @@ ports:
       fails to apply against this port's pinned SDL SHA -- reported,
       reverted, submodule held at bf10f15 pending a hub-side fix. Handed
       off to vcctrl for this port's first real-hardware pass.
+      2026-09-05: the 486DX2-50 (this port's own minimum-target CPU) fix-
+      validation arc CLOSED on real hardware (branch dx2-50-15fps, merged
+      to main as 2881cfc) at 14.99fps average, and the follow-on 3-card x
+      4-CPU matrix (Mach64/ViRGE/Cirrus x 486DX2-50/486DX2-66/Am5x86-133/
+      Pentium OverDrive 83, twelve pairings) CLOSED clean: every cell
+      PASSes the 14.90fps KPI line on the merged build
+      (build_sha12=a5e9835f12e7), clustered 14.97-15.02fps -- expected,
+      since Passage's own pacer targets a fixed 15fps ceiling rather than
+      uncapped throughput, not a sign CPU/card choice doesn't matter. A
+      reproducible "one second over" effect (a 4475-frame life landing at
+      299s instead of 298s on some CPU/card pairings) does not reduce to
+      CPU tier, video path, or framebuffer size alone and never threatens
+      the KPI -- full characterization, including two overclaims about
+      its cause corrected mid-campaign, in dossage's own
+      docs/BENCHMARK-PLAN.md. This closes the 2026-08-31 note's open
+      Mach64-vs-current-build question (patch 0029's MAX_BPP change no
+      longer leaves Mach64 unverified against the current build) and adds
+      gallery/dossage/README.md. Remaining before RELEASE_READY: dist
+      packaging (binary + CWSDPMI + license texts) only.
 
   - name: supertux-0.1.x
     upstream_url: null
