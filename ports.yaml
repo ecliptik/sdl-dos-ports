@@ -118,18 +118,27 @@ ports:
 
       Dependency shape at this pin (read from CMakeLists.txt): C++11
       throughout, SDL2 + SDL2_sound required (fetched via CMake
-      FetchContent by default -- moot for us, DJGPP needs its own
-      hand-written Makefile regardless, per doskutsu precedent), Ogg +
-      Vorbis + Theora all `REQUIRED` at the CMake level. Theora already
-      has a first-class `AGS_NO_VIDEO_PLAYER` build option (matches the
-      compatibility profile's "Theora: unsupported initially" directly --
-      no patching needed to strip it). Ogg/Vorbis have no equivalent
-      toggle yet, so whether an initial DJGPP build can exclude them is an
-      open Milestone-0 question. "Allegro" appears in ~150-240 source
-      files but only as legacy internal class/file naming (AllegroBitmap,
-      wgt2allg, etc.) inherited from AGS's early history -- there is no
-      `find_package(Allegro)` or link target in the current build, so this
-      is not a real external dependency to port.
+      FetchContent by default), Ogg + Vorbis + Theora all `REQUIRED` at
+      the CMake level. Theora already has a first-class
+      `AGS_NO_VIDEO_PLAYER` build option (matches the compatibility
+      profile's "Theora: unsupported initially" directly -- no patching
+      needed to strip it). Ogg/Vorbis have no equivalent toggle.
+
+      2026-09-10 (plan review) -- two earlier claims in this note were
+      wrong and are corrected here rather than silently dropped. (1) It
+      said DJGPP "needs its own hand-written Makefile regardless, per
+      doskutsu precedent": that predates shared/build/sdl3-dos.mk, whose
+      own header is designed for a port's Makefile to wrap the engine's
+      CMake via the SDL DJGPP toolchain file. Decision for dosags: patch
+      AGS's own CMake and drive it that way -- the first CMake-based
+      engine in this hub. (2) It said Allegro is "not a real external
+      dependency": there IS a real link target (`add_subdirectory(libsrc/
+      allegro)` -> `Allegro::Allegro`, linked by both Engine and Common),
+      a headless ~2k-line blit/palette/math/packfile subset of Allegro
+      4.4.3 with no OS-integration code and no license file anywhere in
+      the tree. Full detail, the patch sequence, and the DJGPP probe
+      results live in the dosags repo (PLAN.md, DEPENDENCIES.md,
+      PATCH-SEQUENCE.md, tests/probes/djgpp-runtime/).
 
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
