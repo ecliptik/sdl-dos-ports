@@ -84,12 +84,12 @@ ports:
     upstream_revision: 94e271df9c14484d89f4861100f643d39555dae7
     upstream_license: Artistic License 2.0
     upstream_license_verified: true
-    port_repo_url: null
+    port_repo_url: https://forgejo.ecliptik.com/ecliptik/dosags
     language: C++
     original_sdl_version: "2"
     target_sdl_version: "3"
     graphics_api: software
-    dos_status: BACKLOG
+    dos_status: RESEARCH
     priority: 1
     difficulty: 5
     dos_minimum_target: null
