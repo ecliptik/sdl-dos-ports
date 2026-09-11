@@ -190,6 +190,27 @@ ports:
       hand-authored first test game and a real sprite file -- not yet
       attempted.
 
+      2026-09-10 (sixth session): RUNMANIFEST wired (patch 0038) at
+      quit()'s clean-shutdown path, confirmed by a real DOSBox-X run
+      producing a genuine RUNMANIFEST-BEGIN/END block (environment=
+      dosbox-x, a real non-zero env_block_sha, real started_utc/
+      duration_s, exit_code=0) against the TITLE_SCREEN fixture -- not
+      inferred. dos_status stays TITLE_SCREEN; this isn't its own rung on
+      the ladder. Landing it surfaced a real macro collision between
+      vendored Allegro's alconfig.h (unconditional, unguarded
+      _farsetsel/_farnspokeb/etc DOS-backend macros) and DJGPP's own real
+      <sys/farptr.h> (pulled in by RUNMANIFEST's 86Box-detection code),
+      fixed by an include-order change. Also landed the previously-
+      deferred cache-size-defaults patch (0039): sprite/sound cache
+      ceilings dropped from their desktop-scale defaults (128 MB / 32 MB)
+      to a conservative DOS starting point (4 MB / 2 MB) -- not a crash
+      fix, SetMaxCacheSize() only sets a limit, but worth landing before
+      real sprites load for the first time. Full detail in the dosags
+      repo's PLAN.md/PATCH-SEQUENCE.md/README.md. Next milestone unchanged
+      from above: "Game package parses, reaches initial room setup" still
+      needs the real hand-authored first test game -- scoping research for
+      that is in progress, not yet landed as a decision.
+
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
     upstream_revision: null
