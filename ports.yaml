@@ -211,6 +211,35 @@ ports:
       needs the real hand-authored first test game -- scoping research for
       that is in progress, not yet landed as a decision.
 
+      2026-09-10 (seventh session): patch 0040 (binary_sha12 build
+      fingerprint) landed, closing patch 0038's own deferred follow-up --
+      confirmed by a real DOSBox-X run producing a genuine 12-hex value in
+      RUNMANI.LOG. The 320x200 resolution path (previously flagged as a
+      real open wrinkle for the eventual first test game) is characterized
+      and resolved: both real display paths render correctly via the
+      vendored SDL DOS backend's own classic VGA Mode 13h support, no VESA
+      mode needed. No freeware/open-source AGS game was found usable for
+      testing or committing (reconfirms prior research). Separately, a
+      time-boxed Wine investigation found a real, working, non-interactive
+      AGS compile pipeline (wine + winetricks dotnet46 + xvfb-run +
+      AGSEditor.exe /compile) -- materially more encouraging than prior
+      literature suggested. A real 8-bit package compiled this way, run
+      against this port's own ags.exe under DOSBox-X, reached
+      Initialize sprites succeeding for the first time ever against a
+      real (non-synthetic) package, then Starting game/Initialize path
+      finder -- independently cross-checked against AGS's own official
+      Linux engine build (same log stopping point, same rendered frame,
+      confirmed by screenshot). dos_status stays TITLE_SCREEN; this
+      session's own instructions deliberately did not change it despite
+      the strength of this evidence -- a future session should decide
+      what it means for the milestone ladder, and whether the Editor's
+      interactive GUI (not just non-interactive compile) is also viable
+      under Wine, which would remove the Windows-VM dependency for
+      authoring the real first test game entirely. Everything from the
+      Wine investigation lives outside version control (the dev machine's
+      /tmp); nothing was committed as a result. Full detail in the dosags
+      repo's PLAN.md.
+
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
     upstream_revision: null
