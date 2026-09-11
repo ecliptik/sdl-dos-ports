@@ -89,7 +89,7 @@ ports:
     original_sdl_version: "2"
     target_sdl_version: "3"
     graphics_api: software
-    dos_status: STARTS
+    dos_status: TITLE_SCREEN
     priority: 1
     difficulty: 5
     dos_minimum_target: null
@@ -164,9 +164,31 @@ ports:
       cosmetic doubled-drive-prefix bug in `Directory::
       GetCurrentDirectory()`'s output under this DJGPP/DOSBox-X
       combination, worth a real probe before the "Game package parses"
-      milestone. Next milestone: TITLE_SCREEN (native window surface
-      opens, clears, presents -- no game loaded yet), needs a minimal
-      synthetic game package -- not yet attempted.
+      milestone.
+
+      2026-09-10 (fifth session): TITLE_SCREEN reached -- a minimal
+      hand-built synthetic .ags game package (not the real first test
+      game) gets ags.exe past engine_init_gamedata()/InitGameState() and
+      into graphics-mode setup for the first time: a real window surface
+      opens, clears, and presents, confirmed by real DOSBox-X
+      video-capture screenshots at both SDL_PIXELFORMAT_INDEX8 (8-bit)
+      and SDL_PIXELFORMAT_RGB565 (16-bit), 640x480 fullscreen desktop.
+      The "cosmetic" doubled-drive-prefix bug flagged above turned out to
+      be real and load-bearing: root-caused to vendored Allegro's
+      canonicalize_filename() losing DOS drive-letter handling under this
+      port's DJGPP/ALLEGRO_UNIX branch, which would have corrupted a
+      successfully-resolved game-data path, not just the no-game-data
+      error text -- fixed as patch 0037. Also found and fixed a real,
+      subtle bug in the fixture-building work itself (an easy-to-miss
+      unconditional trailing field in AGS's own
+      read_interaction_scripts(), causing a silent out-of-bounds crash)
+      after an extensive isolated-probe campaign ruled out DJGPP/
+      toolchain explanations first. Full detail in the dosags repo's
+      PLAN.md/README.md. RUNMANIFEST wiring and a cache-size-defaults
+      patch are explicitly deferred to next session. Next milestone:
+      "Game package parses, reaches initial room setup", needs the real
+      hand-authored first test game and a real sprite file -- not yet
+      attempted.
 
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
