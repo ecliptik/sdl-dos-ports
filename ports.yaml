@@ -375,6 +375,26 @@ ports:
       Full writeup: dosags's PLAN.md tenth-session "Current state" and
       tests/harness/results/HW-486-66-2026-09-11-agsquest.md.
 
+      2026-09-11 (eleventh session): slice 7 landed -- the dialog phase
+      + input-latency approximation, both optional/non-gating (neither
+      affects dos_status, unchanged at TITLE_SCREEN). The original
+      design (dRedMage.Start() then a coordinate click) turned out
+      unusable: Dialog.Start() is itself deferred when called from
+      script, and its own intro text drains any pre-queued click before
+      the options screen exists, among other real engine facts found
+      along the way (see dosags's PLAN.md Measured Constants table,
+      2026-09-11 rows, for the full chain). Final design uses
+      Dialog.DisplayOptions() (genuinely synchronous) instead, with
+      "Leave"'s own screen coordinates read off a live DOSBox-X capture
+      rather than computed. patches/ags/0045 (/sdldos:review'ed) adds
+      paired inject/processed uclock() timestamps around the simulated
+      click, real deltas 11-24ms across several runs. dialog is a new
+      optional phase in the harness's own parse-results.py -- shown in
+      the rendered record, never gates pass/fail. Confirmed by several
+      real, reproducible DOSBox-X runs. No real-hardware confirmation
+      run yet (optional, not required to close this slice). Full
+      writeup: dosags's PLAN.md eleventh-session "Current state".
+
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
     upstream_revision: null
