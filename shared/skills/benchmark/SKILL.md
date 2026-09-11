@@ -99,8 +99,10 @@ detail) -- non-negotiable, not just good practice when convenient:
   how-to-run-it down somewhere durable (a rig runbook in the port's own
   docs), not just in a session's accumulated conversational context.
   **The concrete remedy, not just a mitigation**: install vcctrl's own
-  skills into the port repo (`npx skills add <vcctrl-repo> --full-depth
-  --all`, alongside this hub's -- see `shared/skills/README.md`). Rig
+  hardware-portable skills into the port repo (`npx skills add
+  <vcctrl-repo> --full-depth -s vcctrl-mcp-workflows -s
+  vcctrl-common-workflows -s vcctrl-rig-hazards -s vcctrl-camera`, not
+  `--all` -- alongside this hub's -- see `shared/skills/README.md`). Rig
   operating knowledge (hazards, MCP sequencing, common workflows) then
   lives in the repo itself, not only in whichever session happened to
   learn it that night -- surviving a `/clear` by construction rather than

@@ -30,7 +30,7 @@ target:
   # specific positive fact (e.g. "a sound profile is loaded, so this is
   # NOT the network profile"), never be read backwards as proof of absence
   # of some other profile. See vcctrl's docs/HARNESS-STANDARD.md sec. 12
-  # and docs/OPEN-FAULTS.md sec. 15 for why this matters -- a naive
+  # and docs/lab/OPEN-FAULTS.md sec. 15 for why this matters -- a naive
   # "prove NET by an absent BLASTER" check will happily accept a profile
   # with no network stack at all and fail silently later.
   profile_witness:

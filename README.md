@@ -109,7 +109,7 @@ sdl-dos-ports/
 
 Primary targets, shared across all ports (see [`HARDWARE.md`](HARDWARE.md)
 for the full matrix and real-hardware testing process via
-[vcctrl](https://github.com/ecliptik/vcctrl)):
+[vcctrl](https://forgejo.ecliptik.com/ecliptik/vcctrl)):
 
 | ID | CPU | Role |
 |---|---|---|

@@ -58,8 +58,12 @@ whole repo into Claude Code's plugin cache with the `skills/` symlinks
 preserved, so they resolve there too (verified 2026-09-03).
 
 **vcctrl's skills are not a plugin** and still install flat, per repo,
-via `npx skills add <vcctrl repo> --full-depth --all -a claude-code`
-(`--full-depth` because that repo has no root-level `SKILL.md`);
+via `npx skills add <vcctrl repo> --full-depth -a claude-code -s
+vcctrl-mcp-workflows -s vcctrl-common-workflows -s vcctrl-rig-hazards -s
+vcctrl-camera` (`--full-depth` because that repo has no root-level
+`SKILL.md`; explicit `-s` flags, not `--all`, because vcctrl also ships
+`vcctrl-repo-conventions` and `vcctrl-webkvm-copy` -- its own contributor
+conventions, not anything a port repo needs);
 `scripts/new-port.sh` runs this at scaffold time. A port picks up new
 vcctrl skills with `npx skills update`.
 

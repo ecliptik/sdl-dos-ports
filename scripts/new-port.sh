@@ -154,13 +154,19 @@ if [ ! -f .gitignore ] || ! grep -q '^\.claude' .gitignore; then
 EOF
 fi
 
+# Only the four hardware-portable skills, not --all -- vcctrl also ships
+# vcctrl-repo-conventions and vcctrl-webkvm-copy, which document vcctrl's
+# own contributor conventions and have nothing to do with driving a rig
+# from a port repo.
+VCCTRL_SKILLS=(-s vcctrl-mcp-workflows -s vcctrl-common-workflows -s vcctrl-rig-hazards -s vcctrl-camera)
+
 echo "==> Installing vcctrl skills via npx skills"
 if ! command -v npx >/dev/null 2>&1; then
   echo "    npx not found -- skipping. Install later from this repo's root:" >&2
-  echo "    npx skills add $VCCTRL_REMOTE --full-depth --all -a claude-code" >&2
-elif ! npx --yes skills@latest add "$VCCTRL_REMOTE" --full-depth --all -a claude-code -y >/dev/null 2>&1; then
+  echo "    npx skills add $VCCTRL_REMOTE --full-depth -a claude-code ${VCCTRL_SKILLS[*]}" >&2
+elif ! npx --yes skills@latest add "$VCCTRL_REMOTE" --full-depth -a claude-code -y "${VCCTRL_SKILLS[@]}" >/dev/null 2>&1; then
   echo "    warning: vcctrl skills failed to install (offline? VCCTRL_REMOTE wrong?)." >&2
-  echo "             Re-run manually: npx skills add $VCCTRL_REMOTE --full-depth --all -a claude-code" >&2
+  echo "             Re-run manually: npx skills add $VCCTRL_REMOTE --full-depth -a claude-code ${VCCTRL_SKILLS[*]}" >&2
 fi
 
 # VCCTRL_MCP_URL is intentionally NOT a hardcoded default anywhere in this

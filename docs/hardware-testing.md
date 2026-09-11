@@ -8,9 +8,11 @@ layer" below) as part of dosags's own first real-hardware run.
 
 ## What vcctrl is
 
-[vcctrl](https://github.com/ecliptik/vcctrl) is a remote-control/automation
-harness for a physical vintage PC, driven by a CLI, an MCP server (for
-agent control), or a browser KVM. It provides:
+[vcctrl](https://forgejo.ecliptik.com/ecliptik/vcctrl) is a remote-control/
+automation harness for a physical vintage PC, driven by a CLI, an MCP
+server (for agent control), or a browser KVM. Forgejo is the canonical,
+live repository (a `github.com/ecliptik/vcctrl` mirror is planned but not
+yet created — don't link it as live until it exists). It provides:
 
 - **Keyboard/mouse input** injected over PS/2 via a USB4VC bridge, so an
   agent or script can drive the DOS machine as if typing at the console.
@@ -176,7 +178,9 @@ silence, because a multi-second analysis window has sub-Hz resolution and
 real music essentially never sits on an exact probe frequency. If a port
 ever extends this measurement further, validate against real captured
 rig audio, not just synthetic tones, before trusting a new result (see
-vcctrl's own `docs/FINDINGS.md` sec. 42 for the full writeup).
+vcctrl's own `docs/lab/FINDINGS.md` sec. 42 for the full writeup — moved
+there from `docs/FINDINGS.md` in vcctrl's 2026-09-11 public-release docs
+reorg, see below).
 
 ## What a port should record
 
@@ -211,6 +215,80 @@ back, etc.). `dos-hardware-validation` assumes this skill's discipline
 rather than re-deriving it. See `shared/skills/README.md` for the full
 skill list, including the build/QA-side companion
 `dos-realhw-verification`.
+
+## vcctrl went public (2026-09-11): what changes here
+
+vcctrl made its repository public. Nothing in vcctrl's own behavior
+changed in a way that affects an existing profile (see the hardware-
+defaults note below), but several references from this repo need
+updating and one new document is worth reading before onboarding a
+third port:
+
+- **Canonical URL**: Forgejo (`https://forgejo.ecliptik.com/ecliptik/vcctrl`)
+  is the live, canonical repository, with clean history after a scrub
+  (credentials/hostnames that had leaked into old commits, including four
+  an earlier 2026-08-24 rewrite missed and none of the commit messages,
+  which that earlier pass never touched). A `github.com/ecliptik/vcctrl`
+  mirror is planned but blocked on repo creation — not live yet. Links in
+  this repo (`README.md`, `HARDWARE.md`, `CONTRIBUTING.md`, this file)
+  were updated to Forgejo; don't add a GitHub link back until it's
+  confirmed live.
+- **Doc paths moved**: `docs/FINDINGS.md`, `OPEN-FAULTS.md`,
+  `PI5-MIGRATION.md`, `VIDEO-SWAP.md`, `SOUND-PROFILES.md`, and
+  `PICOGUS-CONSOLIDATION.md` all moved to `docs/lab/` in vcctrl (separated
+  as "one rig's own record" from generic reference docs, still public).
+  `templates/vcctrl-profile.yaml.template`'s `docs/OPEN-FAULTS.md` sec. 15
+  citation was updated to `docs/lab/OPEN-FAULTS.md` accordingly — check
+  for the old `docs/<name>.md` form before citing any of these six files
+  again.
+- **Camera/Power/MSD hardware defaults are now enforced, not just
+  documented-against.** Previously, leaving a capability's `backend:` key
+  absent in `vcctrl.yaml` silently defaulted it ON against vcctrl's own
+  specific hardware (a Kasa smart plug, `/dev/video0`) — a framework-level
+  bug (`daemon/vcctrld.py`'s `Registry._resolve_backend`), not a
+  documentation gap. An absent key now means "not configured" for these
+  three. This has no effect on any profile that already sets these
+  explicitly — every `profile-kinds/*.yaml` template in vcctrl does — but
+  it means a new port's own profile can no longer end up silently talking
+  to vcctrl's specific hardware defaults by omission; it must actually
+  say what it wants.
+- **New `docs/KNOWN-LIMITATIONS.md` in vcctrl — read this before assuming
+  the DOS-side harness "just works" for a non-doskutsu target.** It's an
+  honest list of what does NOT yet generalize past vcctrl's own rig: the
+  whole DOS-side contract is still hardcoded rather than config-driven —
+  the boot-menu item/window, the BLASTER-to-boot-profile-name map, mTCP's
+  install path and batch-file names, the `RDYPULSE.COM` Scroll-Lock
+  readiness signal (the *only* boot-readiness witness vcctrl implements —
+  there is no pluggable readiness-witness abstraction yet, so a target
+  that can't run a custom TSR or doesn't use PS/2 LEDs has no readiness
+  signal at all), and the VGA mode-restore/UniVBE paths. It also flags
+  several capabilities read once from the primary profile rather than
+  per-profile, literal install-prefix/bindir/service-user assumptions, a
+  fixed HID-gadget identity, a US-QWERTY-only `type` charmap, and a
+  bootstrap FTP path that still depends on a script living outside the
+  repo. None of this is new breakage — dosags's and dossage's own profile
+  work already routed around parts of it (the "orchestration layer"
+  section above) — but it's now written down in one place instead of
+  discovered per-port. Worth rereading before scoping any future port
+  whose target isn't PS/2 DOS on vcctrl's own rig shape.
+- **License and doc restructuring** (informational only): vcctrl added an
+  MIT `LICENSE` (matching this hub and every port here) plus
+  `THIRD-PARTY.md`; its README gained a "Configuration by target type"
+  section mapping named hardware setups to `profile-kinds/*.yaml`; and its
+  `CLAUDE.md`/new `AGENTS.md` are now 3-line pointers at `CONTRIBUTING.md`,
+  which now holds the substance — nothing in this hub currently reads
+  vcctrl's `CLAUDE.md` expecting the old content, but a future reference
+  should point at `CONTRIBUTING.md` instead.
+- **Skills-install line changed.** vcctrl's README no longer tells
+  installers to pull all 7 skills (`--full-depth --all`) — that swept in
+  `vcctrl-repo-conventions` and `vcctrl-webkvm-copy`, two skills about
+  vcctrl's own contributor conventions that have nothing to do with
+  driving a rig from a port repo. The new line names the four
+  hardware-portable skills explicitly. `scripts/new-port.sh`,
+  `PORTING.md`, `skills/port/SKILL.md`, `shared/skills/README.md`, and
+  `shared/skills/benchmark/SKILL.md` all quoted or ran the old `--all`
+  form and were updated to match — see those files' own history for the
+  exact command.
 
 ## Future work (explicitly not this milestone)
 

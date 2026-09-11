@@ -62,7 +62,7 @@ stays the fast index of what's known per component.
 ## Real-hardware testing process
 
 Real-hardware validation for all ports currently runs through
-[vcctrl](https://github.com/ecliptik/vcctrl), a KVM/automation rig (PS/2
+[vcctrl](https://forgejo.ecliptik.com/ecliptik/vcctrl), a KVM/automation rig (PS/2
 input injection, VGA/audio capture, power control, FTP file transfer) built
 around one physical machine with hot-swappable CPUs matching the matrix
 above. See [`docs/hardware-testing.md`](docs/hardware-testing.md) for the

@@ -98,9 +98,13 @@ the `sdldos` plugin -- so anyone who opens and trusts the new repo is
 offered this hub's skills under one colon-namespaced prefix
 (`/sdldos:review`, `/sdldos:benchmark`, `/sdldos:dos-hardware-validation`,
 ...), with no per-repo copy of any `SKILL.md`. vcctrl's skills are not a
-plugin, so the script installs those flat into the same repo via
-`npx skills add <repo> --full-depth --all -a claude-code`. To install the
-plugin by hand somewhere else:
+plugin, so the script installs the four hardware-portable ones flat into
+the same repo via `npx skills add <repo> --full-depth -a claude-code -s
+vcctrl-mcp-workflows -s vcctrl-common-workflows -s vcctrl-rig-hazards -s
+vcctrl-camera` (not `--all` -- that would also pull in
+`vcctrl-repo-conventions` and `vcctrl-webkvm-copy`, which document
+vcctrl's own contributor conventions, not anything a port needs). To
+install the plugin by hand somewhere else:
 
 ```sh
 /plugin marketplace add https://forgejo.ecliptik.com/ecliptik/sdl-dos-ports.git
