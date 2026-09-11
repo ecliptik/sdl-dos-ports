@@ -259,12 +259,23 @@ ports:
       room rendered real background art, a player-character sprite, and a
       working cursor for the first time ever on this port -- not the
       flat-color placeholder every prior real-package result had
-      produced. dos_status stays TITLE_SCREEN; this evidence is stronger
-      than the seventh session's but the operator did not raise the
-      milestone question this session, so per this project's own standing
-      rule it was not changed unilaterally. No patches landed; nothing
-      committed. Full detail in the dosags repo's PLAN.md (eighth-session
-      "Current state").
+      produced. No patches landed; nothing committed. Full detail in the
+      dosags repo's PLAN.md (eighth-session "Current state").
+
+      2026-09-10 (eighth session, follow-up, same sitting): the operator
+      reviewed the write-up above and explicitly confirmed it satisfies
+      dosags's own "Game package parses, reaches initial room setup"
+      milestone checkbox (PLAN.md), with the real limitations (off-the-
+      shelf, unlicensed, local-testing-only package) stated on that line.
+      dos_status stays TITLE_SCREEN -- the hub's dos_status ladder has no
+      intermediate rung between TITLE_SCREEN and PLAYABLE for this
+      checkbox, so the hub-visible status doesn't move again until
+      PLAYABLE itself, even though dosags's own finer-grained milestone
+      list has advanced. The operator also decided: keep pushing on Wine
+      GUI authoring (not a Windows VM) for the eventual licensed test-game
+      deliverable, and keep using off-the-shelf local-testing-only
+      packages as the default way to exercise the engine going forward
+      regardless of how that resolves.
 
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
