@@ -89,7 +89,7 @@ ports:
     original_sdl_version: "2"
     target_sdl_version: "3"
     graphics_api: software
-    dos_status: COMPILES
+    dos_status: STARTS
     priority: 1
     difficulty: 5
     dos_minimum_target: null
@@ -148,9 +148,25 @@ ports:
       `make configure-ags` + full build + link producing a real
       ags.exe (MS-DOS/DJGPP go32 executable), not inferred from the
       absence of remaining compile errors. Full detail in the dosags
-      repo's PLAN.md/PATCH-SEQUENCE.md. Next milestone: STARTS (runs
-      under DOSBox-X, SDL3 initializes, exits cleanly) -- not yet
-      attempted.
+      repo's PLAN.md/PATCH-SEQUENCE.md.
+
+      2026-09-10 (fourth session): STARTS reached -- ags.exe boots under
+      DOSBox-X, SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_EVENTS)
+      succeeds, and the engine exits cleanly (real DOS exit code 0)
+      through its own normal quit() path. No game package exists yet, so
+      this run takes AGS's documented no-game-data path rather than
+      reaching a graphical window -- that already satisfies this
+      milestone's own "SDL3 initializes, exits cleanly" definition. Two
+      non-blocking findings surfaced along the way, full detail in the
+      dosags repo's PLAN.md: a DOSBox-X-shell tooling gotcha
+      (`dosbox-run.sh --merge-stderr` corrupts the invoked program's argv,
+      not just output merging -- never pass it to this engine) and a
+      cosmetic doubled-drive-prefix bug in `Directory::
+      GetCurrentDirectory()`'s output under this DJGPP/DOSBox-X
+      combination, worth a real probe before the "Game package parses"
+      milestone. Next milestone: TITLE_SCREEN (native window surface
+      opens, clears, presents -- no game loaded yet), needs a minimal
+      synthetic game package -- not yet attempted.
 
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
