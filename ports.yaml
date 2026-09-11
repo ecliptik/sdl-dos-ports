@@ -277,6 +277,24 @@ ports:
       packages as the default way to exercise the engine going forward
       regardless of how that resolves.
 
+      2026-09-10 (eighth session, later the same day): a standing test
+      harness around AGS Quest is now planned in dosags's PLAN.md ("Test
+      harness (AGS Quest)") -- an autopilot scripted inside AGS itself
+      (System.Log to stdout, RunInteraction/Button.Click, SaveGameSlot/
+      RestoreGameSlot, SaveScreenShot, QuitGame), a reproducible Wine
+      package build from a pinned upstream SHA (art never committed;
+      screenshot hashes only), an overlay adding our own WAV/MIDI/TTF so
+      the port's real audio and TTF paths are covered, and engine-side
+      instrumentation patches (fps p50/p95 into RUNMANIFEST, ms
+      timestamps, DPMI memory, run-identity env vars). AGS Quest
+      (640x360x16) is the stress/coverage workload; the fps KPI floor
+      stays tied to an in-profile package. HUB PREREQUISITE decided by
+      the operator: generalize shared/'s doskutsu-hardcoded
+      vcctrl-sweep/cell/collect scripts (C:\DOSKUTSU\LOGS, DOSKUTSU_*
+      env names -> profile-driven) BEFORE dosags's first rig run, so the
+      rig flow is port-agnostic rather than a second one-off. First rig
+      tier for dosags: HW-486-66.
+
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
     upstream_revision: null
