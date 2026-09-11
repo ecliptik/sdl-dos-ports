@@ -240,6 +240,32 @@ ports:
       /tmp); nothing was committed as a result. Full detail in the dosags
       repo's PLAN.md.
 
+      2026-09-10 (eighth session): the interactive AGS Editor GUI was
+      confirmed to genuinely render under Wine+Xvfb (real menu bar,
+      toolbar, a real modal dialog dismissed via xdotool) -- further than
+      the seventh session's non-interactive-only test, but the full
+      authoring workflow (room designer, sprite/font/audio import) was not
+      exercised. Mid-session the operator redirected the work: licensing
+      only blocks committing a game, not using one for local engine
+      testing that never gets committed -- so the session fetched the
+      official adventuregamestudio/ags-demo-game (AGSQuest, CC BY-NC-ND
+      art, local-testing-only, never committed) and recompiled it at
+      16-bit HighColor (its rooms are natively hi-color; an 8-bit Palette
+      attempt compiled but silently broke all 4 rooms -- a room's color
+      depth is baked in per-.crm file, independent of the project
+      setting). Run against this port's own ags.exe under DOSBox-X, the
+      engine reached the same stopping point as AGS's own official Linux
+      reference engine, and clicking through to the game's actual first
+      room rendered real background art, a player-character sprite, and a
+      working cursor for the first time ever on this port -- not the
+      flat-color placeholder every prior real-package result had
+      produced. dos_status stays TITLE_SCREEN; this evidence is stronger
+      than the seventh session's but the operator did not raise the
+      milestone question this session, so per this project's own standing
+      rule it was not changed unilaterally. No patches landed; nothing
+      committed. Full detail in the dosags repo's PLAN.md (eighth-session
+      "Current state").
+
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
     upstream_revision: null
