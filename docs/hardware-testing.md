@@ -40,13 +40,19 @@ as machine IDs matching this repo's `HARDWARE.md` matrix — 486DX2-50,
   (input/leds/power/video/audio/files/board) and a `harness.profile` key
   pointing at which project profile is active.
 - **`profiles/<name>.yaml`** — one per **software project**, tracked in
-  that project's own repo (dosags's own `profiles/dosags.yaml`) or, for a
-  project that hasn't moved it out yet, in vcctrl's own `profiles/`
-  directory (doskutsu's, still there — see "The orchestration layer"
-  below). Holds project-specific facts: DOS working directory,
-  env-var names the program reads (TAS replay, PRNG seed, log verbosity),
-  boot-menu timing, the machine/CPU table for that rig, per-sweep wall-clock
-  budgets.
+  that project's own repo (dosags's own `profiles/dosags.yaml`, dossage's
+  own `profiles/dossage.yaml`) or, for a project that hasn't moved it out
+  yet, in vcctrl's own `profiles/` directory (doskutsu's, still there —
+  see "The orchestration layer" below). Holds project-specific facts: DOS
+  working directory, env-var names the program reads (TAS replay, PRNG
+  seed, log verbosity), boot-menu timing, the machine/CPU table for that
+  rig, per-sweep wall-clock budgets.
+  dossage's own profile was rewritten 2026-09-11 (a `vcctrl-harness-
+  migration` follow-on to the work below) to replace guessed env-var
+  names with facts verified against its own source/patches/campaign
+  docs — see that file's own header and commit message for what changed
+  and why; dossage's real-hardware campaign to date used vcctrl's
+  generic MCP file-transfer tools directly, not vcctrl-cell.
 
 This split already maps cleanly to a multi-port world: **one rig config,
 many project profiles**, switched via `harness.profile`. A new port defines
@@ -95,6 +101,25 @@ design (a single `tests/harness/` package run via `AGS.EXE --test`, no
 multi-cell TAS sweep) uses the *default* fetch path instead, which already
 delegates the equivalent reboot/verify mechanics to the daemon generically
 — this legacy branch was left alone rather than generalized speculatively.
+
+**Follow-on pass, same day (`vcctrl-harness-migration` fork): doskutsu's
+own profile had a real, previously-invisible bug.** Verifying every field
+just filled in against doskutsu's actual source (not just vcctrl-cell's
+own hardcoded strings) found that `target.env`'s replay/seed/
+auto_exit_tick/log_tag/pin_native_mode/shot_ticks names were all written
+as `DOSKUTSU_<LEVER>` — copied from vcctrl-cell's own pre-generalization
+strings — when doskutsu's actual engine (confirmed in
+`vendor/nxengine-evo/src/{tas.cpp,main.cpp,graphics/Renderer.cpp}`) and
+its real, currently-used QA batch files (`tests/qa/CLRENV.BAT`, `RB.BAT`)
+all use the shared, neutral `DOS_PORT_*` naming instead. Practical effect:
+any vcctrl-cell-driven diagnostic cell that intended to arm one of these
+levers via the old names would have silently not armed it — fixed in
+`profiles/doskutsu.yaml` (vcctrl repo). Running vcctrl's own test suite
+during this pass also caught a real regression the generalization itself
+introduced (`vcctrl-sweep` lost its `CONF` module attribute, which
+`tests/test_core.py` asserts on) — fixed, and a reminder that "the tests
+still pass" is a check worth actually running, not assuming, after a
+cross-cutting refactor like this one.
 
 ## Manual workflow (works for any port, independent of vcctrl-cell)
 
