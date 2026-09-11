@@ -311,13 +311,29 @@ ports:
       (queued, not synchronous), and player.ActiveInventory must stay
       set until the deferred interaction reading it has actually run --
       see dosags's PATCH-SEQUENCE.md "Phase I" section and PLAN.md's
-      ninth-session write-up for the full mechanism. Slice 4 (overlay
-      assets: our own CC0 WAV/generated MIDI/OFL TTF) deliberately not
-      started -- real asset sourcing/licensing and unverified Game.agf
-      audio/font wiring are next session's first task, not a rushed
-      tail end of this one. dos_status unchanged (TITLE_SCREEN) -- the
-      hub's ladder has no rung for test-harness progress specifically;
-      it will advance again at PLAYABLE.
+      ninth-session write-up for the full mechanism.
+
+      2026-09-11 (ninth session, continued): slice 4 (overlay assets)
+      landed too, after the operator opted to push what was done so far
+      and answered a few clarifying questions (self-generate WAV/MIDI,
+      let the session pick the OFL font, keep going in the same
+      session). Self-generated CC0 WAV chime + MIDI tune (no external
+      tools/samples) plus "Press Start 2P", a real OFL TrueType font
+      pinned at a verified google/fonts commit (OFL.txt read directly,
+      not assumed). The two unknowns that blocked slice 4 earlier were
+      resolved by reading the AGS Editor's own C# source directly: fonts
+      are packaged by a plain filename glob (agsfnt<ID>.ttf in the
+      project root) regardless of Game.agf's own SourceFilename field;
+      audio clips are packaged from AudioCache/au<Index:hex6><ext>,
+      keyed by each clip's own stable "Fixed Index" (explaining the
+      existing package's index gap starting at 12, not a bug). Confirmed
+      by a real DOSBox-X run: package compiles, all 16 phases stay
+      green, and a real room-3 screenshot shows the intro cutscene's own
+      dialogue rendered in the new font's distinct pixel glyphs (not
+      committed, per this package's NC-ND art rule). dos_status
+      unchanged (TITLE_SCREEN) -- the hub's ladder has no rung for
+      test-harness progress specifically; it will advance again at
+      PLAYABLE.
 
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
