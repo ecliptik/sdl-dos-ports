@@ -348,6 +348,33 @@ ports:
       (TITLE_SCREEN) -- the hub's ladder has no rung for test-harness
       progress specifically; it will advance again at PLAYABLE.
 
+      2026-09-11 (tenth session): slice 6 landed -- the hub's own
+      vcctrl-sweep/-cell/-collect and path-touching bin/vcctrl-* tools
+      (in the sibling vcctrl repo) were generalized to read a profile
+      instead of hardcoding doskutsu (see this hub's own
+      docs/hardware-testing.md for the full writeup; profiles/
+      doskutsu.yaml filled in with its real values, profiles/
+      dosags.yaml with explicit nulls for what dosags doesn't have yet).
+      Then dosags's actual first real-hardware run: HW-486-66 (Intel
+      486DX2 ~66MHz, ATI Mach64), tag HW1, via vcctrl's generic
+      stage-file/send-file/get-file primitives with a purpose-built
+      RUN.BAT (not vcctrl-cell directly -- AGS.EXE's real CLI-args
+      invocation doesn't fit vcctrl-cell's env-var+CFG-file model built
+      for doskutsu). Result: all 16 AutoPilot phases ok, exit_code=0,
+      first-ever real-hardware fps datum for this port
+      (fps_p50=9.62/fps_p95=10.09 on AGS Quest's stress workload, not
+      the in-profile KPI floor), and all three screenshots
+      byte-identical to the existing DOSBox-X baseline. A real harness
+      gap was found and fixed (a RUN.BAT that doesn't restore the
+      console's video mode after AGS.EXE exits reads as a hang on
+      vcctrl's capture for several minutes after a run has actually
+      finished cleanly). dosags's own "First room renders" milestone is
+      now formally claimed (both its DOSBox-X and real-hardware gate
+      halves done). dos_status unchanged (TITLE_SCREEN) -- still no
+      ladder rung between TITLE_SCREEN and PLAYABLE for this milestone.
+      Full writeup: dosags's PLAN.md tenth-session "Current state" and
+      tests/harness/results/HW-486-66-2026-09-11-agsquest.md.
+
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
     upstream_revision: null
