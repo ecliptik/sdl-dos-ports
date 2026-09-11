@@ -11,8 +11,10 @@ layer" below) as part of dosags's own first real-hardware run.
 [vcctrl](https://forgejo.ecliptik.com/ecliptik/vcctrl) is a remote-control/
 automation harness for a physical vintage PC, driven by a CLI, an MCP
 server (for agent control), or a browser KVM. Forgejo is the canonical,
-live repository (a `github.com/ecliptik/vcctrl` mirror is planned but not
-yet created — don't link it as live until it exists). It provides:
+live repository; a [GitHub mirror](https://github.com/ecliptik/vcctrl)
+went live 2026-09-11 (confirmed via a direct `git ls-remote`, matching
+Forgejo's `main` exactly) — Forgejo stays where changes land first. It
+provides:
 
 - **Keyboard/mouse input** injected over PS/2 via a USB4VC bridge, so an
   agent or script can drive the DOS machine as if typing at the console.
@@ -59,7 +61,9 @@ as machine IDs matching this repo's `HARDWARE.md` matrix — 486DX2-50,
 This split already maps cleanly to a multi-port world: **one rig config,
 many project profiles**, switched via `harness.profile`. A new port defines
 its own profile using `templates/vcctrl-profile.yaml.template` (modeled on
-vcctrl's `profiles/doskutsu.yaml`) and does not need to touch `vcctrl.yaml`.
+doskutsu's own `profiles/doskutsu.yaml`, in doskutsu's own repo -- see
+"The orchestration layer" below) and does not need to touch `vcctrl.yaml`
+beyond pointing `harness.profile` at wherever the new profile ends up.
 
 ## The orchestration layer: generalized 2026-09-11 (dosags's slice 6)
 
@@ -116,7 +120,9 @@ its real, currently-used QA batch files (`tests/qa/CLRENV.BAT`, `RB.BAT`)
 all use the shared, neutral `DOS_PORT_*` naming instead. Practical effect:
 any vcctrl-cell-driven diagnostic cell that intended to arm one of these
 levers via the old names would have silently not armed it — fixed in
-`profiles/doskutsu.yaml` (vcctrl repo). Running vcctrl's own test suite
+`profiles/doskutsu.yaml`, at the time still in the vcctrl repo (later
+the same day, moved into doskutsu's own repo — see the next paragraph).
+Running vcctrl's own test suite
 during this pass also caught a real regression the generalization itself
 introduced (`vcctrl-sweep` lost its `CONF` module attribute, which
 `tests/test_core.py` asserts on) — fixed, and a reminder that "the tests
@@ -228,11 +234,20 @@ third port:
   is the live, canonical repository, with clean history after a scrub
   (credentials/hostnames that had leaked into old commits, including four
   an earlier 2026-08-24 rewrite missed and none of the commit messages,
-  which that earlier pass never touched). A `github.com/ecliptik/vcctrl`
-  mirror is planned but blocked on repo creation — not live yet. Links in
-  this repo (`README.md`, `HARDWARE.md`, `CONTRIBUTING.md`, this file)
-  were updated to Forgejo; don't add a GitHub link back until it's
-  confirmed live.
+  which that earlier pass never touched). A
+  [`github.com/ecliptik/vcctrl`](https://github.com/ecliptik/vcctrl)
+  mirror went live the same day (confirmed via a direct `git ls-remote`
+  against it matching Forgejo's `main` exactly) — link either, but
+  Forgejo is where changes land first. **A second rewrite pass, same
+  day**, scrubbed a real LAN hostname (`jezebel` → `modernpc`, across
+  the tree including two filenames) and the self-hosted forge's own
+  hostname, and purged two files from history entirely (not just the
+  tree): `tools/scan-history.sh`, an old `kvm-ro-share.jpg`. vcctrl's own
+  `docs/HISTORY-MAP.txt` maps hashes from *before* the first rewrite to
+  *after* it, but was not regenerated for the second pass — a hash from
+  the narrow between-passes window has no clean map; don't cite one from
+  that window without checking with whoever's touching vcctrl at the
+  time.
 - **Doc paths moved**: `docs/FINDINGS.md`, `OPEN-FAULTS.md`,
   `PI5-MIGRATION.md`, `VIDEO-SWAP.md`, `SOUND-PROFILES.md`, and
   `PICOGUS-CONSOLIDATION.md` all moved to `docs/lab/` in vcctrl (separated
@@ -289,6 +304,27 @@ third port:
   `shared/skills/benchmark/SKILL.md` all quoted or ran the old `--all`
   form and were updated to match — see those files' own history for the
   exact command.
+- **`templates/vcctrl-profile.yaml.template` was stale from BEFORE this
+  section's own subject** (fixed 2026-09-11, same pass as this note):
+  it still described the orchestration scripts as "doskutsu-coupled...
+  may not yet run a second project's profile unattended" — true before
+  slice 6's generalization, false after it — and was missing every
+  field that generalization added (`exe`, `default_cfg`/`cfg_dest`,
+  `env_clear_cmd`, `sweep_entry_cmd`, `card_overrides`,
+  `env.capture_flag`). Rewritten to match the current schema, with an
+  explicit warning that `vcctrl-cell` only fits an executable that takes
+  no CLI args (doskutsu's shape) — a port like dosags whose engine needs
+  real arguments and stdout redirection should use the "Manual workflow"
+  below instead, regardless of what this template lets you fill in. Its
+  own `profiles/doskutsu.yaml` citation also moved: that file no longer
+  lives in vcctrl's repo (see below).
+- **`profiles/doskutsu.yaml` moved out of vcctrl's own repo**, into
+  doskutsu's own (`profiles/doskutsu.yaml` there), the same day as the
+  rest of this handoff — matching the per-repo-profile convention
+  dosags/dossage already used. vcctrl's local (gitignored) `vcctrl.yaml`
+  now points `harness.profile` at doskutsu's new path explicitly.
+  Anything in this hub that used to say "vcctrl's own
+  `profiles/doskutsu.yaml`" means doskutsu's repo now.
 
 ## Future work (explicitly not this milestone)
 
