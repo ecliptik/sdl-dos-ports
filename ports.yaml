@@ -295,6 +295,30 @@ ports:
       rig flow is port-agnostic rather than a second one-off. First rig
       tier for dosags: HW-486-66.
 
+      2026-09-11 (ninth session): the AGS Quest test harness planned
+      above is now real -- slices 1-3 of its own 7-slice work order
+      landed and committed. tests/harness/ is a reproducible pipeline
+      (setup-wine.sh -> build-package.sh -> run-dosbox.sh ->
+      parse-results.py); a full AutoPilot.ash/.asc module drives the
+      package through all 16 named phases (boot..quit) entirely via AGS
+      script; four new engine patches (patches/ags/0041-0044) fill
+      RUNMANIFEST's fps p50/p95, real ms room-transition timestamps,
+      DPMI free-memory tracking, and the run-identity env vars
+      (DOSAGS_LOG_TAG/DOSAGS_SCENE/DOSAGS_TAS_AUTO_EXIT_TICK), each
+      confirmed by a real DOSBox-X run producing real numbers. Two real
+      engine-behavior findings not anticipated by the eighth session's
+      own research: Hotspot/Object.RunInteraction() is itself deferred
+      (queued, not synchronous), and player.ActiveInventory must stay
+      set until the deferred interaction reading it has actually run --
+      see dosags's PATCH-SEQUENCE.md "Phase I" section and PLAN.md's
+      ninth-session write-up for the full mechanism. Slice 4 (overlay
+      assets: our own CC0 WAV/generated MIDI/OFL TTF) deliberately not
+      started -- real asset sourcing/licensing and unverified Game.agf
+      audio/font wiring are next session's first task, not a rushed
+      tail end of this one. dos_status unchanged (TITLE_SCREEN) -- the
+      hub's ladder has no rung for test-harness progress specifically;
+      it will advance again at PLAYABLE.
+
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
     upstream_revision: null
