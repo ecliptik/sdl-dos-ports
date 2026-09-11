@@ -330,10 +330,23 @@ ports:
       by a real DOSBox-X run: package compiles, all 16 phases stay
       green, and a real room-3 screenshot shows the intro cutscene's own
       dialogue rendered in the new font's distinct pixel glyphs (not
-      committed, per this package's NC-ND art rule). dos_status
-      unchanged (TITLE_SCREEN) -- the hub's ladder has no rung for
-      test-harness progress specifically; it will advance again at
-      PLAYABLE.
+      committed, per this package's NC-ND art rule).
+
+      2026-09-11 (ninth session, continued once more): slice 5
+      (screenshots + hash regression + first results/ record) landed
+      too, closing out the ENTIRE local-DOSBox-X portion of the
+      harness's 7-slice work order (slices 1-5 all done). Three inline
+      SaveScreenShot() calls, one per meaningful phase transition
+      (settle/room3, interior/room4, gem-balcony/room3) -- confirmed
+      byte-identical (same sha256) across three independent DOSBox-X
+      runs before being committed as the expected/ baseline, and each
+      image visually inspected first. First results/
+      dosbox-x-2026-09-11-agsquest.{md,json} record committed,
+      correctness-only. Slice 6 (hub vcctrl-sweep/-cell/-collect
+      generalization + first real-hardware run) is next -- its own real
+      piece of work, not attempted this session. dos_status unchanged
+      (TITLE_SCREEN) -- the hub's ladder has no rung for test-harness
+      progress specifically; it will advance again at PLAYABLE.
 
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
