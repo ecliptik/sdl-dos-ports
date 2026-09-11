@@ -89,7 +89,7 @@ ports:
     original_sdl_version: "2"
     target_sdl_version: "3"
     graphics_api: software
-    dos_status: BOOTSTRAP
+    dos_status: COMPILES
     priority: 1
     difficulty: 5
     dos_minimum_target: null
@@ -139,6 +139,18 @@ ports:
       the tree. Full detail, the patch sequence, and the DJGPP probe
       results live in the dosags repo (PLAN.md, DEPENDENCIES.md,
       PATCH-SEQUENCE.md, tests/probes/djgpp-runtime/).
+
+      2026-09-10: COMPILES reached -- patches/ags/0001-0036 land the full
+      minimum patch sequence (CMake/platform-macro gates, DJGPP runtime
+      shims, the SDL2->SDL3 engine-source port, the ali3dsw.cpp
+      window-surface rewrite replacing the old 32-bit-only SDL_Renderer
+      path, and the DOS platform driver), confirmed by a clean-slate
+      `make configure-ags` + full build + link producing a real
+      ags.exe (MS-DOS/DJGPP go32 executable), not inferred from the
+      absence of remaining compile errors. Full detail in the dosags
+      repo's PLAN.md/PATCH-SEQUENCE.md. Next milestone: STARTS (runs
+      under DOSBox-X, SDL3 initializes, exits cleanly) -- not yet
+      attempted.
 
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
