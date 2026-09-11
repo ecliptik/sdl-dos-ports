@@ -1,10 +1,10 @@
 # Hardware testing (vcctrl integration)
 
 This documents how real-hardware validation should work across multiple
-ports. It is a **design**, not yet implemented automation — the harness
-scripts it describes are still doskutsu-coupled today (see "Current gap"
-below). Nothing in `vcctrl` is modified as part of establishing this
-document; generalizing the harness is tracked as future work.
+ports. `harness/vcctrl-sweep|-cell|-collect` and the `bin/vcctrl-*` tools
+that touch project-specific paths were generalized to read a profile
+instead of hardcoding doskutsu's own values (see "The orchestration
+layer" below) as part of dosags's own first real-hardware run.
 
 ## What vcctrl is
 
@@ -40,8 +40,10 @@ as machine IDs matching this repo's `HARDWARE.md` matrix — 486DX2-50,
   (input/leds/power/video/audio/files/board) and a `harness.profile` key
   pointing at which project profile is active.
 - **`profiles/<name>.yaml`** — one per **software project**, tracked in
-  that project's own repo (or, for now, in vcctrl's `profiles/` directory —
-  see "Current gap"). Holds project-specific facts: DOS working directory,
+  that project's own repo (dosags's own `profiles/dosags.yaml`) or, for a
+  project that hasn't moved it out yet, in vcctrl's own `profiles/`
+  directory (doskutsu's, still there — see "The orchestration layer"
+  below). Holds project-specific facts: DOS working directory,
   env-var names the program reads (TAS replay, PRNG seed, log verbosity),
   boot-menu timing, the machine/CPU table for that rig, per-sweep wall-clock
   budgets.
@@ -51,27 +53,54 @@ many project profiles**, switched via `harness.profile`. A new port defines
 its own profile using `templates/vcctrl-profile.yaml.template` (modeled on
 vcctrl's `profiles/doskutsu.yaml`) and does not need to touch `vcctrl.yaml`.
 
-## Current gap: the orchestration layer is doskutsu-coupled
+## The orchestration layer: generalized 2026-09-11 (dosags's slice 6)
 
-`harness/vcctrl-sweep`, `-cell`, and `-collect` (vcctrl's unattended
-run/log-collection scripts) and a few `bin/vcctrl-*` tools (`vcctrl-cardid`,
-`vcctrl-score-pump`, etc.) currently hardcode `C:\DOSKUTSU\LOGS` paths and
-`DOSKUTSU_*` env var names. A second port cannot run an unattended sweep
-through these scripts without either generalizing them or forking a
-per-project copy. `vcctrl`'s own `docs/HARNESS-STANDARD.md` already
-anticipates this — it's explicitly written target-agnostic and states it
-"will move to a repository of its own when a second project adopts it."
-That move is the natural trigger once a second port reaches real-hardware
-QA; it is out of scope for this repo's current milestone.
-`shared/skills/dos-hardware-validation/` (below) documents the discipline
-a campaign should follow regardless of whether the harness scripts
-themselves are generalized yet — it doesn't resolve this gap, it's a
-layer on top of the manual interim workflow.
+`harness/vcctrl-sweep`, `-cell`, and `-collect` used to hardcode
+`C:\DOSKUTSU\...` paths and doskutsu's own QA methodology: a `BLASTER`
+boot-profile witness checked against a hardcoded PGSB value string, a
+`CALL CLRENV` env-clear command, per-video-card `DOSKUTSU_PIN_NATIVE_MODE`
+requirements, and `DOSKUTSU.CFG`/`DOSKUTSU.EXE` names. None of that was
+fixable by renaming strings — it was doskutsu-specific QA methodology, not
+generic DOS-testing wisdom, and a second port has no equivalent of most of
+it yet. Reading the actual code (not just this doc's earlier description of
+the gap) surfaced that the real coupling split three ways:
 
-## Interim workflow (manual, works today for any port)
+- **Genuinely reusable already**: `bin/vcctrl-cardid` reads the shared
+  SDL3-DOS backend's own probe/detect log lines, identical across every
+  port — "doskutsu" was only ever in its docstring.
+- **Mechanical path substitution**: `vcctrl-collect`, `bin/vcctrl-cfclean`,
+  `bin/vcctrl-uvconfig` just needed their hardcoded `C:\DOSKUTSU\...` paths
+  and default incoming directory made profile-driven.
+- **Substantive QA methodology**: `vcctrl-cell`'s env-clear command,
+  config-file switching, per-card overrides, and boot-profile witness are
+  now each an *optional*, profile-declared section in `profiles/<name>.yaml`
+  (`target.env_clear_cmd`, `target.default_cfg`/`cfg_dest`,
+  `target.card_overrides`, `target.profile_witness.value`,
+  `target.exe`, `target.sweep_entry_cmd`, `env.capture_flag`) — a profile
+  that doesn't declare one (dosags, today) makes the corresponding guard
+  skip cleanly with a printed reason, rather than faking doskutsu's values
+  or refusing outright. `profiles/doskutsu.yaml` carries its real,
+  already-established values, so doskutsu's own cells are unaffected.
+  `bin/vcctrl-score-pump` was found NOT to be reusable infrastructure at
+  all — it is a bespoke, one-off analysis script for one already-completed
+  doskutsu Pi5-migration experiment (hardcoded cell tags, a hardcoded
+  baseline directory from one specific run, pass bands from that
+  experiment's own pre-registered profile) and was left untouched.
 
-Until the harness layer is generalized, any port can validate on real
-hardware using vcctrl's generic file-transfer primitives directly:
+**Explicitly still doskutsu-only, and not needed for dosags's own
+first-run design**: `vcctrl-collect`'s legacy `--via-put` path
+(`reboot_into_net()`/`verify_profile()`) reboots into a `NET` boot-menu
+profile with a hardcoded menu digit and banner text. dosags's own harness
+design (a single `tests/harness/` package run via `AGS.EXE --test`, no
+multi-cell TAS sweep) uses the *default* fetch path instead, which already
+delegates the equivalent reboot/verify mechanics to the daemon generically
+— this legacy branch was left alone rather than generalized speculatively.
+
+## Manual workflow (works for any port, independent of vcctrl-cell)
+
+For a one-off check that doesn't need vcctrl-cell's env/config/witness
+guards, any port can drive real hardware using vcctrl's generic
+file-transfer primitives directly:
 
 ```sh
 vcctrl file-check                    # confirm the Pi's FTP server is up
@@ -160,9 +189,6 @@ skill list, including the build/QA-side companion
 
 ## Future work (explicitly not this milestone)
 
-- Generalize `harness/vcctrl-sweep|-cell|-collect` to read the active
-  project's env-var names, paths, and cell/BAT naming from its profile
-  instead of hardcoding doskutsu's.
 - Move `docs/HARNESS-STANDARD.md` out of vcctrl into a shared location once
   a second project adopts it (per vcctrl's own stated intent).
 - Decide whether multiple physical rigs eventually need a registry, or
