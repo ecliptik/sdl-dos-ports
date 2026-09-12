@@ -89,7 +89,7 @@ ports:
     original_sdl_version: "2"
     target_sdl_version: "3"
     graphics_api: software
-    dos_status: TITLE_SCREEN
+    dos_status: PLAYABLE
     priority: 1
     difficulty: 5
     dos_minimum_target: null
@@ -400,6 +400,32 @@ ports:
       (fixed by vcctrl, not a dosags/AGS defect). Full writeup: dosags's
       PLAN.md eleventh-session "Current state" and tests/harness/
       results/HW-486-66-2026-09-11-agsquest-slice7.md.
+
+      2026-09-11 (twelfth session): dos_status advances to PLAYABLE,
+      operator sign-off. The eleventh session's own flagged "Open
+      question" -- whether the harness's full-green phase list actually
+      satisfied PLAYABLE's own Milestone mapping, or just looked green --
+      turned out to have two real gaps, not just phrasing ambiguity: GUI
+      coverage was a single title-screen button click, and animation was
+      exercised nowhere at all (zero hits grepping the autopilot overlay
+      for Animate/SetView/.Loop/.Frame). Slice 8 closed both for real:
+      guimenu clicks the actual in-game-menu button a player uses;
+      anim samples room 4's own always-running chandelier object's Frame
+      across a poll window, proving genuine frame advancement rather
+      than trusting an Animating flag alone. Both landed as required
+      (non-optional) phases, confirmed on DOSBox-X with zero regression,
+      then confirmed again on HW-486-66 (tag HW10, first attempt, after
+      a real vcctrl-daemon fix -- a boot-menu keystroke-retry bug's
+      early-stop was watching the wrong signal, not a dosags/AGS defect).
+      dialog stays its own deliberately-optional item, confirmed (via
+      git log -S on the Milestone mapping's own wording) to be original
+      intent from the very first planning commit, not stale text. Same
+      session, run-rig.sh's post-launch wait was also changed from an
+      unconditional sleep for the full --timeout to a poll for the
+      screen actually going static, cutting real wasted time on a
+      normal successful run. Full writeup: dosags's PLAN.md
+      twelfth-session "Current state" and tests/harness/results/
+      HW-486-66-2026-09-11-agsquest-slice8.md.
 
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
