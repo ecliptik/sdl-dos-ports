@@ -812,6 +812,22 @@ static void sink_on_tick(void *user)
   }
 }
 
+void gus_sink_silence(gus_sink *s)
+{
+  int v;
+
+  if (!s) return;
+
+  for (v = 0; v < s->num_voices; ++v)
+  {
+    if (s->voices[v].active)
+    {
+      SDL_DOSGusStopVoice(v);
+      memset(&s->voices[v], 0, sizeof(s->voices[v]));
+    }
+  }
+}
+
 void gus_sink_close(gus_sink *s)
 {
   int v;

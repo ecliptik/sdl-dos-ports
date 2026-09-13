@@ -120,6 +120,20 @@ gus_sink *gus_sink_open(void);
  * a fresh song boundary); `s` or `m` NULL is a no-op. */
 void gus_sink_prepare_song(gus_sink *s, const midi_sched *m);
 
+/* Stop every voice this sink currently believes active (all-notes-off,
+ * effectively) WITHOUT tearing the sink down -- mirrors
+ * waveblaster_sink_silence()'s own role for a caller (dosags's
+ * dos_midi_backend_end_song()) that needs to guarantee no note is left
+ * physically sounding when a song stops, but must NOT close/reopen this
+ * sink (see the file header's own "session-lifetime singleton" rule --
+ * gus_sink_open()'s DRAM/voice-count sizing is comparatively expensive and
+ * must never repeat mid-session). Does not touch DRAM residency at all
+ * (unlike gus_sink_prepare_song(), which also frees/reuploads it) -- the
+ * next gus_sink_prepare_song() call still does that part when a new song
+ * actually starts. Safe to call anytime after gus_sink_open(); `s` NULL is
+ * a no-op. */
+void gus_sink_silence(gus_sink *s);
+
 /* True teardown: stop every voice this sink owns, SDL_DOSGusShutdown(),
  * free `s`. Call ONCE, at final session/engine audio shutdown -- never
  * between songs (use gus_sink_prepare_song() instead; see file header).
