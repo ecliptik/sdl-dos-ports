@@ -263,14 +263,28 @@ gus_sink *gus_sink_open(void)
   gus_sink *s;
   int n;
   struct gus_hw_state st;
+  bool did_init = false;
 
-  if (!SDL_DOSGusInit())
-    return NULL;
+  /* Bring up the GF1 only if nothing else has yet (a real coexistence bug
+   * found in review: this used to call SDL_DOSGusInit() unconditionally,
+   * which is a hard chip reset -- calling it a second time after
+   * shared/audio/gus_pcm_stream.c has already brought the card up would
+   * audibly cut off any already-uploaded PCM stream state and re-run the
+   * comparatively expensive DRAM/voice-count detection for nothing). Track
+   * whether THIS call is the one that actually initialized it, so the
+   * failure path below only shuts down what it started. */
+  if (!(SDL_DOSGusGetState(&st) && st.valid))
+  {
+    if (!SDL_DOSGusInit())
+      return NULL;
+    did_init = true;
+  }
 
   s = (gus_sink *)calloc(1, sizeof(*s));
   if (!s)
   {
-    SDL_DOSGusShutdown();
+    if (did_init)
+      SDL_DOSGusShutdown();
     return NULL;
   }
 

@@ -70,6 +70,25 @@
  * unrelated to the SB16 ISA-bus timing WaveBlaster's MPU-401 cold-init
  * depends on) -- gus_sink_open() may be called lazily, at any point.
  *
+ * KNOWN, UNRESOLVED HAZARD -- coexisting with shared/audio/gus_pcm_stream.c:
+ * gus_sink_open() and gus_sink_prepare_song() both call
+ * SDL_DOSGusResetDram(0) (a hard rewind of the WHOLE GF1 DRAM bump
+ * allocator to empty), on every song boundary, unconditionally. If a
+ * gus_pcm_stream is alive at the same time (its own DRAM allocated via
+ * plain SDL_DOSGusUploadSample, indistinguishable to ResetDram from
+ * anything else above the rewind point), the very next song change
+ * silently invalidates that stream's fixed half-buffer addresses --
+ * gus_pcm_stream would keep "successfully" overwriting addresses that no
+ * longer hold what it thinks they hold, and whatever gus_sink's own next
+ * .pat upload happens to land on top of would then be read back as
+ * garbage PCM audio. NEITHER module currently coordinates with the other
+ * about DRAM ownership (unlike doskutsu's own Pixtone-on-GF1 precedent,
+ * which solved exactly this with a persist_mark boundary, patches/
+ * nxengine-evo/0239) -- using GUS MIDI and GUS PCM streaming TOGETHER in
+ * the same session is NOT safe until this is designed and fixed. Using
+ * either alone (MIDI-only or PCM-only) is unaffected. Flagged, not solved,
+ * here -- a real follow-up item, not a hypothetical.
+ *
  * DIVERGENCE FROM THE DOSKUTSU SOURCE -- deliberate, not an oversight: this
  * module's per-song voice quiesce (inside gus_sink_prepare_song()) stops
  * only voices THIS module's own tracking believes active, which by

@@ -38,6 +38,7 @@ struct gus_hw_state
   uint32_t abi_version;
 };
 
+extern bool     SDL_DOSGusInit(void);
 extern bool     SDL_DOSGusGetState(struct gus_hw_state *out);
 extern uint32_t SDL_DOSGusUploadSample(const void *data, uint32_t len, int is16bit);
 extern bool     SDL_DOSGusOverwriteSample(uint32_t dram_addr, const void *data, uint32_t len, int is16bit);
@@ -119,12 +120,30 @@ gus_pcm_stream *gus_pcm_stream_open(unsigned rate, unsigned channels, size_t chu
   uint32_t addr0, addr1;
   int voice;
   const char *dma_hint;
+  struct gus_hw_state st;
 
   if (rate == 0 || channels != 1)
     return NULL; /* GF1 has no stereo-voice primitive; caller must down-mix first */
 
   if (chunk_bytes < GUS_PCM_STREAM_MIN_CHUNK)
     chunk_bytes = GUS_PCM_STREAM_MIN_CHUNK;
+
+  /* Bring up the GF1 if nothing else has yet -- a real bug found in
+   * review, not a hypothetical: this module used to assume something
+   * else (in dosags, shared/audio/gus_sink.c's own MIDI backend) would
+   * always call SDL_DOSGusInit() first. If a game plays a PCM sound
+   * effect before ever touching MIDI, that assumption is false and every
+   * voice would fail forever, silently, even with a real working GF1
+   * present. Checking GetState() first (rather than calling Init()
+   * unconditionally) makes this safe to call whether or not gus_sink has
+   * already brought the card up -- SDL_DOSGusInit() itself does a hard
+   * chip reset, so calling it a SECOND time while GUS MIDI notes are
+   * already sounding would audibly cut them off. */
+  if (!(SDL_DOSGusGetState(&st) && st.valid))
+  {
+    if (!SDL_DOSGusInit())
+      return NULL;
+  }
 
   /* Only set the hint if the caller/game hasn't already picked a value --
    * never override an explicit "0" some other part of the session set on
