@@ -41,6 +41,7 @@ struct gus_hw_state
 
 extern bool     SDL_DOSGusInit(void);
 extern bool     SDL_DOSGusGetState(struct gus_hw_state *out);
+extern bool     SDL_DOSGusVoiceActive(int voice);
 extern uint32_t SDL_DOSGusUploadSample(const void *data, uint32_t len, int is16bit);
 extern bool     SDL_DOSGusOverwriteSample(uint32_t dram_addr, const void *data, uint32_t len, int is16bit);
 extern int      SDL_DOSGusAllocVoiceSfx(void);
@@ -273,16 +274,19 @@ void gus_pcm_stream_set_volume(gus_pcm_stream *s, float volume)
 
 void gus_pcm_stream_pump(gus_pcm_stream *s)
 {
-  struct gus_hw_state st;
   bool cur_sounding;
   int off;
 
   if (!s || !s->active || s->voice < 0)
     return;
 
-  cur_sounding = false;
-  if (s->cur >= 0 && SDL_DOSGusGetState(&st) && st.valid)
-    cur_sounding = (st.voice_active_mask & (1u << (unsigned)s->voice)) != 0u;
+  /* SDL_DOSGusVoiceActive (sdl3-dos patch 0140), not SDL_DOSGusGetState --
+   * this runs every pump cycle (every rendered frame while a half is
+   * sounding), and GetState's full scan over EVERY busy GF1 voice (not just
+   * this stream's own) was measured as the dominant real-hardware cost of
+   * the whole S5 GUS PCM path (PLAN.md, S5 GUS perf regression finding).
+   * VoiceActive does the identical hardware read for just this one voice. */
+  cur_sounding = (s->cur >= 0) && SDL_DOSGusVoiceActive(s->voice);
 
   if (s->cur < 0 || !cur_sounding)
   {
