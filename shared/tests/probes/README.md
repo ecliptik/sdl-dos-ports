@@ -34,6 +34,22 @@ If your port wants to reuse these two probes, either:
 
 Everything else in this directory does not have this dependency.
 
+## `opl3midi.c` needs a real compiled SDL3-DOS, not bare metal
+
+Unlike the rest of this directory, `opl3midi.c` (the `shared/audio/
+opl3_sink.{c,h}` validation probe) calls into the real SDL3-DOS OPL3
+register primitives (`SDL_dos_audio_synth.h`, SDL patch 0037) rather than
+talking to hardware directly -- it needs to link against an actual
+`libSDL3.a` built with that patch applied (any port's own
+`build/sysroot/lib/libSDL3.a` works; this hub does not vendor/build SDL
+itself). See the build recipe in the probe's own header comment. It also
+needs `oplmode = opl3` (or `auto`) in whatever DOSBox-X conf runs it --
+this hub's own shared confs default `oplmode = none`, so a plain
+`dosbox-run.sh` run will report "no chip detected" (harmlessly; every
+`midi_sched` parse/dispatch witness the probe reports is unaffected) --
+use a scratch copy of the conf with that one setting changed to actually
+exercise the sink's register I/O.
+
 ## Naming
 
 Probe-owned environment variables have been renamed from doskutsu's
