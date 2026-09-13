@@ -29,6 +29,7 @@ INTERACTIVE=0
 INCLUDES=()
 KEEP_STAGE=0
 FAST=0
+ENVS=() # --env KEY=VALUE, repeatable -- see usage below
 # --merge-stderr: capture stderr too (e.g. SDL_Log goes there). DOSBox-X / DOS shells
 # don't always honor `2>&1` cleanly -- prefer printf-to-stdout in tests where possible.
 MERGE_STDERR=0
@@ -50,6 +51,17 @@ Usage: dosbox-run.sh --exe PATH [--args "..."] [--stdout PATH] [--include PATH].
   --merge-stderr     Capture both stdout and stderr (>STDOUT.TXT 2>&1). Needed for
                      programs that log to stderr (e.g. SDL_Log on DJGPP). DJGPP's
                      runtime processes 2>&1 itself so the syntax works under DOS.
+  --env KEY=VALUE    SET KEY=VALUE in RUN.BAT before invoking the exe (repeatable).
+                     This is how to reach an SDL_HINT_* value from this script --
+                     SDL_GetHint() falls back to getenv() for anything never
+                     SDL_SetHint()'d in code, and RUN.BAT's SET is a real DOS
+                     environment variable the exe's own getenv() sees, exactly
+                     like this script's own hardcoded BLASTER/
+                     SDL_DOS_AUDIO_SB_SKIP_DETECTION lines below. Previously a
+                     real gap (dosags S5 WaveBlaster validation had to stage
+                     RUN.BAT by hand for exactly this); mirrors tests/harness/
+                     run-rig.sh's own --env flag (real-hardware side) for the
+                     DOSBox-X side.
   -h, --help         Show this help.
 USAGE
 }
@@ -64,6 +76,7 @@ while [[ $# -gt 0 ]]; do
     --interactive) INTERACTIVE=1; shift ;;
     --keep-stage)  KEEP_STAGE=1; shift ;;
     --merge-stderr) MERGE_STDERR=1; shift ;;
+    --env)         ENVS+=("$2"); shift 2 ;;
     -h|--help)     usage; exit 0 ;;
     *) echo "dosbox-run.sh: unknown arg: $1" >&2; usage; exit 2 ;;
   esac
@@ -83,6 +96,13 @@ if [[ ! -f "$CONF" ]]; then
   echo "dosbox-run.sh: conf not found: $CONF" >&2
   exit 2
 fi
+for e in "${ENVS[@]:-}"; do
+  [[ -z "$e" ]] && continue
+  if [[ "$e" != *=* ]]; then
+    echo "dosbox-run.sh: --env expects KEY=VALUE, got: $e" >&2
+    exit 2
+  fi
+done
 
 # Stage ---------------------------------------------------------------------
 STAGE="$(mktemp -d -t dos-port-dosbox.XXXXXX)"
@@ -142,6 +162,10 @@ esac
   # Real hardware (g2k Phase 8) MUST NOT set this -- would mask Vibra16S regressions.
   # See tools/dosbox-launch.sh for the matching parity-config injection.
   printf 'SET SDL_DOS_AUDIO_SB_SKIP_DETECTION=1\r\n'
+  for e in "${ENVS[@]:-}"; do
+    [[ -z "$e" ]] && continue
+    printf 'SET %s\r\n' "$e"
+  done
   printf '%s' "$INVOKE_LINE"
 } > "$STAGE/RUN.BAT"
 
