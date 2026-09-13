@@ -42,6 +42,25 @@
  * voice 0 keeps sounding. The log line immediately before that attempt is
  * the one to watch:
  *
+ * OVERWRITETEST=1 (a second, distinct experiment added alongside DMATEST --
+ * confirms SDL_DOSGusOverwriteSample's own real-hardware safety, sdl3-dos
+ * patch 0139): DMATEST's own REPEAT loop already writes to the SAME fixed
+ * address every attempt, but every one of those writes happens AFTER voice 0
+ * is already active -- it never establishes "written once, safely, before
+ * any voice existed" as its own baseline. That is the actual shape
+ * SDL_DOSGusOverwriteSample exists for (a double-buffered stream's own
+ * half-buffer: allocated ONCE via UploadSample before playback starts,
+ * REFILLED in place many times after). OVERWRITETEST writes a second region
+ * ("region B", 0x20000, clear of both voice 0's own tone at 0x0 and
+ * DMATEST's region at 0x10000) once during bring-up -- before voice 0
+ * starts, the same safe window every other DRAM write in this probe already
+ * uses -- then, once voice 0 is looping, overwrites region B REPEAT times
+ * while voice 0 (which never reads region B) keeps sounding. Same risky-
+ * attempt-announcement discipline as DMATEST: the log line immediately
+ * before each overwrite is the one to watch, and a survived run's final
+ * post-hoc verify confirms the LAST overwrite's data actually landed (not
+ * stale content from the safe pre-voice write).
+ *
  *     gusdmawedge: ABOUT TO ATTEMPT DMA UPLOAD WHILE VOICE 0 IS ACTIVE
  *
  * - If the machine WEDGES (hangs, no further output, needs a power cycle),
@@ -67,6 +86,9 @@
  *   GUSDMAWEDGE DMATEST=1 REPEAT=3   repeat the concurrent-DMA attempt N times
  *                              in the same voice-0-active window (a single
  *                              survived attempt is weaker evidence than several).
+ *   GUSDMAWEDGE OVERWRITETEST=1 REPEAT=3   the overwrite-in-place experiment
+ *                              (see above), independent of DMATEST -- both
+ *                              may be passed together in one run.
  *
  * Knobs shared with gustone.c's own convention (V=<n>, HZ=<n>, DUR=<ms>,
  * BASE=<hex>, IRQ=<n>, DMA=<n>, LATCH=0|1) -- see below; defaults match
@@ -139,7 +161,11 @@ static const unsigned char DMA_CODES[8]  = { 0,1,0,2,0,3,4,5 };
 /* ---- knobs --------------------------------------------------------------- */
 static int k_base = 0x240, k_irq = 7, k_dma = 3, k_voices = 14;
 static int k_hz = 440, k_dur_ms = 4000, k_latch = 1;
-static int k_dmatest = 0, k_repeat = 1;
+static int k_dmatest = 0, k_repeat = 1, k_overwritetest = 0;
+
+/* OVERWRITETEST's own DRAM region -- clear of voice 0's tone (0x0) and
+ * DMATEST's own region (0x10000). Never read by any voice in this probe. */
+#define REGION_B_ADDR 0x20000ul
 
 static FILE *g_log = NULL;
 
@@ -427,6 +453,7 @@ static void parse_args(int argc, char **argv)
         else if (!strcmp(key, "LATCH"))   k_latch = decarg(eq);
         else if (!strcmp(key, "DMATEST")) k_dmatest = decarg(eq);
         else if (!strcmp(key, "REPEAT"))  k_repeat = decarg(eq);
+        else if (!strcmp(key, "OVERWRITETEST")) k_overwritetest = decarg(eq);
     }
 }
 
@@ -434,33 +461,45 @@ static void parse_args(int argc, char **argv)
 static unsigned char g_tone[TONE_LEN];
 static unsigned char g_dma_payload[DMA_CHUNK];
 
+static unsigned char g_region_b_payload[DMA_CHUNK];
+
 int main(int argc, char **argv)
 {
     int present, period, i, r;
     unsigned long out_rate, end_byte;
     unsigned long dma_dest;
+    int any_test = 0;
 
     g_log = fopen("GUSDMAWEDGE.LOG", "w");
     parse_args(argc, argv);
     if (k_voices < 1) k_voices = 1;
     if (k_voices > 32) k_voices = 32;
     out_rate = RATE_NUM / (unsigned long)k_voices;
+    any_test = k_dmatest || k_overwritetest;
 
     logln("==== GUSDMAWEDGE -- GF1 DMA-upload-vs-active-voice wedge probe ====");
-    logln("gusdmawedge: mode=%s base=0x%X irq=%d dma=%d V=%d out_rate=%luHz "
+    logln("gusdmawedge: mode=%s%s%s base=0x%X irq=%d dma=%d V=%d out_rate=%luHz "
           "hz=%d dur=%dms repeat=%d",
-          k_dmatest ? "DMATEST (RISKY)" : "SAFE", k_base, k_irq, k_dma,
-          k_voices, out_rate, k_hz, k_dur_ms, k_repeat);
+          any_test ? "" : "SAFE", k_dmatest ? "DMATEST" : "",
+          k_overwritetest ? (k_dmatest ? "+OVERWRITETEST" : "OVERWRITETEST") : "",
+          k_base, k_irq, k_dma, k_voices, out_rate, k_hz, k_dur_ms, k_repeat);
     if (k_dmatest)
         logln("gusdmawedge: *** DMATEST=1 -- this WILL attempt a DMA upload while "
               "voice 0 is actively looping. If this machine is real hardware and "
               "the hypothesis is confirmed, IT MAY HANG HERE. That is the point "
               "of this probe -- do not run DMATEST=1 on real hardware without the "
               "operator's own explicit go-ahead for a hang risk. ***");
-    else
+    if (k_overwritetest)
+        logln("gusdmawedge: *** OVERWRITETEST=1 -- this WILL overwrite a DRAM "
+              "region already written once earlier in this run, while voice 0 "
+              "is actively looping (a DIFFERENT region). Same hang risk as "
+              "DMATEST -- do not run on real hardware without the operator's "
+              "own explicit go-ahead. ***");
+    if (!any_test)
         logln("gusdmawedge: SAFE mode -- exercises bring-up/upload/voice-start "
-              "only, same proven-safe sequence GUSTONE already uses. No DMA "
-              "attempt will be made. Pass DMATEST=1 for the actual experiment.");
+              "only, same proven-safe sequence GUSTONE already uses. No risky "
+              "attempt will be made. Pass DMATEST=1 and/or OVERWRITETEST=1 for "
+              "the actual experiments.");
 
     /* --- bring-up (identical shape to gustone.c) -------------------------- */
     logln("gusdmawedge: [bring-up] reset chip...");
@@ -499,45 +538,95 @@ int main(int argc, char **argv)
         end_byte = (unsigned long)(nsamp - 1);
     }
 
+    /* OVERWRITETEST's own "written once, safely, before any voice existed"
+     * baseline -- the SAME safe window (no voice active yet) every other
+     * upload in this probe already uses. This establishes region B as an
+     * already-used address, exactly like a gus_pcm_stream half-buffer's own
+     * initial fill at stream-open time, BEFORE the later overwrite-while-
+     * voice-0-plays test below. */
+    if (k_overwritetest) {
+        for (i = 0; i < DMA_CHUNK; i++)
+            g_region_b_payload[i] = (unsigned char)(0x5A ^ (i & 0xFF)); /* initial fill pattern */
+        logln("gusdmawedge: [upload] region B initial fill, %u bytes -> DRAM "
+              "0x%lX (PIO, safe -- no voice active yet; this is the write "
+              "OVERWRITETEST will later overwrite while voice 0 plays)",
+              DMA_CHUNK, REGION_B_ADDR);
+        gus_upload_pio(k_base, REGION_B_ADDR, g_region_b_payload, (unsigned long)DMA_CHUNK);
+    }
+
     logln("gusdmawedge: [voice0] START looping tone @ %luHz (V=%d) -- will play "
-          "for %dms total (plus any DMATEST attempts inside that window)...",
+          "for %dms total (plus any risky attempts inside that window)...",
           out_rate, k_voices, k_dur_ms);
     start_loop_voice(k_base, 0, end_byte, out_rate, out_rate);
     logln("gusdmawedge: [voice0] voice 0 reports STARTED (this line proves the "
           "machine survived starting the loop -- unremarkable, but establishes "
           "the baseline before anything risky happens).");
 
-    if (!k_dmatest) {
+    if (!any_test) {
         delay(k_dur_ms);
         stop_voice(k_base, 0);
         logln("gusdmawedge: RESULT=SAFE_DONE -- voice-0 loop played + stopped "
-              "cleanly, no DMA attempt made (pass DMATEST=1 for the real test).");
+              "cleanly, no risky attempt made (pass DMATEST=1 and/or "
+              "OVERWRITETEST=1 for the real tests).");
         gus_w8(k_base, REG_RESET, 0x00);
         if (g_log) fclose(g_log);
         return 0;
     }
 
-    /* --- the experiment ---------------------------------------------------- */
-    dma_dest = 0x10000; /* well clear of the voice-0 tone at DRAM 0x0 */
-    for (i = 0; i < DMA_CHUNK; i++)
-        g_dma_payload[i] = (unsigned char)(0xA5 ^ (i & 0xFF)); /* a recognizable pattern */
+    /* --- experiment 1: DMA upload to a FRESH region while voice 0 plays --- */
+    if (k_dmatest) {
+        dma_dest = 0x10000; /* well clear of the voice-0 tone at DRAM 0x0 */
+        for (i = 0; i < DMA_CHUNK; i++)
+            g_dma_payload[i] = (unsigned char)(0xA5 ^ (i & 0xFF)); /* a recognizable pattern */
 
-    for (r = 0; r < k_repeat; r++) {
-        logln("gusdmawedge: ---- DMA attempt %d/%d ----", r + 1, k_repeat);
-        logln("gusdmawedge: ABOUT TO ATTEMPT DMA UPLOAD WHILE VOICE 0 IS ACTIVE "
-              "(dest=0x%lX chan=%d chunk=%u bytes) -- if this machine hangs, "
-              "THIS is the last line you will see.",
-              dma_dest, k_dma, DMA_CHUNK);
-        {
-            int ok = gus_dma_upload_once(k_base, k_dma, dma_dest, g_dma_payload,
-                                          (unsigned long)DMA_CHUNK);
-            logln("gusdmawedge: DMA upload attempt %d/%d RETURNED, poll_ok=%d "
-                  "(the machine did NOT hang on this attempt -- refutes the "
-                  "immediate-hang hypothesis for this one attempt; poll_ok=0 "
-                  "means the completion poll timed out, a DIFFERENT, milder "
-                  "failure than a hang).", r + 1, k_repeat, ok);
+        for (r = 0; r < k_repeat; r++) {
+            logln("gusdmawedge: ---- DMA attempt %d/%d ----", r + 1, k_repeat);
+            logln("gusdmawedge: ABOUT TO ATTEMPT DMA UPLOAD WHILE VOICE 0 IS ACTIVE "
+                  "(dest=0x%lX chan=%d chunk=%u bytes) -- if this machine hangs, "
+                  "THIS is the last line you will see.",
+                  dma_dest, k_dma, DMA_CHUNK);
+            {
+                int ok = gus_dma_upload_once(k_base, k_dma, dma_dest, g_dma_payload,
+                                              (unsigned long)DMA_CHUNK);
+                logln("gusdmawedge: DMA upload attempt %d/%d RETURNED, poll_ok=%d "
+                      "(the machine did NOT hang on this attempt -- refutes the "
+                      "immediate-hang hypothesis for this one attempt; poll_ok=0 "
+                      "means the completion poll timed out, a DIFFERENT, milder "
+                      "failure than a hang).", r + 1, k_repeat, ok);
+            }
+            delay(200);
         }
-        delay(200);
+
+        /* Bounded, single-pass, no-active-voice verify happens further down
+         * (after voice 0 is stopped) so it never itself becomes a risky
+         * concurrent-read -- see the shared verify block below. */
+    }
+
+    /* --- experiment 2: OVERWRITE an address already written once, while --- */
+    /* --- voice 0 (a DIFFERENT region) keeps playing ----------------------- */
+    if (k_overwritetest) {
+        for (i = 0; i < DMA_CHUNK; i++)
+            g_region_b_payload[i] = (unsigned char)(0x3C ^ (i & 0xFF)); /* NEW pattern, distinct from the initial fill */
+
+        for (r = 0; r < k_repeat; r++) {
+            logln("gusdmawedge: ---- OVERWRITE attempt %d/%d ----", r + 1, k_repeat);
+            logln("gusdmawedge: ABOUT TO OVERWRITE REGION B (already written once "
+                  "pre-voice) WHILE VOICE 0 IS ACTIVE (dest=0x%lX chan=%d "
+                  "chunk=%u bytes) -- if this machine hangs, THIS is the last "
+                  "line you will see.",
+                  REGION_B_ADDR, k_dma, DMA_CHUNK);
+            {
+                int ok = gus_dma_upload_once(k_base, k_dma, REGION_B_ADDR,
+                                              g_region_b_payload, (unsigned long)DMA_CHUNK);
+                logln("gusdmawedge: OVERWRITE attempt %d/%d RETURNED, poll_ok=%d "
+                      "(the machine did NOT hang on this attempt -- refutes the "
+                      "immediate-hang hypothesis for overwriting an already-used "
+                      "address while a different voice plays; poll_ok=0 means "
+                      "the completion poll timed out, a DIFFERENT, milder "
+                      "failure than a hang).", r + 1, k_repeat, ok);
+            }
+            delay(200);
+        }
     }
 
     stop_voice(k_base, 0);
@@ -546,9 +635,9 @@ int main(int argc, char **argv)
 
     /* Bounded, single-pass, no-active-voice verify -- mirrors GUSDUMP's own
        "safe because nothing is playing" framing. Tells you whether a
-       *survived* DMA attempt actually moved correct data, independent of
-       the wedge question. */
-    {
+       *survived* attempt actually moved correct data, independent of the
+       wedge question. */
+    if (k_dmatest) {
         int mismatches = 0;
         unsigned long k;
         disable();
@@ -558,16 +647,36 @@ int main(int argc, char **argv)
             if (got != want) mismatches++;
         }
         enable();
-        logln("gusdmawedge: [verify] post-hoc DRAM check @0x%lX, first 64 bytes: "
-              "%d/64 mismatches (0 = DMA transferred this region correctly).",
-              dma_dest, mismatches);
+        logln("gusdmawedge: [verify] post-hoc DRAM check @0x%lX (DMATEST region), "
+              "first 64 bytes: %d/64 mismatches (0 = DMA transferred this region "
+              "correctly).", dma_dest, mismatches);
+    }
+    if (k_overwritetest) {
+        int mismatches = 0;
+        unsigned long k;
+        disable();
+        for (k = 0; k < 64; k++) { /* bounded sample, not the whole chunk */
+            unsigned char got = gus_peek(k_base, REGION_B_ADDR + k);
+            unsigned char want = (unsigned char)(0x3C ^ (k & 0xFF)); /* the LAST overwrite's pattern, not the initial fill */
+            if (got != want) mismatches++;
+        }
+        enable();
+        logln("gusdmawedge: [verify] post-hoc DRAM check @0x%lX (region B), "
+              "first 64 bytes: %d/64 mismatches (0 = the LAST overwrite landed "
+              "correctly -- a mismatch here that instead matches the INITIAL "
+              "0x5A fill pattern would mean the overwrite never actually took, "
+              "surviving only because it silently no-op'd, not because "
+              "overwriting a live address is genuinely safe).",
+              REGION_B_ADDR, mismatches);
     }
 
-    logln("gusdmawedge: RESULT=DMATEST_DONE -- if you are reading this, the "
-          "machine survived every DMA-while-active-voice attempt this run. "
-          "Re-run a few times / vary REPEAT and DMA chunk exposure before "
-          "trusting this generally, per this campaign's own 'one clean pass "
-          "is evidence, not proof' discipline.");
+    logln("gusdmawedge: RESULT=%s%s%s_DONE -- if you are reading this, the "
+          "machine survived every risky attempt this run. Re-run a few times "
+          "/ vary REPEAT and chunk exposure before trusting this generally, "
+          "per this campaign's own 'one clean pass is evidence, not proof' "
+          "discipline.",
+          k_dmatest ? "DMATEST" : "", (k_dmatest && k_overwritetest) ? "_" : "",
+          k_overwritetest ? "OVERWRITETEST" : "");
     gus_w8(k_base, REG_RESET, 0x00);
     if (g_log) fclose(g_log);
     return 0;
