@@ -64,6 +64,13 @@
  * SDL_DOSGusResetDram rewind) -- it lives for the session, same as GUS
  * MIDI's own per-song residency above it in the same DRAM space.
  *
+ * COEXISTING WITH shared/audio/gus_sink.c: gus_pcm_stream_open() reserves
+ * its two half-buffers against the shared floor (gus_dram_floor.h)
+ * immediately after they're allocated, so a later gus_sink song-boundary
+ * DRAM rewind can never land on top of them -- true whether this stream
+ * opens before gus_sink or after it has already played several songs. GUS
+ * MIDI and GUS PCM streaming may be used together in the same session.
+ *
  * DOS/DJGPP: no threads, no dynamic C++, ASCII-only. Builds as C99.
  */
 

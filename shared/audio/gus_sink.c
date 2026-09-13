@@ -8,6 +8,7 @@
  */
 
 #include "gus_sink.h"
+#include "gus_dram_floor.h"
 
 #include <math.h>
 #include <stdbool.h>
@@ -302,9 +303,14 @@ gus_sink *gus_sink_open(void)
   }
 
   /* No persistent DRAM region of our own (unlike doskutsu's Pixtone SFX
-   * bank -- this module carries no PCM SFX): the whole card is a per-song
-   * pool, rewound fresh by every gus_sink_prepare_song() call. */
-  SDL_DOSGusResetDram(0);
+   * bank -- this module carries no PCM SFX): everything ABOVE the shared
+   * floor is a per-song pool, rewound fresh by every
+   * gus_sink_prepare_song() call. Rewinding to the floor rather than a
+   * literal 0 is what keeps this call from invalidating a
+   * shared/audio/gus_pcm_stream.c stream that already reserved its own
+   * session-lifetime DRAM before this sink ever opened -- see
+   * gus_dram_floor.h for the full protocol. */
+  SDL_DOSGusResetDram(gus_dram_floor_get());
 
   s->no_reap     = hint_is_1("SDL_HINT_DOS_GUS_NO_REAP");
   s->release     = !hint_is_0("SDL_HINT_DOS_GUS_RELEASE");
@@ -556,8 +562,11 @@ void gus_sink_prepare_song(gus_sink *s, const midi_sched *m)
   }
 
   /* Free the previous song's DRAM region -- this module keeps nothing
-   * persistently resident across songs (no PCM SFX bank of its own). */
-  SDL_DOSGusResetDram(0);
+   * persistently resident across songs (no PCM SFX bank of its own).
+   * Rewinding to the shared floor, not a literal 0, so any coexisting
+   * gus_pcm_stream's own session-lifetime half-buffers survive every song
+   * change -- see gus_dram_floor.h. */
+  SDL_DOSGusResetDram(gus_dram_floor_get());
   for (n = 0; n < 128; ++n)
   {
     s->mel[n].resident  = false;

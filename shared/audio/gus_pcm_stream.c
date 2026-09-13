@@ -7,6 +7,7 @@
  */
 
 #include "gus_pcm_stream.h"
+#include "gus_dram_floor.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -167,6 +168,15 @@ gus_pcm_stream *gus_pcm_stream_open(unsigned rate, unsigned channels, size_t chu
   free(silence);
   if (addr0 == GUS_BAD_ADDR || addr1 == GUS_BAD_ADDR)
     return NULL; /* DRAM exhausted -- graceful degradation, no voice claimed yet */
+
+  /* This stream's two half-buffers are a SESSION-LIFETIME allocation (see
+   * this file's own header comment) -- raise the shared floor to protect
+   * them from a later shared/audio/gus_sink.c song-boundary DRAM rewind,
+   * regardless of whether gus_sink has opened yet or opens later. See
+   * gus_dram_floor.h for the full protocol. Must happen before this
+   * function can return success (i.e. before any caller could start
+   * relying on addr0/addr1 staying valid). */
+  gus_dram_floor_reserve(addr1 + (uint32_t)chunk_bytes);
 
   voice = SDL_DOSGusAllocVoiceSfx();
   if (voice < 0)

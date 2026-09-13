@@ -70,24 +70,23 @@
  * unrelated to the SB16 ISA-bus timing WaveBlaster's MPU-401 cold-init
  * depends on) -- gus_sink_open() may be called lazily, at any point.
  *
- * KNOWN, UNRESOLVED HAZARD -- coexisting with shared/audio/gus_pcm_stream.c:
- * gus_sink_open() and gus_sink_prepare_song() both call
- * SDL_DOSGusResetDram(0) (a hard rewind of the WHOLE GF1 DRAM bump
- * allocator to empty), on every song boundary, unconditionally. If a
- * gus_pcm_stream is alive at the same time (its own DRAM allocated via
- * plain SDL_DOSGusUploadSample, indistinguishable to ResetDram from
- * anything else above the rewind point), the very next song change
- * silently invalidates that stream's fixed half-buffer addresses --
- * gus_pcm_stream would keep "successfully" overwriting addresses that no
- * longer hold what it thinks they hold, and whatever gus_sink's own next
- * .pat upload happens to land on top of would then be read back as
- * garbage PCM audio. NEITHER module currently coordinates with the other
- * about DRAM ownership (unlike doskutsu's own Pixtone-on-GF1 precedent,
- * which solved exactly this with a persist_mark boundary, patches/
- * nxengine-evo/0239) -- using GUS MIDI and GUS PCM streaming TOGETHER in
- * the same session is NOT safe until this is designed and fixed. Using
- * either alone (MIDI-only or PCM-only) is unaffected. Flagged, not solved,
- * here -- a real follow-up item, not a hypothetical.
+ * COEXISTING WITH shared/audio/gus_pcm_stream.c -- RESOLVED via
+ * shared/audio/gus_dram_floor.{c,h}: gus_sink_open() and
+ * gus_sink_prepare_song() both rewind the GF1 DRAM bump allocator on every
+ * song boundary (this module keeps nothing persistently resident of its
+ * own), but rewind to gus_dram_floor_get() rather than a literal 0 -- the
+ * lowest address any coexisting session-lifetime allocation (a
+ * gus_pcm_stream's own two fixed half-buffers) has reserved, regardless of
+ * whether that reservation happened before or after this sink opened. This
+ * is a live, dynamic floor, NOT a one-time snapshot the way doskutsu's own
+ * Pixtone-on-GF1 precedent (patches/nxengine-evo/0239's persist_mark) gets
+ * away with -- that precedent only ever had to handle "the SFX bank is
+ * fully populated once at boot, then MIDI starts," whereas here a
+ * gus_pcm_stream can open (and so raise the floor) at ANY point in the
+ * session, including after this sink has already played several songs. See
+ * gus_dram_floor.h for the full protocol. GUS MIDI and GUS PCM streaming
+ * may now be used together in the same session; using either alone is,
+ * and always was, unaffected.
  *
  * DIVERGENCE FROM THE DOSKUTSU SOURCE -- deliberate, not an oversight: this
  * module's per-song voice quiesce (inside gus_sink_prepare_song()) stops
