@@ -19,6 +19,7 @@ never ships a full copy of SDL, SDL_mixer, or SDL_image.
 | `shared/audio/midi_sched.{c,h}` and hardware-MIDI backends | MIT (original work, this repo) | no upstream dependency |
 | `shared/audio/opl3_sink.{c,h}` | MIT (original work, this repo) | plain-C rebase of a GPLv3-derivative doskutsu source file (patches/nxengine-evo 0103+0106+0141+0142+0171+0232 against NXEngine-evo) onto the shared `midi_sched_sink` interface -- same treatment as `midi_sched.c`: a rewrite verified behaviorally equivalent, not a textual copy, judged an independent work rather than a derivative for the same reason (see rationale below) |
 | `shared/audio/opl3bank.dat` + `gen-opl3-bank.py` | MIT (see DMXOPL provenance below) | 128-program GM instrument bank for `opl3_sink`, mechanically generated, reproducible from source |
+| `shared/audio/waveblaster_sink.{c,h}` | MIT (original work, this repo) | plain-C rebase of a GPLv3-derivative doskutsu source file (patches/nxengine-evo 0102 against NXEngine-evo) onto the shared `midi_sched_sink` interface -- follows the identical rewrite-verified-behaviorally-equivalent precedent recorded for `opl3_sink.{c,h}` below; unlike that entry, this specific categorization was not separately re-confirmed with the operator this session (see rationale below) |
 | `shared/tests/probes/*` | MIT (original work, this repo) | standalone DJGPP diagnostics, no upstream dependency |
 
 ## `shared/audio/opl3_sink.{c,h}` -- why this is recorded as MIT, not GPLv3
@@ -52,6 +53,16 @@ all: so this judgment call is visible and re-examinable, not silently
 assumed. If this reasoning is ever revisited, both `midi_sched.{c,h}` and
 `opl3_sink.{c,h}` should be reconsidered together, since they rest on the
 same argument.
+
+`shared/audio/waveblaster_sink.{c,h}` (S5, WaveBlaster hoist) rests on the
+exact same argument again: a plain-C rebase of doskutsu's
+`MidiBackendWaveBlaster` (`patches/nxengine-evo/0102` against NXEngine-evo,
+GPLv3-derivative in its origin repo) onto `midi_sched_sink`, dropping every
+doskutsu-specific dependency (`MidiBackend`/`Logger.h`) the same way
+`opl3_sink` did. Applying the operator's 2026-09-12 decision to this module
+too, without a separate re-ask, is a judgment call by whoever lands this --
+flagged here explicitly so it is visible and can be confirmed or reversed
+rather than silently assumed to carry forward.
 
 ## `shared/audio/opl3bank.dat` -- DMXOPL provenance, independently verified
 
