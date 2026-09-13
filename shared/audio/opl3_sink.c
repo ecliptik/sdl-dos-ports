@@ -460,5 +460,6 @@ void opl3_sink_bind(opl3_sink *s, midi_sched_sink *out)
   out->note_off        = sink_note_off;
   out->control_change  = sink_control_change;
   out->program_change  = sink_program_change;
+  out->on_tick         = NULL; /* no per-tick state on this backend */
   out->user            = s;
 }
