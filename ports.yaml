@@ -426,6 +426,36 @@ ports:
       normal successful run. Full writeup: dosags's PLAN.md
       twelfth-session "Current state" and tests/harness/results/
       HW-486-66-2026-09-11-agsquest-slice8.md.
+      2026-09-16: local-only prep session (no rig). The fixed timestep
+      (patches 0046-0048, opt-in DOSAGS_FIXED_TIMESTEP=1 by operator
+      decision) is now enforced by default in tools/port-game's
+      validate/check and in run-rig.sh, witnessed from the engine's own
+      "DOS-PORT fixed-timestep: ENABLED" log line, with tick_rate/
+      frames_skipped parsed into every record; patch 0077 extends the
+      RUNMANIFEST env allowlist so the benchmark env vars (fixed
+      timestep, forced depth, auto-exit tick, MIDI backend, GUS
+      autoinc/diag) change env_block_sha. Game porting framework gate
+      set decided: Trilby's Notes, 5 Days a Stranger, Maniac Mansion
+      Deluxe (in-profile) + Shards of God, IOAWN4T (32-bit); both 32-bit
+      references now validate from their manifests alone on DOSBox-X,
+      and a `check` subcommand lets a run-rig.sh collected dir enter the
+      record through the tool. The 2026-09-12 "black boxes around
+      sprites" report was root-caused on DOSBox-X as harness package
+      DATA -- the AGS Editor drops PNG alpha when the TrueColor-authored
+      AGS Quest is recompiled at HighColor, and the PNGs are RGB-black
+      under alpha 0; AGS's official Linux engine renders sha256-identical
+      frames -- so it is neither a dosags nor a shared-layer bug (no
+      SDL_ConvertSurface/colorkey on the sprite path at all); the fix is
+      a pre-compile alpha flatten in the harness build. Allegro 4.4.3's
+      license verified as giftware against upstream's own text at tag
+      4.4.3 (LICENSE-REVIEW.md blocker closed; built-in plugins are
+      compiled out). Plans written in dosags PLAN.md: framework
+      completion (F1-F5), the self-authored TAS-driven benchmark test
+      game (Linux-native pipeline from AGS's own agscc/agf2dta/
+      spritepak/crmpak/agspak, all verified building natively from the
+      pinned tree; one own tool, mkroom, for room data; CC0 assets +
+      MIT scripts), and the glitch fix/test plan. STATUS.md rewritten
+      to match current state.
 
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
