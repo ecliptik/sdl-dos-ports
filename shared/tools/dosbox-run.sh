@@ -29,6 +29,7 @@ INTERACTIVE=0
 INCLUDES=()
 KEEP_STAGE=0
 FAST=0
+CONF_OVERRIDE=""
 ENVS=() # --env KEY=VALUE, repeatable -- see usage below
 # --merge-stderr: capture stderr too (e.g. SDL_Log goes there). DOSBox-X / DOS shells
 # don't always honor `2>&1` cleanly -- prefer printf-to-stdout in tests where possible.
@@ -38,7 +39,7 @@ CWSDPMI="${CWSDPMI:-$SCRIPT_DIR/../vendor/cwsdpmi/cwsdpmi.exe}"
 usage() {
   cat <<'USAGE'
 Usage: dosbox-run.sh --exe PATH [--args "..."] [--stdout PATH] [--include PATH]...
-                     [--fast] [--interactive] [--keep-stage] [--merge-stderr]
+                     [--fast | --conf PATH] [--interactive] [--keep-stage] [--merge-stderr]
 
   --exe PATH         DOS executable to run (required). Basename is placed at C:\.
   --args "..."       Arguments passed to the exe (quoted as a single string).
@@ -46,6 +47,15 @@ Usage: dosbox-run.sh --exe PATH [--args "..."] [--stdout PATH] [--include PATH].
   --include PATH     Additional file to stage into C:\ (repeatable). If CWSDPMI
                      is present at vendor/cwsdpmi/cwsdpmi.exe it is auto-included.
   --fast             Use dosbox-x-fast.conf (cycles=max) instead of parity config.
+  --conf PATH        Use an arbitrary DOSBox-X conf instead of either shipped one.
+                     Mutually exclusive with --fast (say which conf you mean).
+                     The two shipped confs deliberately set oplmode=none, so a
+                     port validating a MIDI backend under DOSBox-X (dosags's
+                     Sound gate needed oplmode=opl3 for OPL3 chip detection)
+                     previously had to stage a scratch conf and hand-run this
+                     script; that conf now lives in the port's own tree and is
+                     passed here. Same staging/RUN.BAT/exit behavior otherwise --
+                     this only changes which file lands on `-conf`.
   --interactive      Open the DOSBox-X window instead of running headless.
   --keep-stage       Leave the staging temp dir on exit (useful for debugging).
   --merge-stderr     Capture both stdout and stderr (>STDOUT.TXT 2>&1). Needed for
@@ -73,6 +83,7 @@ while [[ $# -gt 0 ]]; do
     --stdout)      STDOUT_PATH="$2"; shift 2 ;;
     --include)     INCLUDES+=("$2"); shift 2 ;;
     --fast)        FAST=1; shift ;;
+    --conf)        CONF_OVERRIDE="$2"; shift 2 ;;
     --interactive) INTERACTIVE=1; shift ;;
     --keep-stage)  KEEP_STAGE=1; shift ;;
     --merge-stderr) MERGE_STDERR=1; shift ;;
@@ -82,7 +93,17 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ "$FAST" == "1" ]]; then CONF="$CONF_FAST"; else CONF="$CONF_PARITY"; fi
+if [[ -n "${CONF_OVERRIDE:-}" && "$FAST" == "1" ]]; then
+  echo "dosbox-run.sh: --conf and --fast are mutually exclusive (pass the conf you actually want)" >&2
+  exit 2
+fi
+if [[ -n "${CONF_OVERRIDE:-}" ]]; then
+  CONF="$CONF_OVERRIDE"
+elif [[ "$FAST" == "1" ]]; then
+  CONF="$CONF_FAST"
+else
+  CONF="$CONF_PARITY"
+fi
 
 if [[ -z "$EXE" ]]; then
   echo "dosbox-run.sh: --exe is required" >&2
