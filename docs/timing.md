@@ -111,6 +111,62 @@ same span the in-engine measurement covers -- an unaccounted-for
 startup/teardown window on one side of the comparison but not the other
 produces a confident, wrong verdict in either direction.
 
+## An engine's portable clock can cost 1.3 ms PER READ, and its sleep a whole 55 ms tick
+
+The `gettimeofday()` finding above is about *resolution*. This one is
+about *cost*, and it applies to any C++ engine that keeps time with
+`std::chrono` -- on DJGPP, `std::chrono::steady_clock`/
+`high_resolution_clock::now()` lands in `gettimeofday()`. Measured on
+HW-486-66 by a standalone probe, 10,000 iterations each (dosags,
+2026-09-17; `tests/harness/results/clock-probe/` and the "40/40 plan"
+P1 item 1 in its `PLAN.md`):
+
+| primitive | per call |
+|---|---|
+| `uclock()` (control) | 4.9 us |
+| engine `Clock::now()` (std::chrono) | **1324.6 us** |
+| `gettimeofday()` underneath it | 1318.8 us |
+| `mktime()` inside that -- the largest part | 723.7 us |
+| one `__dpmi_int(0x21)` (two per call) | 171.2 us |
+| `__dpmi_int(0x33)` mouse poll, for scale | 81.9 us |
+| `std::this_thread::sleep_for(0)` | 0.4 us |
+| `sleep_for(1 ms / 10 ms / 25 ms)` | **~54.8 ms each** |
+
+Consequences, all seen for real in AGS on the DX2-66:
+
+- **The cost is mostly `mktime()`'s calendar arithmetic, not the DPMI
+  real-mode switches.** "It is just a DOS call" undersells it by 4x.
+- **A handful of innocent clock reads per tick is a large slice of a
+  25 ms budget.** AGS read its clock ~5 times per logic tick on an idle
+  screen (three in its end-of-tick bookkeeping, one each in the
+  fixed-timestep driver and the frame wait): ~6.3 ms per tick of pure
+  overhead, predicted from call counts and matching the measured phase
+  costs to within 4-18%. Two of those reads were the
+  port's own once-a-second samplers polling the clock every tick to see
+  whether a second had passed -- count ticks instead.
+- **The signature to look for:** a timed phase whose cost is suspiciously
+  constant (min = max to the millisecond) across thousands of calls while
+  doing no real work. Count `now()` call sites on the hot path and
+  multiply before hunting anything more exotic.
+- **The mouse poll was checked and ruled out** (0.25 ms per tick) -- a
+  per-tick `INT 33h` is cheap next to one `gettimeofday()`.
+- **Any positive sleep costs up to a full 55 ms BIOS tick.** A frame
+  pacer built on `sleep_for()`/`nanosleep` cannot pace a 25 ms frame.
+- **Swap the clock and the pacer in the same change.** With the coarse
+  55 ms clock the pacer always believes it is behind and never sleeps,
+  so it is accidentally harmless. Give it an accurate clock alone and it
+  will start sleeping ~55 ms every frame, capping the game near 18 fps.
+  Replace the wait with a `uclock()`-deadline wait (interrupts enabled,
+  audio still pumped -- see the busy-wait hazard above) in the same
+  slice, and validate with an external wall-clock bracket, because the
+  change replaces the very clock the engine's self-report uses.
+
+Fix shape: a DOS-only clock type backed by `uclock()` behind the engine's
+own clock alias (guarded `#ifdef __DJGPP__`), leaving calendar-time users
+on the system clock. Respect `uclock()`'s own limits documented above
+(not monotonic across a wrong-order subtract; read DJGPP's source for its
+midnight behaviour before relying on it across a long session).
+
 ## SDL_Delay() overshoot on 486-class CPUs (resolved: delay(1) granularity, not clock rate)
 
 dossage/Passage bisected a residual fps gap on 486DX2-66 + S3 ViRGE (see

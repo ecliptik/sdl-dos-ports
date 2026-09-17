@@ -154,6 +154,64 @@ misleading way to close out a campaign whose actual goal was a 15fps
 run average. Before crediting an optimization, confirm it moved the KPI
 itself, not just the intermediate quantity it was designed to influence.
 
+**Skip the present entirely when the frame is unchanged -- a cheap
+stand-in for dirty rectangles on a mostly-static game.** dosags (AGS,
+Trilby's Notes, HW-486-66) cached the last-presented frame and skipped
+the blit + `SDL_UpdateWindowSurface()` when the new one was
+byte-identical (palette, offset and flip state checked too). On an idle
+adventure-game screen **95.9% of presents were skipped**; pre-registered
+ABBA: fps_p50 8.57 -> 21.05. It is not a substitute for real dirty
+rectangles -- the moment anything moves, every frame pays the full
+present again -- but it is a few dozen lines and needs no engine
+knowledge. (dosags patches 0091/0092.)
+
+**DJGPP libc's `memcmp()` and tiny `memcpy()` calls are slow enough to
+decide a frame budget.** Disassembling the toolchain's `libc.a` showed
+`memcmp` is a byte-at-a-time loop (no `REP CMPSB`, no word widening).
+Replacing a 64 KB frame compare with a 32-bit word compare (exact, not a
+hash -- a `Uint32` is equal iff its four bytes are) took fps_p50 22.01 ->
+34.62 in a pre-registered ABBA, 4x the predicted effect, because on a
+fixed-timestep engine saved time also removes catch-up ticks. The same
+port's first "fast blit" showed ZERO real-hardware gain until a
+per-replicated-byte `memcpy()` (~153,600 one-byte calls per frame) was
+replaced with direct stores. Verify a hot inner loop compiled to what you
+think it did before crediting or blaming the algorithm.
+
+**Label every fps number with how many presents were real.** After the
+skip-unchanged change, dosags's headline `fps_p50=34.62` counted render
+passes on a static screen: 23 of 881 frames actually reached the card,
+and a real present still cost ~76 ms (~13 fps if everything changed).
+Both statements are true; only one describes gameplay. Emit
+`presents_real`/`presents_skipped` beside fps, and never quote a
+static-screen figure as a gameplay figure. The same applies to a
+whole-run tick rate that silently averages in one-time stalls: report a
+steady-state figure AND list the stalls.
+
+**Instrumentation bugs that hid real signal in one campaign, worth
+checking in any per-phase timer:** (1) truncating each sample to whole
+milliseconds *before* summing -- nine phases reported exactly 0 ms
+across 10,000+ calls; sum in the clock's native units and convert once.
+(2) a whole-function bracket on a function with call sites outside the
+path being measured summed to MORE than its parent -- an impossible
+subset is a free tell; bracket the call site, not the callee. (3) totals
+for a phase that can re-enter itself (a blocking script wait that runs
+nested game ticks) double-count; measure self-time, or the arithmetic
+built on those totals is wrong. (4) the measured cost of the timing
+mechanism itself was 11 us per bracket -- cheap enough, but measure it
+once rather than assume.
+
+**Pick the iteration vehicle for speed, the validation vehicle for
+truth.** dosags spent most of a day on 20-70 minute real-hardware cells
+because its only 32-bit content was a 72 MB game. Forcing a small,
+fully scripted game onto the same code path with an existing
+depth-override lever reproduced the same relative behaviour in 4-8
+minute cells. Develop against the fastest fixture that exercises the
+code path; return to the heavy one only to confirm.
+
+See also `video.md` ("No low-res mode on the card") for the largest
+structural lever found so far -- presenting unscaled instead of
+scale-to-fill -- and `timing.md` for the 1.3 ms clock read.
+
 ## Setting a performance KPI
 
 Write a KPI down *before* chasing it, in a form that can't be satisfied by

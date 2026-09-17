@@ -63,6 +63,82 @@ this one (directly or via `shared/patches/sdl3-dos/0010`'s
 `SDL_HINT_DOS_PREFER_LFB` interaction with it), tearing is expected
 behavior for that path, not a defect.
 
+## No low-res mode on the card: present unscaled, never scale to fill
+
+Some cards cannot produce 320x200/320x240 VESA modes at all (the ATI
+Mach64 CT/ET cannot double-scan -- see "Real hardware can diverge..."
+below and `HARDWARE.md`). The engine then lands in a larger mode, and the
+tempting default -- scale the game frame up to fill it -- is the single
+most expensive thing a port can do on a 486. Two ports have now measured
+this on the same Mach64:
+
+- **doskutsu** (320x240x8) first ran at **2.2 fps** on this card, and
+  reached a **27.6 fps** baseline after presenting *unscaled*: the
+  320x240 picture centered in the 640x480 surface, the flush scoped to
+  the logical rect (`center-oversized: flush rect=320x240@160,120
+  bytes=76800`), margins cleared once, writes going straight to VRAM.
+  (`doskutsu/qa-results/2026-08-13-r2-mach64/`, `2026-08-21-mach64-tilemap/`.)
+- **dosags** (AGS, 320x200x8) took the scale-to-fill default (AGS's
+  "fullscreen desktop" = 640x480, 2x): every real present cost ~76 ms --
+  ~34 ms for the 2x scale blit plus ~42 ms to push 307,200 bytes --
+  against 64,000 bytes for the game's own frame. Hand-optimizing the
+  scaler (integer fast path, word stores) won real fps but only polishes
+  a step that should not exist. (dosags `PLAN.md`, "40/40 plan".)
+
+**Candidate ladder for a low-res game on such a card, best first.
+Status is stated per rung -- do not quote an unproven rung as fact:**
+
+1. **Classic VGA Mode 13h, for 320x200 8-bit games only.** Full-screen
+   picture, 64,000 bytes per frame, no VESA involved (the shared backend
+   always enumerates a synthetic Mode 13h entry). Reasoning: a vendor's
+   "no double scanning" note is about the VESA/accelerator modes; Mode
+   13h runs on the legacy VGA core, which does its own line doubling,
+   and every VGA-compatible card must run it for ordinary DOS games.
+   **STATUS: reasoning only -- confirmed from this backend on DOSBox-X
+   (dosags, 2026-09-10), NOT yet on the Mach64. Being proven in dosags's
+   40/40 plan, P2.1.** Verify it sets, displays correctly (use a camera,
+   not only VGA capture -- see the stale-frame hazards in
+   `dos-hardware-validation`), and restores the console on exit.
+2. **Centered, unscaled, in the SMALLEST enumerated mode that contains
+   the game rect.** On this Mach64's UniVBE list that is 512x384x8 (mode
+   0x01F3; 0x01D4 at 16-bit). The flush is the same size as rung 3, but
+   a 320-wide picture fills ~62% of the screen width instead of 50%.
+   **STATUS: untested idea (2026-09-17), queued for the same bake-off.**
+   Known history to respect: doskutsu's 320x240 request once landed on a
+   512x384 closest-match on this chip and exposed the stride-caching bug
+   fixed in `shared/patches/sdl3-dos/0125`; and a closest-match result
+   is a property of one card + BIOS + UniVBE config, not of the chip
+   model (see below). Read the enumerated list per machine; pin the mode
+   explicitly rather than trusting closest-match.
+3. **Centered, unscaled, in 640x480.** doskutsu's exact shape on this
+   card. **STATUS: proven on real hardware (doskutsu).** The known-good
+   fallback; picture is 50% of screen width.
+
+Rules that apply to every rung:
+
+- **Scope the flush to the game's own rect** (rect-limit every stage --
+  see "Presentation path" above and `optimization.md`).
+- **Clear the margins once, not per present.** dosags found AGS issuing
+  a full-window black fill on every present of a letterboxed 640x360
+  game, ~15 ms that no timing bracket covered. A game that is already
+  1:1 letterboxed is halfway to rung 3 -- finish the job.
+- **Keep the scaled path available as an option**, never as the default
+  on the 486 tier.
+- **Let the operator choose between rungs from measurements AND a
+  picture** of how each one looks on the real monitor. Picture size is a
+  taste call; bytes per frame is not.
+
+**Measure the bus; do not infer its ceiling from your own present path.**
+A dosags session concluded "~7 MB/s, so full-frame pushes can never beat
+~12 fps on this hardware" from its own 307,200-bytes-in-41.9-ms figure.
+doskutsu's Mach64 campaign had already measured this same card taking
+76,800 bytes in 4.77 ms (~16 MB/s, on the Pentium OverDrive 83). The
+7.3 MB/s was a property of one code path on one CPU, not of the card.
+The claim was retracted. Before any design or any "physically out of
+reach" statement rests on a bandwidth number, run a bandwidth probe: a
+plain dword copy of each frame size you care about into the LFB (and
+into A000 under Mode 13h) on the actual target CPU.
+
 ## What `shared/patches/sdl3-dos/` already handles
 
 The hard-won VESA/VGA chip-specific work — Cirrus CL-GD5430 banked-blit
