@@ -91,6 +91,12 @@ instead of `SDL_UpdateWindowSurface` — calling the right existing API, not
 new plumbing. Before trusting a "dirty rectangles" optimization is
 actually working, verify every stage between your draw calls and the
 screen is rect-limited, not just the one you remembered to change first.
+**Caveat found later (dosags, 2026-09-17): that per-rect loop exists only
+on the backend's banked path and its `SDL_HINT_DOS_ALLOW_DIRECT_FRAMEBUFFER=1`
+path. The normal LFB path ignores the rect list and copies the whole
+surface** -- check which path your mode-set log says you are on
+(`use_lfb`, `banked`, `hint_direct_fb`) before spending effort on dirty
+rectangles. See `video.md`, "No low-res mode on the card".
 
 **Float/double-to-int conversion costs a real rounding-mode dance on
 486-class CPUs, not just the arithmetic — and this is invisible under

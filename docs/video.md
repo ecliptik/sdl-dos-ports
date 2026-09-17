@@ -94,16 +94,33 @@ Status is stated per rung -- do not quote an unproven rung as fact:**
    "no double scanning" note is about the VESA/accelerator modes; Mode
    13h runs on the legacy VGA core, which does its own line doubling,
    and every VGA-compatible card must run it for ordinary DOS games.
-   **STATUS: reasoning only -- confirmed from this backend on DOSBox-X
-   (dosags, 2026-09-10), NOT yet on the Mach64. Being proven in dosags's
-   40/40 plan, P2.1.** Verify it sets, displays correctly (use a camera,
-   not only VGA capture -- see the stale-frame hazards in
-   `dos-hardware-validation`), and restores the console on exit.
+   **STATUS: reasoning plus one piece of prior evidence -- doskutsu's
+   SETUP.EXE mode-13h video bench was validated on this Mach64
+   (`doskutsu/docs/internal/MACH64-TRIAGE.md`); from THIS backend it is
+   confirmed only on DOSBox-X (dosags, 2026-09-10).** Verify it sets,
+   displays correctly (use a camera, not only VGA capture -- see the
+   stale-frame hazards in `dos-hardware-validation`), and restores the
+   console on exit. **Check the engine's own reported native resolution
+   before planning on this rung, not the game's catalogue entry:** dosags
+   found that none of its fixtures qualifies -- Trilby's Notes is listed
+   as 320x200 but AGS's compiled letterbox option makes it 320x240 to the
+   engine (`Game native resolution: 320 x 240 (8 bit)
+   letterbox-by-design` in every log), and its other 320x200 titles are
+   16- or 32-bit. Mode 13h is 8-bit, 320x200 exactly; a 320x240 game is
+   doskutsu's case and needs rung 2 or 3.
 2. **Centered, unscaled, in the SMALLEST enumerated mode that contains
    the game rect.** On this Mach64's UniVBE list that is 512x384x8 (mode
    0x01F3; 0x01D4 at 16-bit). The flush is the same size as rung 3, but
    a 320-wide picture fills ~62% of the screen width instead of 50%.
-   **STATUS: untested idea (2026-09-17), queued for the same bake-off.**
+   **STATUS: untested from dosags (2026-09-17), queued for its bake-off.
+   doskutsu DID run here: its only clean comparison is 28.3/28.4 fps at
+   512x384 (UniVBE, LFB) against 26.9/26.8 at 640x480 (card ROM, banked)
+   -- at most +1.4 fps and confounded (provider, LFB and mode all changed
+   together). Its operator retired 512x384 for a PRODUCT reason, not a
+   technical one: the mode exists only in UniVBE's list, so shipping it
+   would require every user to install that third-party TSR. A port
+   whose target machine already runs UniVBE can use it; a port that must
+   run on the bare card ROM cannot.**
    Known history to respect: doskutsu's 320x240 request once landed on a
    512x384 closest-match on this chip and exposed the stride-caching bug
    fixed in `shared/patches/sdl3-dos/0125`; and a closest-match result
@@ -117,7 +134,24 @@ Status is stated per rung -- do not quote an unproven rung as fact:**
 Rules that apply to every rung:
 
 - **Scope the flush to the game's own rect** (rect-limit every stage --
-  see "Presentation path" above and `optimization.md`).
+  see "Presentation path" above and `optimization.md`) -- **and check
+  that the backend path you are on honours the rect list at all.** In
+  `SDL_dosframebuffer.c` the banked path and the
+  `SDL_HINT_DOS_ALLOW_DIRECT_FRAMEBUFFER=1` path copy per rect; the
+  NORMAL LFB path never reads `rects`/`numrects` and copies the whole
+  surface every call (verified in dosags's vendored copy, 2026-09-17).
+  On that path `SDL_UpdateWindowSurfaceRects` and dirty rectangles buy
+  nothing. doskutsu sets the hint (plus `SDL_HINT_DOS_PREFER_LFB=1`);
+  dosags ran with both at 0. Both can be set from the environment
+  (`SDL_DOS_ALLOW_DIRECT_FRAMEBUFFER`, `SDL_DOS_PREFER_LFB`), so probe
+  the effect with zero code first. Trade-offs are the documented ones
+  above: no vsync, no SDL cursor compositing.
+- **An unscaled, centred present can be SLOWER than scale-to-fill until
+  the port's present code is adapted.** In dosags both the skip-unchanged
+  check and the integer fast blit required the destination to be the
+  whole window, and a bordered destination triggered a full-window fill
+  on every present -- so centring alone loses two optimizations and gains
+  a fill. Fix the present path first, then compare.
 - **Clear the margins once, not per present.** dosags found AGS issuing
   a full-window black fill on every present of a letterboxed 640x360
   game, ~15 ms that no timing bracket covered. A game that is already
@@ -132,7 +166,9 @@ Rules that apply to every rung:
 A dosags session concluded "~7 MB/s, so full-frame pushes can never beat
 ~12 fps on this hardware" from its own 307,200-bytes-in-41.9-ms figure.
 doskutsu's Mach64 campaign had already measured this same card taking
-76,800 bytes in 4.77 ms (~16 MB/s, on the Pentium OverDrive 83). The
+76,800 bytes in 4.77 ms (~16 MB/s, on the Pentium OverDrive 83, through
+the banked window -- and its own authors declined to call that a
+bandwidth limit, "an argument from a numerical coincidence"). The
 7.3 MB/s was a property of one code path on one CPU, not of the card.
 The claim was retracted. Before any design or any "physically out of
 reach" statement rests on a bandwidth number, run a bandwidth probe: a
