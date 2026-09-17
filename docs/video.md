@@ -78,10 +78,11 @@ this on the same Mach64:
   the logical rect (`center-oversized: flush rect=320x240@160,120
   bytes=76800`), margins cleared once, writes going straight to VRAM.
   (`doskutsu/qa-results/2026-08-13-r2-mach64/`, `2026-08-21-mach64-tilemap/`.)
-- **dosags** (AGS, 320x200x8) took the scale-to-fill default (AGS's
-  "fullscreen desktop" = 640x480, 2x): every real present cost ~76 ms --
-  ~34 ms for the 2x scale blit plus ~42 ms to push 307,200 bytes --
-  against 64,000 bytes for the game's own frame. Hand-optimizing the
+- **dosags** (AGS; Trilby's Notes, 320x240x8 to the engine) took the
+  scale-to-fill default (AGS's "fullscreen desktop" = 640x480, 2x): every
+  real present cost ~76 ms -- ~34 ms for the 2x scale blit plus ~42 ms to
+  push 307,200 bytes -- against 76,800 bytes for the game's own frame,
+  exactly doskutsu's frame size. Hand-optimizing the
   scaler (integer fast path, word stores) won real fps but only polishes
   a step that should not exist. (dosags `PLAN.md`, "40/40 plan".)
 
