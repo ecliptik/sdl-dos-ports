@@ -220,7 +220,11 @@ budget sized from real measurements, and a result file appearing. Keep
 `verify-input` for the question it answers well: *no program is running
 -- is the link alive?* It correctly diagnosed a genuinely dead PS/2 link
 after a post-transfer reboot (target side healthy on the Pi, no LED
-change); only a full power cycle recovered it, not a warm reboot.
+change); only a full power cycle recovered it, not a warm reboot. That
+fault recurs on the g2k 486 at the post-FTP return reboot; the signature,
+check order, recovery, and the requirement that scripts recover from it
+by themselves are in `dos-rig-operations`'
+`references/power-management.md`.
 
 Two collection details from the same campaign: check the per-file `ok` of
 the files you actually need, not a job's aggregate `ok` -- a list that

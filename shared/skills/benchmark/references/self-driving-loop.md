@@ -86,6 +86,12 @@ Known frictions, and the instruction that fixes each:
   guess-one-function loop stops converging, change the METHOD (exhaustive
   partition, a synthetic probe, a cheaper fixture) rather than approving
   another guess.
+- The target can stop answering the keyboard at a post-transfer reboot
+  and the harness will just sit there refusing. The worker's scripts must
+  detect it (a reboot-took witness) and recover by themselves (one power
+  cycle, verified boot, link check) -- see `dos-rig-operations`'
+  `references/power-management.md`. Until they do, the coordinator's
+  own two-channel look plus `verify-input` settles it in a minute.
 - Attribution, date, and tag conventions drift across a long run.
   Restate them in the dispatch when they change.
 
