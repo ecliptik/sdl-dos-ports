@@ -204,7 +204,15 @@ for a phase that can re-enter itself (a blocking script wait that runs
 nested game ticks) double-count; measure self-time, or the arithmetic
 built on those totals is wrong. (4) the measured cost of the timing
 mechanism itself was 11 us per bracket -- cheap enough, but measure it
-once rather than assume.
+once rather than assume. (5) changing a recorder's unit without updating
+every call site: the fix for (1) moved the recorder to microseconds, two
+hand-rolled call sites kept passing milliseconds, and for a day the
+script VM read 1000x too cheap -- which sent the investigation hunting
+"zero-work wrapper overhead" that was really script time. The tell was
+in the data the whole time: a parent phase with max 2605 ms wrapping a
+child that claimed max 2 ms. Put the unit in the parameter AND the local
+variable names, and sanity-check child-vs-parent maxima after any change
+to the timing code itself.
 
 **Pick the iteration vehicle for speed, the validation vehicle for
 truth.** dosags spent most of a day on 20-70 minute real-hardware cells

@@ -163,7 +163,12 @@ Consequences, all seen for real in AGS on the DX2-66:
 
 Fix shape: a DOS-only clock type backed by `uclock()` behind the engine's
 own clock alias (guarded `#ifdef __DJGPP__`), leaving calendar-time users
-on the system clock. Respect `uclock()`'s own limits documented above
+on the system clock. **Find EVERY clock alias, not just the main one:**
+dosags's first pass replaced the engine's `Clock` and missed a second
+alias, `FastClock = std::chrono::system_clock`, which the script
+interpreter reads on every script function call -- another ~2.5 ms per
+tick. Grep for `::now()` and for every `chrono` clock type, then decide
+per user whether it needs calendar time (keep) or a duration (swap). Respect `uclock()`'s own limits documented above
 (not monotonic across a wrong-order subtract; read DJGPP's source for its
 midnight behaviour before relying on it across a long session).
 
