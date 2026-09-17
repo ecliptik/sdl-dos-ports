@@ -47,9 +47,18 @@ advance (what result means fail, not just pass), attributed to a named
 
 ## 3. Pick team shape
 
-Solo + subagents for a one-off check. Once you're doing genuine iterative
-real-hardware investigation: one investigating session + one dedicated
-rig-operator session, peer-to-peer. See `shared/agents/README.md`.
+Solo + subagents for a one-off check. For a genuine iterative
+real-hardware campaign, the default that has worked best is **one
+coordinator session plus one long-lived named worker subagent** that
+owns the port repo and drives the target machine itself, run as a
+self-driving loop from a written plan of record -- see
+`references/self-driving-loop.md` for the whole procedure (plan of
+record, up-front decisions and scoped standing authorization, dispatch
+briefs with stop conditions, the slice recipe, coordinator verification
+duties, and how to re-enter the flow in a later session). Escalate to
+one investigating session + one dedicated hardware-operator session,
+peer-to-peer (`shared/agents/README.md`), only when the work really
+needs two independent lines of attention.
 
 ## 4. Start a measured-constants table
 

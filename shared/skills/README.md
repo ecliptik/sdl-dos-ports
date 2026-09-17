@@ -50,7 +50,9 @@ Anyone who opens and trusts the repo is offered the plugin and gets
 in `.claude-plugin/plugin.json`: `/plugin update sdldos` fetches a new
 version and reports "already at the latest version" otherwise, so every
 skill or layout change here must bump that version (1.0.0 -> 1.0.1 was
-the first such bump, 2026-09-03) or it never reaches an installed copy.
+the first such bump, 2026-09-03; 1.0.2, 2026-09-17, added the benchmark
+skill's `references/self-driving-loop.md`) or it never reaches an
+installed copy.
 `claude --plugin-dir <path-to-this-hub>` loads the working tree for one
 session instead (it overrides the installed copy), which is how to test
 a skill edit here before pushing it. The marketplace install copies the
