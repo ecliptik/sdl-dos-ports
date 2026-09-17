@@ -172,6 +172,43 @@ per user whether it needs calendar time (keep) or a duration (swap). Respect `uc
 (not monotonic across a wrong-order subtract; read DJGPP's source for its
 midnight behaviour before relying on it across a long session).
 
+## With TZ unset, DJGPP's libc can land in a garbage timezone state: wrong dates and ~42 ms clock reads
+
+Found in dosags, 2026-09-17 (its patch 0097 and PLAN.md "libc zone bug").
+With `TZ` unset, DJGPP's `tzset()` looks for a default zone file
+(`/dev/env/DJDIR/etc/localtime`, then zoneinfo fallbacks). On a target
+with no DJGPP install every open fails (errno 22 on the g2k 486), and
+what is left behind is not a clean UTC: probes read `tm_gmtoff` of
+-1024 s in one process and -675288 s in the next; inside the AGS engine
+it came out as +11896 days, so RUNMANIFEST's `started_utc` read 2059 to
+2071. `localtime()` stayed correct, which is why nobody noticed.
+
+Two consequences, both invisible unless you look for them:
+
+- **Every `gettimeofday()` -- and so every `std::chrono` clock read --
+  cost ~42 ms instead of 1.3 ms** in the bad state, because it runs
+  `mktime()` through the broken zone data. CPU-bound phases stayed
+  normal while every phase containing a clock read ran ~31x slow.
+- **Whether a given process is hit varies with the binary and with the
+  environment it runs under (which `SET` lines), so it CONFOUNDS A/B
+  comparisons rather than adding noise.** About twenty dosags
+  real-hardware cells over four days carried a wrong date, and they were
+  the catastrophically slow ones. Some conclusions built on them had to
+  be marked "re-measure", including a whole sound-on/sound-off campaign.
+  DOSBox-X is not immune, only milder (records dated ~76 days off).
+
+**What every DJGPP port should do:** call `setenv("TZ","UTC0",0);
+tzset();` first thing in `main` (a TZ that is set is parsed, never loaded
+from a file; `UTC0` is what the fallback was meant to produce, DOS local
+time taken as-is), and **treat a `started_utc` that is not today as a
+cell invalidity** in any benchmark harness -- it is a free, already-logged
+tell. A year check is not enough: the garbage offset can be minutes or
+days. Status for the other ports: doskutsu's 128 recorded run dates and
+dossage's are all in the right year, neither sets `TZ`, and neither has
+been checked at finer grain -- unverified, not cleared. Setting `TZ` in
+the target's own boot configuration would protect every program at once;
+that is a boot-config change and needs the operator's say-so.
+
 ## SDL_Delay() overshoot on 486-class CPUs (resolved: delay(1) granularity, not clock rate)
 
 dossage/Passage bisected a residual fps gap on 486DX2-66 + S3 ViRGE (see
