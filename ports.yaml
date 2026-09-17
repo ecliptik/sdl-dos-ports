@@ -456,6 +456,39 @@ ports:
       pinned tree; one own tool, mkroom, for room data; CC0 assets +
       MIT scripts), and the glitch fix/test plan. STATUS.md rewritten
       to match current state.
+      2026-09-17: dos_status unchanged (PLAYABLE). Since the prep
+      session: Game porting framework claimed (F1-F5; 5 Days a Stranger
+      and Maniac Mansion Deluxe sourced -- MMD from a named Internet
+      Archive mirror by operator decision, its developer site is dead --
+      and all three in-profile games have HW-486-66 records through
+      `check`/`record`); Compatibility sweep claimed on six games (7 Days
+      a Skeptic replaced King's Quest III, whose only download is
+      itch.io's session-gated flow): boots + title PASS on all six,
+      playable/complete recorded honestly as not attempted (closed
+      binaries, no input automation). Performance: a diagnostic chain
+      (patches 0077-0086) accounted for 99.1% of Trilby's Notes' per-tick
+      cost and found Present()'s scaled blit had never been bracketed;
+      four pre-registered ABBA wins (0087 integer fast blit, 0090 word
+      store, 0091 skip-unchanged present, 0092 word-sized frame compare)
+      took fps_p50 5.0 -> 34.6 on HW-486-66 -- a STATIC-SCREEN figure
+      (23 of 881 presents real; a real full present still costs ~76 ms on
+      the 640x480 2x path). Operator opened the "40/40 plan" (dosags
+      PLAN.md): gates = idle 8-bit, moving content, and AGS Quest 16-bit
+      at 40Hz AND 40fps, both steady-state and whole-run tick rates must
+      pass. Findings so far that matter hub-wide, all folded into docs/:
+      std::chrono clock reads cost 1.3 ms each on the DX2-66 and any
+      positive sleep ~55 ms (timing.md); with TZ unset DJGPP's libc can
+      land in a broken zone state on a machine with no DJGPP install --
+      ~42 ms clock reads and 2059-2071 run dates, an A/B confound across
+      ~20 earlier cells (fix: set TZ at startup; re-measurement of the
+      affected conclusions is listed in dosags PLAN.md); on the Mach64
+      the rendering phase follows doskutsu's unscaled presentation
+      (Mode 13h / centered in 512x384 / centered in 640x480, to be proven
+      on the machine; video.md); a running SDL3-DOS program cannot be
+      liveness-probed through the keyboard, and the post-FTP keyboard
+      hang needs self-recovering scripts (hardware-testing.md,
+      dos-rig-operations). Workflow captured as the benchmark skill's
+      self-driving loop reference.
 
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
