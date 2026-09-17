@@ -188,6 +188,48 @@ vcctrl's own `docs/lab/FINDINGS.md` sec. 42 for the full writeup — moved
 there from `docs/FINDINGS.md` in vcctrl's 2026-09-11 public-release docs
 reorg, see below).
 
+## Never probe a RUNNING SDL3-DOS program through the keyboard
+
+vcctrl proves the input link is alive with a Scroll-Lock LED round trip
+through the BIOS keyboard path (`verify-input`), and every operation that
+has to reboot the target first -- `get-file --return`, `send-file
+--return`, the reboot chord -- routes through the same check. On this
+stack that has two consequences every port inherits, because the cause is
+in the shared backend, not in any one game (dosags, 2026-09-16; commits
+5f86091 and 1f9790d there; confirmed independently by the vcctrl session,
+which now documents it in its own rig-hazards/workflow skills and
+OPEN-FAULTS sec. 27):
+
+- **It cannot succeed while any SDL3-DOS program is running.**
+  `DOSVESA_InitKeyboard()` (`SDL_dosevents.c`) replaces the BIOS IRQ-1
+  handler for the life of the program, so the LED round trip never
+  completes. A healthy program and a hung one look identical: REFUSED.
+  "The screen stopped changing" is not "the program exited" -- a slow
+  game can sit on a static frame for many minutes.
+- **It is not side-effect-free.** The Scroll-Lock press still reaches the
+  program's own raw-scancode handler. Two `get-file` attempts against a
+  still-running game (each refused at its own reboot step) were followed
+  by four key-press log lines and an early quit with no RUNMANIFEST -- the
+  health check ended the run it was checking.
+
+So: while a program may still be running, judge liveness with channels
+that inject nothing -- both capture channels (`vcctrl_shot` and
+`vcctrl_camera_shot`; a transient "no picture" during a VESA mode-set is
+expected, recheck before concluding anything), elapsed time against a
+budget sized from real measurements, and a result file appearing. Keep
+`verify-input` for the question it answers well: *no program is running
+-- is the link alive?* It correctly diagnosed a genuinely dead PS/2 link
+after a post-transfer reboot (target side healthy on the Pi, no LED
+change); only a full power cycle recovered it, not a warm reboot.
+
+Two collection details from the same campaign: check the per-file `ok` of
+the files you actually need, not a job's aggregate `ok` -- a list that
+includes files only some programs produce can never be all-ok (vcctrl's
+own `harness/vcctrl-collect` already reads per-file status; match it
+rather than reinventing the check); and use a fresh tag per run, since
+the target side keeps old logs and a reused tag can hand back a stale
+file.
+
 ## What a port should record
 
 Follow `templates/BENCHMARK.md`'s format, and vcctrl's own result-envelope
