@@ -63,6 +63,21 @@ this one (directly or via `shared/patches/sdl3-dos/0010`'s
 `SDL_HINT_DOS_PREFER_LFB` interaction with it), tearing is expected
 behavior for that path, not a defect.
 
+**Decide the tearing trade explicitly, by genre, and record the
+decision** -- it is a judgment call the operator should make once rather
+than a question each slice re-opens. dosags took this path by default
+after measuring what it buys on a 486 (present cost 15.95 -> 3.44 ms on
+one candidate, and the whole speed ordering between presentation modes
+collapsing once the per-rect path was reachable), with the operator's
+reasoning recorded as: "tearing is fine, these are adventure games" --
+mostly-static screens, no scrolling, no camera motion, so a tear is
+rarely visible and never mid-action. **A port with scrolling or fast
+motion must not inherit that decision unexamined.** Note also that a
+camera photo cannot clear tearing on its own: an exposure integrates
+over roughly a CRT refresh, so a transient tear blurs rather than
+freezes -- photos can show tearing is not gross or continuous, and
+nothing stronger. Judge it in motion, or judge it by genre.
+
 ## No low-res mode on the card: present unscaled, never scale to fill
 
 Some cards cannot produce 320x200/320x240 VESA modes at all (the ATI
