@@ -193,6 +193,30 @@ static-screen figure as a gameplay figure. The same applies to a
 whole-run tick rate that silently averages in one-time stalls: report a
 steady-state figure AND list the stalls.
 
+**A build fingerprint derived from the COMMITTED tree cannot see an
+uncommitted working-tree change -- so an A/B pair built that way can
+stamp identical identities and silently pass its own invalidity check.**
+dosags derives `binary_sha12` from `git rev-parse HEAD^{tree}` over its
+vendored trees plus the build flags (its `Makefile`). A worker built the
+A arm by reverse-applying a patch to the working tree: it compiled the
+older code but stamped the NEWER commit's identity, and both ABBA arms
+came back with the same fingerprint. "binary_sha12 must differ between
+arms" is one of this hub's standard invalidity conditions, and it would
+have passed. **Build each arm from a genuine checkout of its own commit,
+not by patching the working tree**, and treat two arms sharing a
+fingerprint as a build error rather than as the check being satisfied.
+The same gap applies to any fingerprint built from committed state --
+git describe, a tag, a submodule SHA.
+
+**Stage every config input explicitly; ambient state left on the target
+is a silent confound.** The same campaign voided a cell because the
+machine still carried an `ACSETUP.CFG` from an earlier zero-patch
+experiment, so the A arm ran with the treatment already applied -- two
+samples of the same state, the failure mode two entries below. It was
+caught only because the A arm's number resembled the B arm's prediction.
+A benchmark cell should write the config it depends on rather than
+inheriting whatever the previous run left behind.
+
 **Instrumentation bugs that hid real signal in one campaign, worth
 checking in any per-phase timer:** (1) truncating each sample to whole
 milliseconds *before* summing -- nine phases reported exactly 0 ms
