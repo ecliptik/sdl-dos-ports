@@ -86,8 +86,21 @@ this on the same Mach64:
   scaler (integer fast path, word stores) won real fps but only polishes
   a step that should not exist. (dosags `PLAN.md`, "40/40 plan".)
 
-**Candidate ladder for a low-res game on such a card, best first.
-Status is stated per rung -- do not quote an unproven rung as fact:**
+**FIRST: check what the card in the machine actually enumerates. This
+whole section is about a card that CANNOT do low-res modes, which is the
+worst case, not the normal one.** A card with a real 320x200/320x240
+mode should simply SET it -- full screen, 64,000-76,800 bytes, no scale,
+no centring, no margins, strictly better than every rung below.
+doskutsu's own logs show exactly that on this rig's other cards
+(`qa-results/2026-08-11-DX266-full/602SDL.LOG`,
+`2026-08-13-r2-POD83/GE3SDL.LOG`: `0x01F9 320x200 bpp=8`,
+`0x01F8 320x240 bpp=8`, plus 15/16/24/32-bit 320x240). **Select the
+presentation mode per card from the live enumerated list, never once
+globally** -- a default chosen on a Mach64 is wrong for a ViRGE.
+
+**Candidate ladder when the card genuinely has no low-res mode, best
+first. Status is stated per rung -- do not quote an unproven rung as
+fact:**
 
 1. **Classic VGA Mode 13h, for 320x200 8-bit games only.** Full-screen
    picture, 64,000 bytes per frame, no VESA involved (the shared backend
@@ -162,6 +175,27 @@ Rules that apply to every rung:
 - **Let the operator choose between rungs from measurements AND a
   picture** of how each one looks on the real monitor. Picture size is a
   taste call; bytes per frame is not.
+- **Re-measure per card, and expect the mechanism to differ, not just
+  the numbers.** The direct-framebuffer/rect-aware path is not the same
+  code on every card: the Cirrus CL-GD5430 has a real LFB-aperture
+  defect and `shared/patches/sdl3-dos/0019` auto-disables LFB on that
+  chip, so it lands on the BANKED path -- which is per-rect aware, but
+  carries two open hazards recorded in `HARDWARE.md` (the unfixed
+  bank-select settle-delay/readback gap, and a reproduced
+  multi-hundred-ms flush stall on that exact card). A presentation
+  result is a fact about one card + BIOS + VBE provider, not about the
+  port.
+- **A dosags measurement of all four rungs on a Mach64 (2026-09-18,
+  BENCH8 anim12, real hardware, 8-bit):** Mode 13h 40.00 fps_p50 /
+  7.84 ms present; 512x384 centred 26.89 / 15.95; 640x480 centred 1x
+  19.72 / 21.60; 640x480 2x (scaled) 11.83 / 28.22 ms blit + 24.31 ms
+  present. Present cost tracked the WINDOW SURFACE size, not the
+  picture -- 64,000/196,608/307,200 bytes -> 7.84/15.95/21.60 ms, a
+  straight line -- confirming on hardware that the normal LFB path
+  copies the whole surface and ignores a scoped rect. **Read the fps
+  column carefully:** the top three all delivered the same ~13.5
+  genuinely-new frames/s (the scene produced no more), so their gap is
+  HEADROOM; only the scaled rung actually dropped frames (8.0/s).
 
 **Measure the bus; do not infer its ceiling from your own present path.**
 A dosags session concluded "~7 MB/s, so full-frame pushes can never beat
