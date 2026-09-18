@@ -217,6 +217,29 @@ caught only because the A arm's number resembled the B arm's prediction.
 A benchmark cell should write the config it depends on rather than
 inheriting whatever the previous run left behind.
 
+**Instrument at the choke point the code must pass through, not at the
+call sites your own analysis enumerated.** dosags needed to know whether
+a 1351 ms precomputed table was ever actually used. It had read every
+caller and concluded almost none could reach it at 8-bit -- and then put
+its counters at the two functions every consumer must pass through
+rather than at the callers it had enumerated, on the grounds that
+"trusting my own caller reading would make the instrument only as good
+as the analysis it exists to check." That is the right instinct
+generally: an instrument placed where your analysis says the action is
+can only confirm your analysis, while one placed at a genuine choke
+point can refute it.
+
+**Don't pre-register an absolute when the quantity is content-dependent
+-- pre-register the mechanism or the ratio.** The same table cost
+1351 ms on one game and **4699 ms on another**, same code and the same
+65,280 iterations: the inner search exits early on exact palette
+matches, so the cost is a property of the game's palette, not of the
+engine. A threshold written as "expect ~1351 ms" would have recorded a
+large miss on the second fixture for reasons having nothing to do with
+the change under test. Where a quantity varies with content, state the
+prediction as the mechanism ("call 1 builds, call 2 reuses, saving is
+whatever call 1 cost") and let the absolute fall out of the measurement.
+
 **A once-per-run summary metric cannot show that a per-event cost
 recurs -- and will make a recurring cost look like a one-off.** dosags
 bracketed a 1351 ms room-load phase, but the bracket was reported in a
