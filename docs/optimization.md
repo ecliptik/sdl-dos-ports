@@ -217,6 +217,20 @@ caught only because the A arm's number resembled the B arm's prediction.
 A benchmark cell should write the config it depends on rather than
 inheriting whatever the previous run left behind.
 
+**A once-per-run summary metric cannot show that a per-event cost
+recurs -- and will make a recurring cost look like a one-off.** dosags
+bracketed a 1351 ms room-load phase, but the bracket was reported in a
+startup summary emitted once, at first-room-ready. A run that paid the
+cost twice (a save-restore re-enters the same room-load path) reported
+exactly the same single figure as a run that paid it once, so the
+bracket built to find that cost would have hidden its most important
+property. Fixed by emitting one line per occurrence, with a sequence
+number and a cheap identity (here a palette hash) so repeats are
+visible and attributable. **If a cost can happen more than once per
+run, count the occurrences -- a total or a first-occurrence figure is
+not enough**, and check where your report is emitted from before
+trusting what it does not show.
+
 **Instrumentation bugs that hid real signal in one campaign, worth
 checking in any per-phase timer:** (1) truncating each sample to whole
 milliseconds *before* summing -- nine phases reported exactly 0 ms
