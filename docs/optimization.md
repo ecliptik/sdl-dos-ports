@@ -208,6 +208,39 @@ fingerprint as a build error rather than as the check being satisfied.
 The same gap applies to any fingerprint built from committed state --
 git describe, a tag, a submodule SHA.
 
+**The fix, built and proven after this trap bit a third time** (dosags
+patch 0115) -- four parts, each of which earned its place:
+
+1. **Fold the working tree's state into the fingerprint, using a
+   CONTENT-sensitive input.** `git diff HEAD | sha256sum`, not
+   `git status --porcelain`: porcelain lists changed *paths*, so two
+   different edits to the same file produce an identical string and
+   collide with each other -- the same silent failure one level down.
+   Demonstrated on the real tree: two different edits to one file now
+   stamp `6e8a3e324187` and `c4e779a6d7a9`, and reverting returns the
+   stamp to its clean value exactly, so it is a function of content
+   rather than of history.
+2. **Hash untracked files' CONTENTS if the build can reach them.** Check
+   how your build lists sources: dosags names its engine sources
+   explicitly, so an untracked `.cpp` could not compile -- but an
+   untracked `.h` can be included by one that does.
+3. **Emit dirtiness as its own field, not a suffix.** `binary_sha12` was
+   fixed-width in the manifest struct, so a `-dirty` suffix would have
+   truncated. A changed hash alone also tells a later reader only that
+   two builds differ, never *why*.
+4. **Absent the flag, report UNKNOWN, never CLEAN.** dosags reports `-1`
+   when the compile flag is missing, so a future build stage that drops
+   it cannot be read as a clean build. **A missing signal must not
+   default to the reassuring value** -- that is how the original failure
+   mode gets rebuilt in a new place.
+
+And the part that actually prevents recurrence rather than diagnosing
+it: **a pre-build check** (`make build-dirty`) that reports the stamp
+and dirty state *before* an arm is built. All three original
+occurrences were caught from a cell's manifest afterwards, which is too
+late to save the cell. **Prefer a check that refuses over a check that
+records.**
+
 **Stage every config input explicitly; ambient state left on the target
 is a silent confound.** The same campaign voided a cell because the
 machine still carried an `ACSETUP.CFG` from an earlier zero-patch
