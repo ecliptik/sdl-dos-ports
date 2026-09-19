@@ -350,6 +350,29 @@ port performance KPI:
   self-report — see `docs/timing.md`'s self-lying-metric entry for why a
   metric computed from a clock the change under test can perturb will
   tend to fail in the flattering direction, not an obviously wrong one.
+- **Is reachable by the fixture you will measure it on.** Check the
+  *content's* own ceiling against the bar before writing the bar down. A
+  dosags gate required 40 fps on a hand-authored benchmark room whose
+  sprites animate at AGS delay 1 — one new frame every 2 ticks, so
+  **exactly 20 distinct frames per second, by authorship**. No amount of
+  optimization could ever have displayed a 21st. The bar was unreachable
+  by construction and nobody noticed for the length of a campaign,
+  because the metric being scored (`fps_p50`) counts render passes, which
+  *can* reach 40 while half of them display nothing new. Worse, 20 fps
+  animation is the *ordinary* authoring choice in AGS, so the bar was
+  also testing something no real game in the genre does. Two rules fall
+  out of this, and the second is the one that generalizes furthest:
+  - **Pair any fps bar with a completeness ratio** — displayed frames
+    over frames the content actually generated. A render-pass count
+    cannot distinguish "fast with headroom" from "dropping content," and
+    on this campaign that ambiguity hid a 98%-versus-74% difference
+    between two presentation paths that the fps column made look like
+    pure headroom.
+  - **Count content frames upstream of the dirty check, not from it.** If
+    the completeness numerator and denominator both come from the same
+    skip-unchanged test, the ratio reads 100% by construction and
+    measures nothing. The denominator has to be incremented where the
+    content changes, before any coalescing.
 
 ## Rule
 

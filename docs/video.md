@@ -201,16 +201,40 @@ Rules that apply to every rung:
   result is a fact about one card + BIOS + VBE provider, not about the
   port.
 - **A dosags measurement of all four rungs on a Mach64 (2026-09-18,
-  BENCH8 anim12, real hardware, 8-bit):** Mode 13h 40.00 fps_p50 /
-  7.84 ms present; 512x384 centred 26.89 / 15.95; 640x480 centred 1x
-  19.72 / 21.60; 640x480 2x (scaled) 11.83 / 28.22 ms blit + 24.31 ms
-  present. Present cost tracked the WINDOW SURFACE size, not the
-  picture -- 64,000/196,608/307,200 bytes -> 7.84/15.95/21.60 ms, a
-  straight line -- confirming on hardware that the normal LFB path
-  copies the whole surface and ignores a scoped rect. **Read the fps
-  column carefully:** the top three all delivered the same ~13.5
-  genuinely-new frames/s (the scene produced no more), so their gap is
-  HEADROOM; only the scaled rung actually dropped frames (8.0/s).
+  BENCH8 anim12, real hardware, 8-bit).** Keep the two present metrics
+  apart -- conflating them cost this campaign a day chasing a
+  "discrepancy" that was two different terms:
+
+  | rung | `present_blit` | `present_update_window` | `fps_p50` |
+  |---|---|---|---|
+  | Mode 13h 1:1 | 4.22 | 7.84 | 40.00 |
+  | 512x384 centred | 4.22 | 15.95 | 26.89 |
+  | 640x480 centred 1x | 4.23 | 21.60 | 19.72 |
+  | 640x480 2x scaled | 28.22 | 24.31 | 11.83 |
+
+  **The blit is flat across the first three rungs and only explodes at
+  2x** -- the only rung that replicates pixels. What separates the top
+  three from each other is entirely `present_update_window`, tracking the
+  WINDOW SURFACE size and not the picture: 64,000/196,608/307,200 bytes
+  -> 7.84/15.95/21.60 ms, a straight line. That confirms on hardware that
+  the normal LFB path copies the whole surface and ignores a scoped rect.
+  **So the general rule is output resolution, and replication is a
+  2x-only penalty stacked on top of it** -- an earlier reading of this
+  same table named the horizontal-replication blit as *the* target, which
+  is true of the current default and false as a general statement. Do not
+  carry the blit framing to a card whose default rung differs.
+- **The fps column above is render passes, not displayed frames**, and an
+  earlier version of this entry drew a wrong conclusion from it: that the
+  top three rungs all delivered the same ~13.5 genuinely-new frames/s and
+  their gap was pure headroom. **Retracted.** The fixture's own animation
+  delay sets a hard ceiling of 20 distinct frames/s, and against that
+  ceiling the rungs differ sharply in how much they actually deliver --
+  Mode 13h displayed 19.6/s (98% of the ceiling) where the full-window
+  path managed 14.8/s (74%). The gap was not headroom; the slower path
+  was dropping content. **A render-pass count cannot tell you which of
+  those two situations you are in** -- see `docs/optimization.md` on
+  labelling fps with real-versus-skipped presents, and pair every fps
+  figure with a completeness ratio against the content's own frame rate.
 
 **Measure the bus; do not infer its ceiling from your own present path.**
 A dosags session concluded "~7 MB/s, so full-frame pushes can never beat
