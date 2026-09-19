@@ -374,6 +374,16 @@ with a capture of the actual screen** -- the port's own VGA capture or a
 camera -- and do it before and after, not only after. See `docs/video.md`
 on the limits of each capture channel.
 
+**Attach the workaround, or this rule sends people into a false
+failure.** A capture path that judges liveness by looking for frame
+changes will refuse a *correct static screen* -- "every frame in the
+window was a duplicate" is indistinguishable from no signal to it, and an
+adventure game holding a still room is exactly the case you most want to
+verify. Use the raw burst path rather than the judged one for this check.
+Two consecutive identical frames are the desired result here, not a
+fault: they also rule out a display alternating between correct and stale
+content, which a single capture cannot.
+
 ### A note you wrote yourself is not evidence
 
 The same campaign spent a day repeatedly finding that the answer was
@@ -389,6 +399,17 @@ Treat a comment, a plan entry, or a prior conclusion as **a hypothesis
 with your handwriting on it**. Records are for finding things you already
 measured; they are not a substitute for reading the code when the claim
 is about what the code does.
+
+**The sharper version arrived a round later, and it is about inferences
+minutes old rather than notes months old.** A clean A/B had correctly
+falsified one explanation and narrowed the cause to two candidates. The
+more interesting candidate was written into the record as *the* cause,
+propagated to a second session, and used to justify a design change.
+Splitting one counter showed it was the other candidate entirely -- and
+the dull one, an unclipped rectangle, was worth 417 frames going to
+3,253 once fixed. **Freshness feels like evidence and is not.** When a
+result leaves two candidates standing, the next line of code should
+discriminate between them, not pick one.
 
 ### A diagnostic must reset on the same cadence as the metric it explains
 
