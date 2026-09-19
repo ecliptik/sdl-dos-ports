@@ -581,6 +581,29 @@ early -- it's cheaper than chasing the symptom's own mechanism first and
 it directly answers the one question ("is this the card?") that most
 determines where to look next.
 
+## Two traps in pixel code instantiated across several color depths
+
+A blit or conversion routine templated over 8/16/24/32bpp will be
+compiled several times, and both traps below are silent in most of those
+instantiations — which is what makes them dangerous. A test suite
+exercising the common depths passes.
+
+**Derive a pixel count from pointer difference, never from `sizeof`.**
+At 24bpp a pixel is three bytes behind an `unsigned char*`, so
+`sizeof(PIXEL)`-based arithmetic is correct at 8, 16 and 32 and silently
+wrong at 24 alone. One instantiation failing out of four is the worst
+possible failure distribution: every arm a casual test covers is green.
+A run-length blit in one dosags patch hit exactly this.
+
+**Never use a pointer-valued macro in a multi-declarator declaration.**
+`PIXEL_PTR rs = s, rd = d;` where the macro expands to `unsigned short*`
+declares `rs` as a pointer and **`rd` as a plain integer**, because the
+`*` binds to the first declarator only. Here the compiler rejected the
+initialization; with a compatible type it would not have, and the result
+is memory corruption rather than a wrong number. **Use a `typedef`**,
+which removes the whole class rather than requiring anyone to remember
+it.
+
 ## Reduced color depth
 
 8-bit or 16-bit software surfaces are strongly preferred over 32-bit on
