@@ -479,19 +479,23 @@ contamination. Anything present in every run is invisible to it by
 construction**, and the campaign that wrote the rule then spent a day
 chasing a cost that was exactly that.
 
-The symptom: a single engine event measuring **7.53 seconds, nine times a
-run, 40% of total wall clock**, in a code path where script execution was
-only 11-13% — so it read as engine work in the event-dispatch machinery.
-It was neither. **94% of it was the port's own `debug_script_log` calls**,
-added by two earlier instrumentation patches and sitting inside an event
-the engine fires on every room entry. Both the emulator runner and the
-hardware runner enabled that log channel by default, so **every
-measurement the campaign had ever taken included it and none had ever
-been compared against a run without**.
+**A campaign believed for one round that exactly this had happened to
+it** — that 94% of a 7.53-second engine event was its own
+`debug_script_log` calls, enabled by default in both its emulator and
+hardware runners and therefore present in every measurement it had ever
+taken. It reached the operator as a retraction of a major finding before
+the next measurement showed the belief was false: the logging was **1.9
+milliseconds** across all nine dispatches, and the 38.4 seconds belonged
+to the engine call the bracket had accidentally swallowed. (That
+sub-episode is its own lesson — see the scope-bug and halt-condition
+entries below.)
 
-It nearly reached the operator as "the largest actionable defect this
-campaign has found." Four plausible explanations were killed by brackets
-first — each one a real thing with a name that fit.
+So the worked example is a false alarm, and the rule stands on its logic
+rather than on that story: **a bracket-set diff compares two binaries and
+therefore cannot see anything present in both.** Overhead that every run
+carries is invisible to it by construction, and the failure mode is
+silent — every figure is consistently wrong in the same direction, which
+is precisely what a differential check is blind to.
 
 **So price your own instrumentation directly, with at least one cell per
 campaign that has every optional channel, counter and log switched off.**
@@ -505,6 +509,62 @@ write per line, which is exactly why it survives emulator validation.
 The fix is not to delete the instrumentation. It is to measure with and
 without, put the artefact's size on the record, and state which arm every
 figure came from.
+
+### "Absurd on its face" is a halt condition, not a hedge
+
+A number you have just called impossible must stop the conclusion resting
+on it. It must not appear beside that conclusion with an explanation for
+why it might not apply.
+
+Worked example, and it took two people to fail at it. An instrument
+implied a cost of 0.78 seconds per log line. Its author wrote that this
+was "absurd on its face" and shipped the conclusion anyway, labelled as
+arithmetic rather than as a finding. The reviewer then derived the
+contradiction *independently* from a second direction — 40 such calls
+would be 31 seconds, against a whole-run excess of 2.7 seconds for the
+entire fixture — wrote that down, and resolved it with "so either the
+cost is specific to this context, or the per-call estimate is badly off."
+That disjunction turned a falsifier into a caveat. The conclusion then
+drove a work-order change and reached the operator. The real figure was
+1.9 milliseconds; the estimate had been wrong by a factor of 20,000.
+
+**A failed sanity check is a stop, not an annotation.** If the arithmetic
+does not close, the next action is the measurement that closes it, not
+the report. And note the reviewer's failure was the worse one: an
+independent derivation of the same contradiction is stronger evidence
+than the original flag, and it was spent on a hedge.
+
+### A result that fits a pattern you have been rewarded for gets shipped faster
+
+The same episode had a second cause worth separating from the first. Four
+times that day the campaign had found that the real win was its own
+redundant work rather than slow engine code, and each find was received
+enthusiastically and relayed immediately. The fifth candidate fit that
+pattern exactly — and it was the only one of five that left its author's
+hands before a bracket had killed or confirmed it. The four that died
+quietly each had a measurement between the guess and the message.
+
+Two things follow, and the second is for whoever is coordinating rather
+than measuring. **Put a measurement between a striking result and the
+message that reports it**, especially when it confirms a pattern the team
+has been rewarded for finding. And recognise that **turnaround speed is
+set by the reader, not the writer**: a coordinator who responds within
+minutes and relays upward immediately is training a pace that leaves no
+room for the intervening check. Slowing the relay is the coordinator's
+job to fix, not the worker's.
+
+### A scope opened before an `#ifdef` runs to the end of the enclosing block
+
+A timing scope declared before a preprocessor conditional, with no
+closing brace of its own, extends to the end of whatever block encloses
+it — not to the end of the construct it is named after. One named
+`_dp_log` in this way swallowed an engine call sitting *after* the
+`#endif` and attributed 38.4 seconds of that call's time to logging.
+
+This is the class of instrument bug that a parts-sum-to-whole assertion
+cannot catch, because the parts still add up correctly — they are simply
+parts of the wrong whole. **Check a scope's extent against the code it
+claims to measure, not against its own name.**
 
 ### Make an instrument print the symbolic name, not a numeric code
 
