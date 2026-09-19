@@ -106,6 +106,25 @@ discriminates between the candidates and read it before writing the
 mechanism down — the bisect result stands on its own; the story attached
 to it needs separate evidence.
 
+**Before building an optimization mechanism, check whether both halves
+already exist and are simply unconnected.** A dosags session scoped
+engine-level dirty-rect tracking as a substantial change to the AGS
+render path. It was not. AGS's dirty-rect system was **already compiled
+and live in the tree** — the port had never touched it, and it was
+already repainting room backgrounds over dirty spans only. The receiving
+half was also already built: the SDL3-DOS backend has honoured partial
+rect lists since `shared/patches/sdl3-dos/0033`, and the engine's own
+header said so outright — the backend *"never receives a real partial
+rect list because AGS never provides one."* Two finished halves, on
+opposite sides of the port boundary, neither aware of the other.
+
+This is a structural hazard of the porting model rather than an accident:
+a port layer and a mature engine will often implement the same capability
+independently, and the port's patch series is the only place anyone looks.
+**Grep the engine for the capability before designing it**, and grep the
+backend for a code path that is present but never exercised. The cheapest
+optimization available is one that is already written.
+
 **Rect-limit every stage of the pipeline, not just one.** dossage/Passage
 found `SDL_BlitSurface(..., NULL, ..., NULL)` and `SDL_UpdateWindowSurface()`
 (which builds an implicit full-window rect internally — confirmed by
