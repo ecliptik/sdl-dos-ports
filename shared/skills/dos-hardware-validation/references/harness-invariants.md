@@ -469,6 +469,26 @@ recorded under one configuration are a real reason not to flip a default
 configuration, not for leaving the correctness gate blind. Keep the diff
 in the repo so it is reviewable rather than rediscovered.
 
+### Make an instrument print the symbolic name, not a numeric code
+
+An instrument that emits a bare enum value pushes the decoding onto
+whoever reads the log, and that decoding gets done from memory or from
+the order of cases in a `switch`. Neither is the enum.
+
+A campaign came within one step of reporting the wrong cause of its
+largest remaining cost. The measurement split an event kind by sub-type;
+the expensive one was sub-type 1 and the free one sub-type 2, at a ratio
+of 48,000 to 1. The handler's `switch` listed them in the opposite order,
+and the phase's visible action in the game script pointed at the cheap
+one — so matching the printed number against source order, which is the
+natural thing to do, would have produced a confident report of exactly
+the wrong sub-type. Reading the enum definition is what caught it.
+
+**The fix is not to read more carefully. Print the name.** An instrument
+that emits `kObjEventType_Room` has no downstream mapping step to get
+wrong. Where a numeric code must be emitted, put the enum's own mapping
+in the same output rather than expecting a reader to reconstruct it.
+
 ### Check for multiple populations before taking a mean
 
 A mean over a mixture distribution describes no member of it, and the
