@@ -92,30 +92,40 @@ right at a frame-budget boundary, a layout lottery of this size decides
 gate outcomes. **The durable fix is to take enough real work out to move
 off the margin**, not to keep chasing deltas the size of the floor.
 
-**Alignment-only variants understate the floor for code-*adding* changes,
-and the two are different perturbation classes.** Alignment reshuffles
-existing code; adding code changes function size and flips inlining
-decisions. On the same target, alignment-only variants spread 0.19 fps
-while two code-adding changes measured **+0.93 and -1.04** -- opposite
-signs, so this is unpredictable scatter of roughly +/-1 rather than a
-directional tax you could subtract. That puts the real floor for a
-code-adding comparison near **2 fps**, ten times the alignment figure.
-Calibrate with the same class of perturbation as the change under test,
-or the floor you compute will be the wrong one -- a real campaign
-declared a 1.21 fps delta "6x the floor, therefore attributable" on the
-alignment number, when it was actually inside the applicable one.
+**Measure a floor with a deliberate ensemble; never infer one from
+incidental observations.** A real campaign watched two code-adding
+changes land at +0.93 and -1.04 fps, concluded from those two points that
+growing the hot path carried a +/-1 scatter, and wrote down a ~2 fps
+floor. Measured properly with dead-but-emitted blocks at three sizes, the
+actual size effect was **0.19 / 0.23 / 0.27 across a 5.6x size range** --
+smooth, monotone, no cliff, and indistinguishable from that target's
+0.19 alignment floor and 0.24 run-to-run floor. The real floor was ~0.25,
+not 2. The cost of the error ran both ways: a correctly-attributed 1.21
+fps regression was retracted as noise, and a wrong floor reached this
+file before the ensemble that refuted it had been run.
 
-Watch for the diagnostic signature: **two unrelated patches that each add
-small, provably cheap logic to the same hot path and each cost about the
-same amount, neither with a mechanism that survives scrutiny.** Repeated
-failure to find a mechanism is the evidence. The test that settles it is
-**dead-but-emitted code** -- a block of comparable size, guarded behind a
-condition the compiler cannot fold away (a `volatile` read, an env var)
-so it is emitted but never executed. If never-executed code costs the
-same as functional code, the effect is size and placement, not work, and
-there was never a mechanism to find. Confirm the block really was emitted
-by diffing instruction counts; a compiler that folded it away gives a
-null result that means nothing.
+So the useful rule is narrower than "calibrate by perturbation class,"
+though that still holds: **two observations are an anecdote, and the
+ensemble is cheap.** If a floor is load-bearing for an attribution, run
+the variants.
+
+**The diagnostic signature and the test that settles it.** When two
+unrelated patches each add small, provably cheap logic to the same hot
+path and each cost about the same, with no mechanism surviving scrutiny,
+the natural hypothesis is that growth itself is the cost -- an I-cache
+boundary or an inlining flip. Test it with **dead-but-emitted code**: a
+block of comparable size behind a condition the compiler cannot fold away
+(a `volatile` read, an env var), so it is emitted but never executed.
+Confirm emission by diffing instruction counts, or a folded-away block
+gives a null result that means nothing.
+
+In the case above the test came back **negative** -- inert code the same
+size as the real change cost 0.23 where the real change cost 1.05, a 4.6x
+difference at identical growth. That is a strong result, not a wasted
+round: it proves the cost is *execution*, eliminates size, layout and
+inlining in one cell, and sends the investigation back to finding out why
+calls that look like nanoseconds are not. A cheap test that kills a
+plausible hypothesis is worth more than the argument it replaces.
 
 ## Prefer a within-build A/B: put the lever behind a runtime switch
 
