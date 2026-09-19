@@ -410,6 +410,49 @@ decomposition case of the rule that a check which cannot distinguish
 success from failure is not a check: without the sum, a decomposition
 cannot tell a correct split from a wrong one.
 
+**Pair it with a plausibility floor, because the sum alone is not
+enough.** The same patch produced a third bug the assertion passed
+cleanly: a per-frame line of well-formed zeros, because the snapshot was
+taken at the end of one call and reported at the top of the next with
+nothing running in between. Every delta was correctly zero and the parts
+summed perfectly to the whole. **A sum check tests internal consistency;
+it says nothing about whether the interval measured is the intended
+one.** Two failure modes need two defences — assert the parts add up,
+*and* assert the total is physically possible. A frame that took 0
+microseconds is not a frame.
+
+### Instrumented code on a timing-gated path needs a forced-execution mode
+
+The pre-cell rule — prove the code executes before spending a cell on it
+— can fail at a second level: the instrument runs, the harness reports no
+error, and the numbers are meaningless because the *path the instrument
+lives in* was never entered. One campaign read `frames_skipped=0` under
+its emulator as "the emulator never falls behind"; the truth was that the
+fixed-timestep code was switched off there entirely. Two very different
+facts with the same number, and the flattering one got taken.
+
+Some paths only execute under real timing and cannot be reached on a
+developer machine at all. **Treat a forced-execution switch as a
+requirement on instrumented code of that class, not as a workaround** —
+without one, the pre-cell rule is unsatisfiable off-target and the
+emulator's silence will read as coverage.
+
+### Diff the defaults between your emulator runner and your hardware runner
+
+The cause of the above was an asymmetry nobody had audited: the hardware
+runner set an environment variable by default and the emulator runner did
+not. **Every emulator validation of everything behind that variable had
+been vacuous** — not wrong, vacuous, which is worse, because it looked
+like coverage and generated passing checks.
+
+Enumerate every variable, flag and default each runner sets, diff them,
+and for each divergence state which code paths differ as a result. Some
+divergences are deliberate and should stay — committed reference hashes
+recorded under one configuration are a real reason not to flip a default
+— but that is an argument for re-recording the expectations under a known
+configuration, not for leaving the correctness gate blind. Keep the diff
+in the repo so it is reviewable rather than rediscovered.
+
 ### A residual is not a term -- subtraction is not measurement
 
 Taking a total, subtracting the terms you have measured, and treating the
