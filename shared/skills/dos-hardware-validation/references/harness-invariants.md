@@ -384,6 +384,31 @@ Two consecutive identical frames are the desired result here, not a
 fault: they also rule out a display alternating between correct and stale
 content, which a single capture cannot.
 
+### A residual is not a term -- subtraction is not measurement
+
+Taking a total, subtracting the terms you have measured, and treating the
+remainder as a thing that exists somewhere is not instrumentation. It
+produces a phantom with a plausible size, and the enclosing function's
+*name* then supplies a plausible location for it. Both halves are
+invented.
+
+Two instances in one campaign day, by two different sessions, hours
+apart. A coordinator subtracted two known terms from a frame budget,
+announced "17 ms unattributed", and commissioned a search for it -- the
+brackets nested, so the arithmetic was meaningless and there was no hole.
+A worker subtracted a measured sub-term from its parent, attributed the
+~4.4 ms remainder to the part of the function whose name matched, and
+sent a well-reasoned hypothesis after a term that did not exist; the real
+cost was 60% of the parent sitting somewhere else entirely, and the
+measured figure for the named part was 10%.
+
+**Measure the term you intend to reason about.** Where a residual is
+genuinely useful is as an error bar -- "our brackets account for 91.6% of
+the frame" is a statement about instrument coverage, not a discovery of
+an 8.4% component. And before subtracting anything, check whether the
+brackets nest: a bracket that totals more than the run cannot be additive
+with its children.
+
 ### A note you wrote yourself is not evidence
 
 The same campaign spent a day repeatedly finding that the answer was

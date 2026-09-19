@@ -106,6 +106,28 @@ discriminates between the candidates and read it before writing the
 mechanism down — the bisect result stands on its own; the story attached
 to it needs separate evidence.
 
+**The recurring shape of a real win: general-case code doing per-unit
+bookkeeping for a per-unit quantity that is usually zero.** Three of one
+campaign's four largest wins had this form, and none of them were slow
+code — all were work that did not need doing at all:
+- A full-frame buffer-to-buffer copy whose output nothing consumed
+  (+9.64 fps).
+- A full-screen present pushing 230,400 pixels when 18,986 had changed
+  (+12.98 fps).
+- A black-region fill running a 36-byte `memcmp` per scanline to merge
+  identical rows — 360 calls a frame — for a region averaging 1,177
+  pixels, whose actual filling cost 0.06 microseconds. Testing the span
+  count before the comparison took that term down 79%, with provably
+  identical output.
+
+The pattern is worth carrying between ports because it predicts where to
+look: an engine written for the general case pays per-scanline or
+per-element setup unconditionally, and a port that runs one specific
+content class at one resolution often makes that quantity zero almost
+every frame. **Measure the quantity the bookkeeping is bookkeeping for**
+— if it is usually zero, the guard is free and the win is the whole
+scan.
+
 **Look for redundancy in unexamined code before buying efficiency in code
 you understand.** In one dosags campaign day the two kinds of win were
 measured side by side on the same fixture: finding a *redundant*
