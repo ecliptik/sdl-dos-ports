@@ -106,6 +106,22 @@ discriminates between the candidates and read it before writing the
 mechanism down — the bisect result stands on its own; the story attached
 to it needs separate evidence.
 
+**Look for redundancy in unexamined code before buying efficiency in code
+you understand.** In one dosags campaign day the two kinds of win were
+measured side by side on the same fixture: finding a *redundant*
+operation in a never-examined path (a full-frame buffer-to-buffer copy
+whose output nothing consumed) was worth **+9.64 fps**, while the best
+micro-optimization of an already-understood path (un-inlining a hot
+function to shrink its cache footprint) was worth **+1.20**. An 8x
+difference, and not a coincidence: **unexamined code can contain
+redundancy, whereas a path you already understand can only be made more
+efficient.** When a frame breakdown offers you a term nobody has looked
+at and a term you already know how to shave, take the unexamined one
+first -- and look there for work that is *unnecessary*, not merely slow.
+Ask what it does, how many times, over how many bytes, and whether any of
+it is repeated. The same day produced the counter-case too: a term that
+*was* understood yielded only percentages, exactly as this rule predicts.
+
 **Before building an optimization mechanism, check whether both halves
 already exist and are simply unconnected.** A dosags session scoped
 engine-level dirty-rect tracking as a substantial change to the AGS
