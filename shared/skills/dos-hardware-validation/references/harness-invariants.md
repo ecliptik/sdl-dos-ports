@@ -327,6 +327,28 @@ check: `per_loop_fps / fps_mean` should roughly equal
 `duration / (duration - overhead)`; if those disagree by more than a few
 percent, something else is wrong, not just the overhead ratio.
 
+## A conjunction counter says nothing about either conjunct
+
+A counter that increments on `A && B` cannot support a claim about `A`
+alone or `B` alone. This sounds obvious written down and is very easy to
+violate in practice, because the counter's *name* usually mentions only
+one of the conditions. A real example: `presents_palette_only` counts
+presents where the frames were equal AND the palette changed. Two people
+investigating the same regression both reasoned from it to a conclusion
+about the palette flag by itself -- one to rule a code path out, one to
+argue it stayed open -- and both were wrong. It took a direct probe on the
+flag alone (`palchg true=2 of 1000`) to settle a question two people had
+already reasoned about confidently and in opposite directions.
+
+Zero on a conjunction counter is the trap-shaped case: it is consistent
+with `A` never being true, with `B` never being true, and with both being
+frequently true but never simultaneously. **When a hypothesis turns on how
+often one condition holds, instrument that condition directly.** A
+one-line counter on the conjunct is cheaper than either the argument or
+the wrong conclusion, and this whole hub's "attest, don't recall"
+invariant applies to a fact about your own program's control flow exactly
+as it does to a fact about the hardware.
+
 ## One mechanism per measured build
 
 Shipping more than one new mechanism in the same measured binary makes
