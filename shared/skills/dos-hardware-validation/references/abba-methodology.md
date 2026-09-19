@@ -50,6 +50,48 @@ Both checks exist because a comparison run on an unstable baseline can
 produce a confident-looking delta that is actually measuring instability,
 not the lever.
 
+**A noise floor belongs to a fixture, not to a machine.** Measured on one
+real target in one campaign: 0.12 fps spread on an idle fixture and 0.24
+on a moving-content one, same machine, same session. Carrying the smaller
+one across would have halved the bar a delta had to clear. Measure the
+floor for the fixture you are about to draw a conclusion on.
+
+## The second noise floor: build layout, which A-to-A cannot see
+
+An A-to-A check re-runs **the same binary**, so it measures run-to-run
+variance and nothing else. It is structurally incapable of detecting
+**build-to-build layout variance** -- the performance difference between
+two binaries that do the same work but whose code the compiler placed,
+aligned, or allocated registers for differently. On a 486-class target
+with a small cache and no branch prediction, that is not a rounding
+error: a real campaign measured a build with *strictly more work in it*
+running **0.93 fps faster** than the same revision without the added
+instrumentation, four times that fixture's run-to-run spread.
+
+This matters because **every single-build A/B comparison is exposed to
+it.** An A/B of patch N versus patch N+1 compares two different binaries,
+so its delta contains the lever's effect *plus* whatever layout variance
+those two builds happen to differ by. If the layout floor is comparable to
+the delta, the measurement cannot attribute the difference to the patch at
+all -- and no amount of diffing the source will ever find the mechanism,
+because there isn't one. Repeated failure to find a mechanism for a
+reproducible delta is a signal worth taking seriously here.
+
+**Measure it with a layout-perturbation ensemble.** Build three or four
+**semantically identical** variants of the *same* revision -- vary
+`-falign-functions`/`-falign-loops`, insert padding ahead of the hot
+function, reorder two independent functions -- and run a cell on each. The
+spread across that ensemble is the layout floor, and any single-build A/B
+smaller than it is unattributable. Two practical notes: an added probe or
+banner is *not* a semantically neutral perturbation if it executes on the
+hot path, and the floor is per-translation-unit as much as per-fixture, so
+measure it on the TU the lever actually touches.
+
+The strategic reading matters as much as the number. When a target sits
+right at a frame-budget boundary, a layout lottery of this size decides
+gate outcomes. **The durable fix is to take enough real work out to move
+off the margin**, not to keep chasing deltas the size of the floor.
+
 ## Verdict table shape
 
 Key the verdict to the delta magnitude against the pre-registered
