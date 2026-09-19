@@ -356,6 +356,37 @@ grep of your own prior records before designing the cell.** The second
 instance is the cheaper lesson of the two -- the answer was already in the
 project's notes, and the round was spent anyway.
 
+### A number that CONFIRMS your prior gets less scrutiny -- reverse that
+
+The most dangerous figure in an investigation is the one that agrees with
+what you already believe, because it is the one that ends the
+investigation. A contradicting number gets checked; a confirming number
+gets acted on.
+
+Worked example from one campaign. A term was suspected of being
+efficient. Its cost came out at "0.70 ms per sprite, about 2.3
+cycles/pixel -- a fast masked copy," which confirmed the suspicion and
+would have closed the question with "the code is fine, move on." The
+sprite dimension in that calculation had been **invented, not measured**.
+Measured, the sprites were a fifth the assumed area and the real figure
+was **19.4 cycles/pixel -- wrong by 8x, in the reassuring direction.**
+
+The correction mattered beyond the number. "The code is efficient"
+invites micro-optimization; "the memory is saturated" says only fewer
+bytes or fewer passes can help. Those send the next week somewhere
+different.
+
+Two habits follow. **Check every quantity in a calculation that you did
+not measure**, especially the ones sitting quietly in a denominator --
+and note that fixing one does not immunise the next: in the same
+investigation the replacement conclusion rested on an inferred *stream
+count* in the numerator, one round after an invented dimension in the
+denominator. And **invert the arithmetic as a routine test**: compute
+backwards from the measured time to the implied quantity, and check that
+against something known. Here, 0.70 ms at the machine's measured memory
+bandwidth implied a 77x77 sprite, which visibly contradicted the assumed
+100x200 -- the contradiction was available without any new instrument.
+
 ### Grep the cell you already have before designing a new one
 
 That last clause deserves its own standing: in a single campaign day, the
