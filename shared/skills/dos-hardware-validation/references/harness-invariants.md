@@ -469,6 +469,43 @@ recorded under one configuration are a real reason not to flip a default
 configuration, not for leaving the correctness gate blind. Keep the diff
 in the repo so it is reviewable rather than rediscovered.
 
+### Run at least one cell with ALL optional instrumentation off
+
+There is an existing rule for checking whether instrumentation
+contaminates a comparison: diff the bracket sets of the two binaries, and
+if they are identical, per-tick overhead cannot differ between them. That
+rule is correct and it is not enough. **It only covers *differential*
+contamination. Anything present in every run is invisible to it by
+construction**, and the campaign that wrote the rule then spent a day
+chasing a cost that was exactly that.
+
+The symptom: a single engine event measuring **7.53 seconds, nine times a
+run, 40% of total wall clock**, in a code path where script execution was
+only 11-13% — so it read as engine work in the event-dispatch machinery.
+It was neither. **94% of it was the port's own `debug_script_log` calls**,
+added by two earlier instrumentation patches and sitting inside an event
+the engine fires on every room entry. Both the emulator runner and the
+hardware runner enabled that log channel by default, so **every
+measurement the campaign had ever taken included it and none had ever
+been compared against a run without**.
+
+It nearly reached the operator as "the largest actionable defect this
+campaign has found." Four plausible explanations were killed by brackets
+first — each one a real thing with a name that fit.
+
+**So price your own instrumentation directly, with at least one cell per
+campaign that has every optional channel, counter and log switched off.**
+The bounding is the same as for a suspect clock: ratios and within-build
+A/Bs stay safe, because both arms carry the same overhead; **absolute
+figures judged against fixed bars do not.** And note the mechanism is
+platform-specific — a log line that is nearly free on a host filesystem
+can cost orders of magnitude more on real hardware doing a synchronous
+write per line, which is exactly why it survives emulator validation.
+
+The fix is not to delete the instrumentation. It is to measure with and
+without, put the artefact's size on the record, and state which arm every
+figure came from.
+
 ### Make an instrument print the symbolic name, not a numeric code
 
 An instrument that emits a bare enum value pushes the decoding onto
