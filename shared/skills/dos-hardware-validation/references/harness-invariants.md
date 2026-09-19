@@ -327,6 +327,33 @@ check: `per_loop_fps / fps_mean` should roughly equal
 `duration / (duration - overhead)`; if those disagree by more than a few
 percent, something else is wrong, not just the overhead ratio.
 
+## When a batch of cells fails, run a known-good binary BETWEEN the failures
+
+"My change broke it" and "the harness had a transient" are
+indistinguishable from a failing cell's output alone, and a run of
+consecutive failures makes the first explanation feel overwhelming. It
+is not evidence. **Interleave a previously-working binary and see
+whether it also fails.** If it reproduces its own earlier figure, the
+change is exonerated and the fault is in the harness, the transfer, or
+the machine.
+
+A real campaign hit four consecutive collection failures -- stage
+directories holding only a send witness, target idle at a prompt, input
+verified working -- with a plausible common cause sitting right there in
+the one thing that had changed. A known-good binary run in between
+succeeded at *exactly* its previous value, and the supposedly-broken
+binary later produced a clean result. The transient was never explained.
+Without the interleave, the available conclusion was "binaries built this
+way don't run on hardware," which was false and would have deleted a
+confirmed 1.20 fps win.
+
+Two details that make it work: the control has to be a binary with a
+**known prior figure**, so "it ran" can be upgraded to "it reproduced";
+and it has to run **between** the failures rather than before or after
+the batch, or it cannot distinguish a transient from a state change that
+began partway through. Record an unexplained transient as unexplained --
+a later recurrence should be recognised, not re-diagnosed from scratch.
+
 ## A conjunction counter says nothing about either conjunct
 
 A counter that increments on `A && B` cannot support a claim about `A`
