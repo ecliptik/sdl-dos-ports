@@ -141,6 +141,17 @@ independently, and the port's patch series is the only place anyone looks.
 backend for a code path that is present but never exercised. The cheapest
 optimization available is one that is already written.
 
+**At three instances in a single campaign this stopped being bad luck.**
+The same day also found a letterbox fill already done once and cached
+rather than repeated per frame, and an eager rect coalescer already
+merging touching and overlapping rectangles at add time — the latter
+discovered only after modelling a greedy merge pass whose best case was
+0.19 ms, because the cheap merges had all been taken already. **Extend
+the rule past "does this exist" to "what does the existing mechanism
+already do":** before pricing an improvement to a component, read that
+component. An optimization proposed on top of one you have not read is
+being priced against an imaginary baseline.
+
 **Rect-limit every stage of the pipeline, not just one.** dossage/Passage
 found `SDL_BlitSurface(..., NULL, ..., NULL)` and `SDL_UpdateWindowSurface()`
 (which builds an implicit full-window rect internally — confirmed by
