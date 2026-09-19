@@ -327,6 +327,35 @@ check: `per_loop_fps / fps_mean` should roughly equal
 `duration / (duration - overhead)`; if those disagree by more than a few
 percent, something else is wrong, not just the overhead ratio.
 
+## Before spending a cell on a lever, prove the code under test EXECUTES
+
+`set_vars`/`forbid`/`expect_log` prove the lever was *requested* and that
+the engine *accepted* it. None of them prove the code you are measuring
+actually runs on the fixture you are running it against. A cell that
+cannot distinguish a positive result from a negative one is not a
+measurement, and it costs the same machine time as a real one.
+
+Two instances from one campaign, both burning cells on tests that could
+not test anything:
+- **Already out-of-line.** A `noinline` attribute was applied to a
+  function the compiler had *already* placed out-of-line, so the build
+  was a near no-op. The null result read as evidence against the
+  hypothesis; it was evidence of nothing. **Symbol count in the built
+  binary** settles it before the cell runs.
+- **Never reached.** The same attribute was then tested on a fixture
+  where that function never executes -- an unrelated patch gates the
+  whole code path above a buffer-size threshold the fixture exceeds. An
+  **execution counter** (`presents_skipped=0` here) settles it, and in
+  this case the constraint had already been written down in the
+  campaign's own prior record and simply not re-read.
+
+So: prove reachability the same way you prove anything else here, by
+attestation rather than recall. **Symbol count for "is it a distinct
+function", an execution counter for "does it run on this fixture", and a
+grep of your own prior records before designing the cell.** The second
+instance is the cheaper lesson of the two -- the answer was already in the
+project's notes, and the round was spent anyway.
+
 ## When a batch of cells fails, run a known-good binary BETWEEN the failures
 
 "My change broke it" and "the harness had a transient" are
