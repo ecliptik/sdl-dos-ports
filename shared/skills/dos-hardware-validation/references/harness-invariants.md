@@ -469,6 +469,52 @@ recorded under one configuration are a real reason not to flip a default
 configuration, not for leaving the correctness gate blind. Keep the diff
 in the repo so it is reviewable rather than rediscovered.
 
+### Check for multiple populations before taking a mean
+
+A mean over a mixture distribution describes no member of it, and the
+mixture is usually invisible in the summary that hides it.
+
+A campaign measured 41 frames that had overrun their budget and reported
+9.1% of their time in rendering — a figure that would have sent the next
+week at the wrong subsystem. Split by size, the population was two things
+that barely overlap: **37 ordinary frames averaging 79 ms, 85.8% render
+and literally 0% script or events**, and **4 outliers averaging 8,790 ms,
+98.9% events**. Four monsters drowned 37 ordinary frames, and the
+aggregate described neither. The correct conclusion — that the everyday
+tail is render-bound — is the *opposite* of what the aggregate implied.
+
+The same campaign hit it once already, on a dirty-check cost that was
+bimodal by construction: a full buffer scan when frames matched, an early
+exit when they differed, ~0.60 ms against ~0.15, averaged into a figure
+that described neither case and misdirected an investigation for two
+rounds.
+
+**So before averaging a set of measurements, ask what distinguishes its
+members** — size, outcome, code path taken — and report the populations
+separately with their own counts. A bimodal cost with a 4x or 100x ratio
+between modes is common in this domain, not exotic: skip-versus-do,
+hit-versus-miss, and fast-path-versus-slow-path all produce it.
+
+### Assert every derived figure against its own physical bounds
+
+Instruments need plausibility floors; so does the *analysis* built on
+them. In one campaign day three separate tools emitted plausible-shaped
+wrong numbers, and the only thing that caught the worst of them was that
+it happened to be ridiculous rather than merely wrong: a gate figure
+computed at **107 ticks/s on a 40 Hz pacer**, because two excluded
+intervals overlapped and the subtraction removed **80% of the run's wall
+clock**.
+
+Two assertions would have caught it before it printed, and neither needs
+to know the right answer: **excluded intervals must be disjoint**, and
+**a figure computed by exclusion must report what fraction of the whole
+it removed**, refusing or flagging above a threshold. More generally, a
+rate above what the pacer can produce, a share above 100%, or excluded
+time exceeding elapsed time are all impossible regardless of the
+question being asked. **Assert bounds at the point of computation** —
+relying on someone noticing an absurd number is relying on the error
+being large, and the dangerous ones are the ones that are not.
+
 ### A residual is not a term -- subtraction is not measurement
 
 Taking a total, subtracting the terms you have measured, and treating the
