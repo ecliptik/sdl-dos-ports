@@ -586,6 +586,33 @@ that emits `kObjEventType_Room` has no downstream mapping step to get
 wrong. Where a numeric code must be emitted, put the enum's own mapping
 in the same output rather than expecting a reader to reconstruct it.
 
+### State the denominator and population before comparing two figures
+
+The most frequent analysis error in one real campaign was not a wrong
+measurement. Every number involved was correct. The error was comparing
+two of them whose *scopes* differed, three separate times, each costing
+at least a round:
+
+- **Nested brackets treated as additive.** Subtracting two measured terms
+  from a frame budget produced a "17 ms unattributed" that did not exist,
+  because the parent bracket contained the children and summed to more
+  than the run.
+- **Two fixtures treated as one.** "13% here versus 24.3% there means the
+  cost scales with colour depth" compared shares of different frames on
+  different fixtures; in absolute terms the comparison pointed the other
+  way.
+- **Two tick populations treated as the same.** "Script is 11-13% of
+  these ticks but 94% of that path — a contradiction needing a cell to
+  resolve" compared stall ticks in one phase against event dispatches in
+  another. There was no contradiction, and reading the bracket site
+  settled it in less time than designing the measurement took.
+
+**Before comparing two figures, say out loud what each one is a fraction
+of** — which interval, which events, which fixture, and whether the
+brackets nest. All three of these were caught by reading rather than by
+measuring, which means the check is cheap and belongs before the
+hypothesis, not after it.
+
 ### Check for multiple populations before taking a mean
 
 A mean over a mixture distribution describes no member of it, and the
