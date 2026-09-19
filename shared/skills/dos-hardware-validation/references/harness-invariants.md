@@ -356,6 +356,32 @@ grep of your own prior records before designing the cell.** The second
 instance is the cheaper lesson of the two -- the answer was already in the
 project's notes, and the round was spent anyway.
 
+### Grep the cell you already have before designing a new one
+
+That last clause deserves its own standing: in a single campaign day, the
+answer was already on disk **four separate times** -- a gating constraint
+recorded in the team's own prior ABBA notes, a set of bandwidth-probe
+figures that refuted an exotic theory about a copy's cost, repaint counts
+that settled a hypothesis without a new cell, and finally a stall
+breakdown showing **61% of a run's wall time inside 19 ticks**, sitting in
+a log collected an hour earlier. That last one redirected the entire
+remaining plan.
+
+"The data was already there" cost that campaign more rounds than any
+wrong hypothesis did, and it is a cheaper failure to fix: a structured
+per-run log (see `runmanifest-log.md`) is only worth what someone reads
+out of it. **Before designing a cell, grep the last one for the quantity
+you are about to go measure.**
+
+The same habit applies to a metric's definition, not just its values.
+Before doing arithmetic on a rate, **read what its clock is anchored
+to.** Two sessions in that campaign confidently attributed a 25-point
+whole-run gap to startup and load; the metric's denominator began *after*
+engine init and game-data load, and the entire pre-loop turned out to be
+0.9% of the run. A phase-by-phase instrumentation of startup was one
+decision away from being commissioned on the project's most expensive
+fixture.
+
 ## When a batch of cells fails, run a known-good binary BETWEEN the failures
 
 "My change broke it" and "the harness had a transient" are
