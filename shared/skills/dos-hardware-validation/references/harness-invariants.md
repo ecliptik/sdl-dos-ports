@@ -356,6 +356,50 @@ grep of your own prior records before designing the cell.** The second
 instance is the cheaper lesson of the two -- the answer was already in the
 project's notes, and the round was spent anyway.
 
+### A present-path bug needs a capture of the SCREEN, not of the buffer
+
+A backbuffer hash or reference-bitmap comparison validates what the game
+*drew*. It is blind, by construction, to everything that happens between
+the buffer and the monitor: which rectangle got pushed, where it landed,
+whether it landed at all. A dirty-rect optimization in one campaign
+pushed 417 frames' worth of rects **60 rows too high** -- refreshing the
+wrong strip of the display -- while every baseline capture passed, because
+the back buffer those baselines hash was correct the whole time.
+
+The offset came from accumulating a bounding box in *game* coordinates
+and testing it against *window* coordinates, which differed by a
+letterbox margin. Any coordinate-space mismatch on the present path has
+this shape. **Whenever a change touches what gets pushed or where, verify
+with a capture of the actual screen** -- the port's own VGA capture or a
+camera -- and do it before and after, not only after. See `docs/video.md`
+on the limits of each capture channel.
+
+### A note you wrote yourself is not evidence
+
+The same campaign spent a day repeatedly finding that the answer was
+already in its own logs. The mirror-image failure is worse and arrived
+the same day: a bracket comment written months earlier asserted that a
+given code path did not touch the back buffer, was believed, and was
+wrong -- nobody had followed the call chain past the first line. The term
+it mislabelled turned out to be the second-largest in the frame, with
+the engine's *own* author comment sitting directly above the call saying
+it can take up to 50% of game CPU at high resolutions and colour depths.
+
+Treat a comment, a plan entry, or a prior conclusion as **a hypothesis
+with your handwriting on it**. Records are for finding things you already
+measured; they are not a substitute for reading the code when the claim
+is about what the code does.
+
+### A diagnostic must reset on the same cadence as the metric it explains
+
+A "why" field cleared by a per-frame reset, annotating counters that
+accumulate across a run, reads empty forever. In one campaign that
+combination printed `reason="-"` for 2,124 consecutive frames while
+someone tried to work out why an optimization had stopped engaging.
+Check the lifetime of an explanatory field against the lifetime of the
+number it explains, or the explanation is guaranteed to be absent exactly
+when it is needed.
+
 ### A number that CONFIRMS your prior gets less scrutiny -- reverse that
 
 The most dangerous figure in an investigation is the one that agrees with
