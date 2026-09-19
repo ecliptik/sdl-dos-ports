@@ -384,6 +384,32 @@ Two consecutive identical frames are the desired result here, not a
 fault: they also rule out a display alternating between correct and stale
 content, which a single capture cannot.
 
+### A decomposition instrument must assert that its parts sum to its whole
+
+An instrument bug that produces an *absurd* number gets caught. An
+instrument bug that produces a *plausible* number gets believed and acted
+on, and no amount of care detects it — the reading looks exactly like a
+finding.
+
+A campaign hit two in one short patch. A per-phase delta printed
+17,847,809 microseconds of script time inside a 636 ms tick, because
+phase totals accumulate across nested loops while the self-time figure
+deliberately excludes them, so the two were never comparable. The fix
+introduced the second bug: a children figure that printed the parent's
+running accumulator rather than the child total. Both were caught only
+because the values were self-evidently impossible. As the author put it:
+at 1.4 seconds instead of 17.8, it would have been read as real and
+reported as a finding.
+
+**So make the check structural rather than relying on noticing.** Any
+instrument that splits a quantity into parts should assert the parts
+reconstruct the whole — `self + children == total`, phase sum == frame
+total — and report a violation count alongside the data. Both bugs above
+fail that assertion immediately and automatically. This is the
+decomposition case of the rule that a check which cannot distinguish
+success from failure is not a check: without the sum, a decomposition
+cannot tell a correct split from a wrong one.
+
 ### A residual is not a term -- subtraction is not measurement
 
 Taking a total, subtracting the terms you have measured, and treating the
