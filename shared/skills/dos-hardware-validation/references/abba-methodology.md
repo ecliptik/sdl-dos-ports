@@ -92,6 +92,55 @@ right at a frame-budget boundary, a layout lottery of this size decides
 gate outcomes. **The durable fix is to take enough real work out to move
 off the margin**, not to keep chasing deltas the size of the floor.
 
+**Alignment-only variants understate the floor for code-*adding* changes,
+and the two are different perturbation classes.** Alignment reshuffles
+existing code; adding code changes function size and flips inlining
+decisions. On the same target, alignment-only variants spread 0.19 fps
+while two code-adding changes measured **+0.93 and -1.04** -- opposite
+signs, so this is unpredictable scatter of roughly +/-1 rather than a
+directional tax you could subtract. That puts the real floor for a
+code-adding comparison near **2 fps**, ten times the alignment figure.
+Calibrate with the same class of perturbation as the change under test,
+or the floor you compute will be the wrong one -- a real campaign
+declared a 1.21 fps delta "6x the floor, therefore attributable" on the
+alignment number, when it was actually inside the applicable one.
+
+Watch for the diagnostic signature: **two unrelated patches that each add
+small, provably cheap logic to the same hot path and each cost about the
+same amount, neither with a mechanism that survives scrutiny.** Repeated
+failure to find a mechanism is the evidence. The test that settles it is
+**dead-but-emitted code** -- a block of comparable size, guarded behind a
+condition the compiler cannot fold away (a `volatile` read, an env var)
+so it is emitted but never executed. If never-executed code costs the
+same as functional code, the effect is size and placement, not work, and
+there was never a mechanism to find. Confirm the block really was emitted
+by diffing instruction counts; a compiler that folded it away gives a
+null result that means nothing.
+
+## Prefer a within-build A/B: put the lever behind a runtime switch
+
+Everything above -- layout variance, code-size scatter, inlining flips,
+I-cache placement -- exists only because the two arms are **two different
+binaries**. Compile the lever behind a **runtime hint or env var and A/B
+within one build**, and all of it vanishes by construction: identical
+code, identical layout, identical cache behaviour, toggled at startup.
+The floor collapses back to the run-to-run figure, which is typically an
+order of magnitude smaller.
+
+**Any effect smaller than the code-adding floor must be measured
+within-build or not claimed.** Large deltas are safe either way -- a
+comparison of presentation modes differing by 13+ fps was never at risk
+from a 2 fps floor -- so this is a rule about small effects, which is
+exactly where optimization work lives once the obvious wins are gone.
+
+This usually costs nothing to adopt, because a lever worth measuring is
+often a lever worth shipping as a tunable anyway. Build the switch for
+the feature and the measurement method comes free with it. Two cautions:
+the switch itself must not be read on the hot path (hoist it to a
+startup-time bool), and both arms still carry the code, so a within-build
+A/B tells you the lever's value but *not* what the added code cost to
+include -- that question needs the dead-but-emitted test above.
+
 ## Verdict table shape
 
 Key the verdict to the delta magnitude against the pre-registered
