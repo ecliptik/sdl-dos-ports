@@ -421,6 +421,22 @@ one.** Two failure modes need two defences — assert the parts add up,
 *and* assert the total is physically possible. A frame that took 0
 microseconds is not a frame.
 
+### Label correct behaviour that looks identical to a known bug
+
+An instrument had just been fixed for a bug whose signature was a zero
+total alongside non-zero children. It then produced a *legitimate* zero
+total alongside non-zero children — the outer call records on return, so
+during a nested blocking loop the outer total genuinely has not advanced
+while inner phases have. Correct, and indistinguishable in the output
+from the defect fixed minutes earlier.
+
+**When correct behaviour shares a signature with a bug you have seen,
+label the correct case explicitly** — one extra field saying
+`NESTED=outer-call-still-in-flight` removes a whole class of future
+misreading, including by the author weeks later. Otherwise every reader
+has to re-derive which of two identical outputs they are holding, and
+the one who gets it wrong will "fix" working code.
+
 ### Instrumented code on a timing-gated path needs a forced-execution mode
 
 The pre-cell rule — prove the code executes before spending a cell on it
