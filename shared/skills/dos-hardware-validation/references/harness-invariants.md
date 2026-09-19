@@ -343,6 +343,35 @@ improvement was banked, shipped default-on based on a result that looked
 solid, and did not reproduce -- the discipline is the direct answer to
 that incident, not a hypothetical precaution.
 
+## Any automated step that SELECTS an artifact needs a cheap identity check
+
+A script that picks which commit, patch level, or binary to build is
+making a claim about identity, and a loose selector will make that claim
+confidently and wrongly. A real bisect script's commit-matching regex also
+matched an unrelated `dos: ` subject line, so it silently checked out the
+wrong patch level when asked for a specific one. It was caught only
+because an unrelated cheap assertion -- a patch count on the checked-out
+tree -- failed; nobody noticed the wrong checkout by reading the output.
+
+Two things follow. First, **pin selection to something that cannot
+ambiguously match**: read the SHA from the patch file's own `From` line
+rather than pattern-matching a subject. Second, **carry a cheap invariant
+alongside the selection** (a patch count, a file that must exist at that
+revision, an expected `build_sha12`), because the failure mode here is
+silent -- a mis-selected artifact produces a complete, plausible, entirely
+wrong result set, and a bisect is exactly the procedure where one wrong
+data point sends the whole conclusion to the wrong commit. This is the
+"attest, don't recall" invariant applied to the *input* side of a
+measurement rather than its output.
+
+A related auditability trap from the same campaign: folding working-tree
+dirt into a build fingerprint fixes stamp collisions between dirty builds,
+but if it is folded in *unconditionally* it also makes every historical
+fingerprint unreproducible, so an old result can no longer be tied to a
+build. Fold dirt in only when the tree is actually dirty -- a clean build
+must still reproduce its stamp, or you have traded one attribution problem
+for a worse one.
+
 ## An emulator is a correctness instrument, not a performance proxy
 
 Where an emulator and real hardware disagree, real hardware wins, full

@@ -74,6 +74,38 @@ is necessary, not sufficient.
 
 ## Confirmed real-hardware findings
 
+**An optimization validated on one fixture can be a real regression on
+another — build a fixture per workload class before trusting any gate.**
+A dosags patch reordered a present-path dirty check to win a palette-only
+present, measurably helping an *idle* 8-bit benchmark and becoming one of
+five patches behind a claimed performance gate. On 8-bit *moving* content
+the same patch cost **+0.60 ms per render pass** (`present_dirty_check`
+4.86 → 5.46, fps 40.12 → 38.91), which was the entire margin between
+passing and failing the next gate. Nothing was wrong with the original
+measurement; the fixture simply didn't contain the case the patch hurt.
+Two things make this worth generalizing:
+- **It was invisible until a moving-content fixture existed.** The plan
+  of record had already named this exposure, recording that workload as
+  "inferred, not measured" — a correctly-priced risk that then came due.
+  Write that phrase down when you accept such a gap, so the eventual
+  finding reads as a known cost rather than a surprise.
+- **The fix is to preserve both paths, not to revert.** A patch that helps
+  one workload and hurts another is a signal that the cheap path and the
+  expensive path both need to exist, selected at runtime. Reverting just
+  moves the regression to the other fixture.
+
+**Don't accept a plausible mechanism just because its magnitude matches.**
+In the same investigation the obvious explanation — a cheap short-circuit
+test moved after an expensive comparison — predicted almost exactly the
+0.60 ms observed, and was still wrong: a counter in the same logs
+(`presents_palette_only=0`) proved the short-circuit could never have
+fired, so both code arms did identical work. A matching magnitude is weak
+evidence, because on a fixed-size buffer at a fixed bandwidth *many*
+candidate mechanisms predict the same number. Find a counter that
+discriminates between the candidates and read it before writing the
+mechanism down — the bisect result stands on its own; the story attached
+to it needs separate evidence.
+
 **Rect-limit every stage of the pipeline, not just one.** dossage/Passage
 found `SDL_BlitSurface(..., NULL, ..., NULL)` and `SDL_UpdateWindowSurface()`
 (which builds an implicit full-window rect internally — confirmed by
