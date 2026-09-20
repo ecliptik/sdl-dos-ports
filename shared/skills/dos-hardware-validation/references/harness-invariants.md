@@ -701,6 +701,32 @@ question being asked. **Assert bounds at the point of computation** —
 relying on someone noticing an absurd number is relying on the error
 being large, and the dangerous ones are the ones that are not.
 
+### A parked observation ages against the tree — re-confirm before designing around it
+
+An anomaly you deferred is a fact about the binary it was seen on. By the
+time you come back to it, that binary may not exist.
+
+One campaign parked a recurring stall recorded as "deterministic at ticks
+603 and 1807". Returning to it five patch series later, the stalls were
+still there and the indices were **803 and 2407**. The determinism was
+real; its *values* were a property of the old build. A probe armed at the
+recorded indices — the obvious design, and the one both sessions had
+independently planned, since known indices lift the usual cost constraint
+on instrumentation — would have caught nothing and read as the
+phenomenon having vanished.
+
+**Re-confirm a parked observation on the current tree before designing
+any work around it**, and prefer a confirmation that is also useful:
+here, re-running the gate's own cells both re-measured the stalls and
+answered whether the gate had closed on other changes in the meantime.
+That campaign hit this four times; each cost a round spent instrumenting
+something that had moved or gone.
+
+A corollary worth stating separately: **when an index or threshold shifts
+between builds, the shift is data.** In this case the two pairs satisfied
+the same exact relation, which pointed at a mechanism that neither pair
+alone suggested.
+
 ### A residual is not a term -- subtraction is not measurement
 
 Taking a total, subtracting the terms you have measured, and treating the
