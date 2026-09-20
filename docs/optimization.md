@@ -128,6 +128,30 @@ every frame. **Measure the quantity the bookkeeping is bookkeeping for**
 — if it is usually zero, the guard is free and the win is the whole
 scan.
 
+**"We have exhausted the identified work" is a statement about the
+search, not about the territory.** A campaign reported that its target
+frame rate was "not reachable by the render work we have identified" —
+literally true, and badly misleading, because everything identified was
+*efficiency* work while the actual cost turned out to be *volume*: a
+single 460x260 GUI element, covering half the screen, being recomposited
+on frames where nothing about it had changed. Nobody had looked for it,
+and the sentence implied they had.
+
+The phrasing matters because the two readings drive opposite decisions —
+one says stop, the other says look somewhere new. **State it as "we have
+exhausted the work we identified, and nothing has examined X"**, and name
+X. In this case X was "why the slow frames are slow", and asking it
+turned a wall into a bounded object with a measured fingerprint inside
+two rounds.
+
+The related diagnostic habit: when several cost terms are *all* elevated
+but by different factors, that is not "the frame is uniformly slow" — it
+is one upstream cause propagating. Here compositing 6.3x the normal
+sprite area blew the dirty rectangle out to 80% of the screen, which
+stopped the present narrowing and enlarged the background restore. Three
+elevated terms, one object. **Look for the single cause that explains the
+*pattern* of elevations before treating them as separate problems.**
+
 **Look for redundancy in unexamined code before buying efficiency in code
 you understand.** In one dosags campaign day the two kinds of win were
 measured side by side on the same fixture: finding a *redundant*
