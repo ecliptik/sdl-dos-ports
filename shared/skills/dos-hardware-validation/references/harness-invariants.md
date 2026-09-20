@@ -396,6 +396,46 @@ Two consecutive identical frames are the desired result here, not a
 fault: they also rule out a display alternating between correct and stale
 content, which a single capture cannot.
 
+### A stamp-based build can hand you a stale library and a clean build log
+
+`make` targets that gate on a stamp file rather than on source timestamps
+will not notice an edit to vendored source. One campaign found its SDL
+library **four days stale** while the engine rebuilt happily against it —
+no error, no warning, a green build. The instrumentation added that
+afternoon was simply not in the binary.
+
+It was caught by checking for the new symbol with `nm` before running.
+Had it not been, the cell would have measured the **old backend** and
+returned zeros for every new counter — and zeros are exactly what the
+hypothesis under test predicted, so the wrong binary would have produced
+a confident, wrong confirmation.
+
+**Verify the artifact contains the change before spending a cell on it.**
+`nm` for a new symbol, a version string in the boot log, or a build
+fingerprint that folds the library's own hash — anything that attests the
+binary rather than the build's exit code. This is the same "attest, don't
+recall" invariant applied one layer down: a clean build log is a claim
+about `make`, not about what is in the file.
+
+### A counter reading zero must distinguish "false" from "never ran"
+
+Zero is the most ambiguous value an instrument can return, and it is
+usually the value a failing hypothesis predicts — so a zero you cannot
+decompose will confirm whatever you were hoping to rule out.
+
+A campaign testing whether a vblank guard caused a stall instrumented the
+guard's condition and read zero. That zero was consistent with **the
+condition being false**, with **the guard never being reached**, and with
+**the wrong call site being instrumented**. It was resolved by adding a
+`skipped` counter — incremented on reaching the guard and not taking it —
+which separates not-taken from not-reached, and by instrumenting *both*
+call sites rather than one.
+
+**Two rules.** Pair every conditional counter with a reached-but-not-taken
+counter, so zero is decomposable. And **instrumenting one of N call sites
+is not a measurement of the function** — enumerate the call sites first,
+and instrument all of them or state which one you measured.
+
 ### A decomposition instrument must assert that its parts sum to its whole
 
 An instrument bug that produces an *absurd* number gets caught. An
