@@ -111,6 +111,35 @@ against the CURRENT baseline -> commit -> record in the plan.
 - Develop on the fastest fixture that exercises the code path; return
   to the heavy one to confirm (`docs/optimization.md`).
 
+**Prefer one extra field on a line you already emit, over any argument.**
+In one campaign the four consecutive findings that cracked its hardest
+problem were each a single field added to an existing log line -- sprite
+count, largest-sprite dimensions, an engine dirty flag, and a per-GUI
+tally. **None needed a hardware cell. Each answered exactly one
+question. Three of the four overturned or tightened something that would
+otherwise have been asserted**, including the one that identified the
+root cause outright.
+
+That campaign's own retrospective is the rule worth carrying: *the
+expensive part was never the hardware time -- it was the rounds spent
+reasoning from figures that did not describe what we thought they
+described.* Nine separate times two figures were compared whose scopes
+differed, and every one was resolvable by reading rather than by
+measuring.
+
+So when a question arises mid-slice, **cost the field before costing the
+argument.** A field is minutes, rides on the next build, needs no cell,
+and converts a disagreement into a number. Write down which single
+question it answers -- if it does not answer exactly one, it is the
+wrong field.
+
+**And when the fix lands, pre-register the MECHANISTIC signature, not
+just the headline metric.** If the model says an unchanged GUI is being
+invalidated, then the fix must show that GUI's contribution to sprite
+pixels collapsing and the dirty rect ceasing to inflate -- not merely
+that frame rate improved. A headline number can move for unrelated
+reasons; the mechanism moving is what confirms the model was right.
+
 ## 5. Coordinator duties on every report
 
 - **Verify before relaying**: the commits exist, the tree is clean, the
