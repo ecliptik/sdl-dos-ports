@@ -133,6 +133,39 @@ and converts a disagreement into a number. Write down which single
 question it answers -- if it does not answer exactly one, it is the
 wrong field.
 
+**When a fixture bounds the answer, ask whether the question is about the
+fixture or about the port.** A gate fixture is a vehicle for a question,
+and the two are easy to conflate once the gate has been failing for a
+while.
+
+A campaign closed its frame-rate target with a genuinely closed argument:
+the cost was one half-screen transparent GUI the game draws over a moving
+scene, removing it was *sufficient*, clipping it was *insufficient*, and
+removing it was unavailable because it would change what the game draws.
+All true — and it answered "can this game hit the target", while the
+operator had asked "can the port hit the target at this colour depth".
+**A capability probe with that GUI hidden cleared the bar**, turning "not
+reachable on this machine" into "the port reaches it; this game's GUI is
+what it does not reach it with."
+
+Two rules follow, and the second is what keeps the first honest.
+
+**Re-read the goal's own wording when a search closes.** The worker's
+retrospective is the useful form: *"I had the bound and the numbers, and
+I concluded the search is closed rather than there is a question here
+about the port that the fixture cannot answer."* A closed argument about
+the fixture is not a closed argument about the subject.
+
+**And label a capability probe as one, loudly, in the same breath as its
+result.** It changes what the program draws, so it is not a gate cell and
+must never be recorded as one — the gate's own verdict is unchanged and
+the closed argument still stands. Revert the probe from the fixture
+immediately afterwards, or every later cell silently measures a different
+program. Give it the same mechanistic pre-registration as any other cell:
+here the tail-frame population had to collapse alongside the rate rising,
+because a rate that rose while the tail persisted would have meant the
+model was wrong and the headline flattering.
+
 **And when the fix lands, pre-register the MECHANISTIC signature, not
 just the headline metric.** If the model says an unchanged GUI is being
 invalidated, then the fix must show that GUI's contribution to sprite
