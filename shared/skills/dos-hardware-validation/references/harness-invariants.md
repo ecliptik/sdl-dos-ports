@@ -625,6 +625,36 @@ brackets nest. All three of these were caught by reading rather than by
 measuring, which means the check is cheap and belongs before the
 hypothesis, not after it.
 
+### Prefer a decomposable rate over a percentile on a heavy-tailed run
+
+A percentile is computed over a distribution. When that distribution has
+a heavy tail, the percentile moves a great deal while the quantities
+underneath it barely move at all — and it will look like a real effect.
+
+Three cells in one campaign, the last two on an identical binary and
+configuration, measured `fps_p50` at 36.60, 39.00 and 38.12 — a spread of
+**2.40**. The same three runs give `tick_rate_steady x (1 -
+skipped/ticks)` as 38.03, 37.97 and 38.00, a spread of **0.05**. The
+fixture contained nineteen multi-second blocking operations, which skew
+the per-second distribution the percentile is taken over. A coordinator
+had already been handed the 36.60-versus-39.00 pair as an unexplained
+anomaly, supplied a plausible mechanism for it, and relayed both upward.
+**There was nothing to explain.**
+
+**So when a metric can be decomposed into factors you also measure,
+prefer the decomposition** — here into a tick rate and a skip fraction,
+each independently meaningful, each stable, and each pointing at a
+different cause when it moves. Keep the percentile for describing what a
+player experiences, not for detecting a 1-2% effect.
+
+And note the enabling error, which is the per-fixture noise floor rule
+one step further on: the campaign had measured that fixture's blocking
+behaviour in detail, had documented all three of its noise floors as
+per-fixture, **and went on judging a percentile against a floor measured
+on a different fixture entirely.** Characterising a distribution and then
+using a statistic unsuited to it is a distinct failure from not
+characterising it.
+
 ### Check for multiple populations before taking a mean
 
 A mean over a mixture distribution describes no member of it, and the
