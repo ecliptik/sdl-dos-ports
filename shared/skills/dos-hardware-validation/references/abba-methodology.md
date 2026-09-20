@@ -127,6 +127,38 @@ inlining in one cell, and sends the investigation back to finding out why
 calls that look like nanoseconds are not. A cheap test that kills a
 plausible hypothesis is worth more than the argument it replaces.
 
+## A control must be invariant under the change you are testing
+
+A control variable is only a control if the change cannot move it. Pick
+one the change *does* move and you have registered a threshold that will
+fail for the right reason and read as a defect.
+
+A real campaign registered "sprite pixels composited must not change" as
+the primary check on a change to *invalidation*, reasoning that the
+composite path was untouched. It held perfectly under the emulator. **It
+could not hold on hardware by construction** — the change alters which
+frames get skipped, so both arms stop rendering the same frames, and
+every per-frame quantity shifts its denominator. The same run's
+`render_backbuffer` figure rose and breached its regression bound while
+the code was **19% faster per pixel**, compositing 43% more pixels
+because fewer frames were skipped.
+
+**Two rules come out of it.**
+
+**Ask what the change alters about the population, not just about the
+code.** Anything that changes which frames execute, which branch is
+taken, or how often a path runs invalidates every per-unit mean as a
+control. Express thresholds in a unit the change cannot move —
+per-pixel, per-byte, per-call — and keep per-frame means for description
+only.
+
+**And an emulator can satisfy a control for a reason that does not exist
+on the target.** Here the emulator never falls behind, so both arms
+rendered identical frames and the control held for a reason the hardware
+does not share. The verification passed; its *validity* did not transfer.
+When a pre-cell check depends on the emulator behaving like the target,
+say which behaviour it depends on and confirm the target has it.
+
 ## Prefer a within-build A/B: put the lever behind a runtime switch
 
 Everything above -- layout variance, code-size scatter, inlining flips,
