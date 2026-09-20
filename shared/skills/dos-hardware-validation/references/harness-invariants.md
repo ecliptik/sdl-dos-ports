@@ -374,6 +374,18 @@ with a capture of the actual screen** -- the port's own VGA capture or a
 camera -- and do it before and after, not only after. See `docs/video.md`
 on the limits of each capture channel.
 
+**But match the gate to the layer the change touches — the camera is not
+always the stronger one.** A later round in the same campaign split a fix
+into two stages and found their correctness gates were not
+interchangeable. Stage 1 altered *invalidation* and provably did not
+touch the back buffer, so a buffer hash could not have caught a fault
+there and only a camera capture was evidence. Stage 2 altered
+*compositing*, and the buffer hash caught a rendering defect on its first
+run — a defect the camera gate from stage 1 would have passed, and which
+no timing number would ever have shown. **A change that touches both
+layers needs both gates**, and a change that touches neither needs to
+explain why it is being measured at all.
+
 **Attach the workaround, or this rule sends people into a false
 failure.** A capture path that judges liveness by looking for frame
 changes will refuse a *correct static screen* -- "every frame in the
