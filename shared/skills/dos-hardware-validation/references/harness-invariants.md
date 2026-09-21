@@ -833,6 +833,69 @@ when a threshold-based finding looks complete, check the distribution
 just under the cut before believing it. A neighbouring population is the
 most likely thing a clean result is hiding.
 
+### An intermittent detector makes non-detection look like absence
+
+The rule above is about events below a threshold. This one is about events
+*above* it that the instrument still misses, which is worse, because the
+detector is nominally working and its output looks like a complete list.
+
+Two runs of the same sweep, same binary, same parameters. One reported
+**7** stall events, the other **10**. Two conclusions were drawn from the
+difference and both were wrong:
+
+- **"Position is not reproducible."** Six of seven positions were
+  identical. The comparison that killed the position hypothesis had varied
+  record size *and* sweep length *and* whether other arms ran — three
+  levers at once — so the mismatch it found was its own.
+- **"The rate is not stable"** — 6 events against 10 over the same bytes.
+  A later lattice fit put every event in both runs on one 35.0-record
+  period, `n` running 0..6 with no gaps. **One stable period, observed
+  incompletely.**
+
+Each time, a *missing detection* was read as a *missing event*, and each
+time it retired a live hypothesis. A detected-event list is a statement
+about the detector, and the union of two runs' lists can contain
+structure that neither list shows alone.
+
+**Two operational rules.** When runs disagree on a count, **fit the union
+of their event sets before concluding anything from the difference** — a
+lattice fit is robust to misses in a way an interval fit is not, because
+a missed event merely raises one `n` instead of merging two intervals.
+And **calibrate any such fit against a null**: with the period free, a
+lattice will find *something*, so the question is how often it finds one
+this good by chance. Here, 0 of 2,000 random draws reached the observed
+residual — which is what made it a result instead of a shape. See
+`abba-methodology.md`, "Calibrate a fit tolerance against a null".
+
+### Kill a hypothesis with a measurement, not with a pattern
+
+Five mechanism families for one stall were tested against pre-registered
+criteria and all five failed. Four of those failures were **pattern**
+failures — a fit that did not hold, a count that did not match — and
+every one of them stayed arguable, because a pattern can fail for want of
+resolution, for a confound, or for a detector that missed half the events
+(as two of them did, above).
+
+The fifth was different. Halving the record size while holding everything
+else constant moved the period **28,000 -> 19,778 bytes, a 29% swing on
+the one coordinate a byte counter cannot vary by definition.** Nothing
+about that needs a fit, a threshold, or an assumption about the detector.
+
+**When a family has survived several pattern tests, stop designing better
+patterns and find the coordinate the mechanism is forbidden to move.**
+Vary it directly and read the answer. One such cell is worth more than
+the next three refinements of a fit, and it is the only kind of result
+that closes a family rather than wounding it.
+
+**Its companion: measure the conversion constant in the same run.** The
+prediction here required a per-record cost to convert a time period into
+a record count. The 800-byte run measured 6,419 us; assuming the
+400-byte run would be half of that (or the same) would have produced a
+wrong prediction either way — it came back **5,244.9 us**, neither. The
+probe measured it in-run, so the prediction was evaluated against the
+measured value. **A constant carried across the very change under test
+is an assumption wearing a number's clothes.**
+
 ### Check for multiple populations before taking a mean
 
 A mean over a mixture distribution describes no member of it, and the
