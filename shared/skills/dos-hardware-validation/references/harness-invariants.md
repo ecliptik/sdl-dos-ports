@@ -829,6 +829,37 @@ question being asked. **Assert bounds at the point of computation** —
 relying on someone noticing an absurd number is relying on the error
 being large, and the dangerous ones are the ones that are not.
 
+### "Clocked to wall time" does not mean "external"
+
+A recurring cost that reproduces against the clock rather than against
+work looks conclusively like something outside your program — a timer, a
+watchdog, driver housekeeping, an interrupt. **Anything inside your
+program that grows steadily with wall time produces exactly the same
+signature.**
+
+A campaign measured a ~250 ms stall recurring at the *same wall-clock
+times* across four independent runs — **3 ms of spread on an event 121
+seconds in**, with the tick index at that moment varying between runs
+while the clock time did not. Both sessions concluded the cause had to be
+external, since "nothing in an engine is clocked to wall time", and spent
+a round looking at TSRs, packet drivers, DPMI housekeeping and SMIs.
+
+It was a **log file crossing a filesystem cluster boundary**. The log grew
+at a steady rate, so it reached 16,384 bytes at a fixed wall-clock moment,
+and the first new-cluster allocation cost a FAT scan, a FAT sector write
+and a directory update. Two runs on different binaries crossed the
+boundary at 16,103→16,861 and 16,141→16,899 — same flush, same tick. The
+reproducibility that made it look external was just how deterministic the
+writing was.
+
+**So when periodicity points outside the program, enumerate the internal
+quantities that grow with time before accepting it** — log and trace file
+sizes, allocation counts, buffer fills, anything monotonic. And note the
+diagnostic that would have separated them sooner: an external timer fires
+on a *constant* interval, while a growing quantity crossing evenly-spaced
+boundaries fires on an interval set by its own growth rate, which changes
+when you change how much it writes.
+
 ### A parked observation ages against the tree — re-confirm before designing around it
 
 An anomaly you deferred is a fact about the binary it was seen on. By the
