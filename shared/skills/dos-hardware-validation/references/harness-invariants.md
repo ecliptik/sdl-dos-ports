@@ -869,6 +869,63 @@ this good by chance. Here, 0 of 2,000 random draws reached the observed
 residual — which is what made it a result instead of a shape. See
 `abba-methodology.md`, "Calibrate a fit tolerance against a null".
 
+### Never blind-probe a removable drive, and prefer the banner to the probe
+
+A "read-only verification" cell wedged the target. The command was
+`VOL C:;VOL D:;VOL E:;VOL F:`, added to read back the drive map after a
+boot-config change.
+
+**`VOL` or `DIR` against an empty optical drive is not a read.** It
+raises DOS's critical-error handler:
+
+```
+CDR101: Not ready reading drive D
+Abort, Retry, Fail?
+```
+
+and the machine blocks on a character that no automated caller is going
+to send. The keyboard path was demonstrably working when the probe
+started — the screen showed `CD C:\FSTEST` and `PRUN.BAT` typed and
+executed — and by the time `F` was sent, the path no longer carried
+keystrokes. No keyboard means no warm reboot, **so it cost a mains cycle
+on thirty-year-old parts that this campaign is deliberately not thermal
+cycling.**
+
+Three things, in increasing order of what they would have saved:
+
+**Never issue a media-touching command against a removable device
+without a guard.** On DOS that means `VOL`, `DIR`, and anything else
+reaching the drive. Set `INT 24h` to fail, or enumerate drives from a
+source that does not touch media. A command that can block forever on a
+prompt is not read-only, whatever it reads.
+
+**The answer was already free in the boot banner.** MSCDEX prints
+`Drive D: = Driver OPTICAL unit 0` during init, and the screen-capture
+tool this workflow already uses reads it. **A passive witness that the
+system emits on its own is strictly better than a probe that asks** —
+it costs nothing, it cannot wedge anything, and it is available before
+you think to ask. Check what the machine already tells you before
+writing a command to make it tell you.
+
+The sharp form: **the most dangerous thing run that night was the
+read-only cell** — because it touched a device the experiment does not
+use, to answer a question that had already been answered.
+
+**And the check order saved a misdiagnosis.** `verify_input` returned
+`verified: false` / "no LED change" — the documented post-FTP
+keyboard-hang signature, exactly — and that answer was in hand *before*
+anyone took a screenshot. The documented order is lock/activity → chord
+window → **both capture channels** → verify-input, and the capture step
+is third because it is the one carrying the information. Following it
+turned "the known fault recurred" into "my own command wedged it."
+
+That also makes the LED reading **a symptom rather than a diagnosis**:
+at an `INT 24h` prompt with a driver retrying, the BIOS keyboard path may
+not service LED commands at all. The failure was real, reproducible, and
+identical to a known fault — and it was **caused by the state, not the
+cause of it.** See `### A confirmed cause is not necessarily the
+operative cause` above; this is the second instance in one campaign.
+
 ### A transform applied for comparison must never reach the artifact
 
 A machine's `CONFIG.SYS` was fetched so a modified copy could be pushed
