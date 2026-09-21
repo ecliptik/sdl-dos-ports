@@ -869,6 +869,56 @@ this good by chance. Here, 0 of 2,000 random draws reached the observed
 residual — which is what made it a result instead of a shape. See
 `abba-methodology.md`, "Calibrate a fit tolerance against a null".
 
+### Do not let an instrument divide by a number it cannot trust
+
+A probe printed a summary line of the form `RATE = one event per N
+bytes`. Across three runs of one configuration it reported **56,228,
+39,360 and 28,114** — a 2x swing with nothing varied, because the event
+count in the numerator came from a detector with intermittent
+sensitivity, a property nobody knew it had.
+
+The division is what did the damage. `events=7 bytes=393,600` invites the
+question "is seven all of them?". `RATE = one event per 56,228 bytes`
+does not — it is a single authoritative-looking figure with its
+unreliable input dissolved into it, **printed by the instrument itself,
+which lent it the instrument's credibility.** It was read and reasoned
+from three times, and it contributed an argument to killing a hypothesis
+family before the intermittency was discovered.
+
+**Print the inputs, not the ratio, whenever an input's reliability is
+unestablished.** A derived figure is a claim that its terms are sound; an
+instrument that emits one is making that claim on your behalf, in a
+format that survives being copied into a summary long after the caveat is
+forgotten. If a ratio genuinely helps, print it *next to* both terms,
+never instead of them.
+
+The broader form, and the reason this belongs with the decomposition
+rules above: **an instrument's output is an argument, and an instrument
+that computes is an instrument that can be wrong in ways reading it
+cannot reveal.** Keep arithmetic in the analysis, where it can be
+re-derived and audited, rather than in the probe, where it arrives
+pre-concluded.
+
+### Voiding a cell invalidates its comparison, not its observations
+
+The same run that exposed the delimiter bug was declared void — it had
+executed one arm of a four-arm design. It was then mined anyway, and it
+produced the third point of the 7 / 10 / 14 detection spread and the
+2.7% figure that calibrated a threshold for the next cell.
+
+**A void verdict attaches to the question the cell was built to answer,
+not to every observation inside it.** The truncated run still executed a
+complete, valid configuration identical to two earlier ones; what it
+could not do was compare. Before discarding a failed cell, ask which of
+its observations stand on their own — a baseline, a noise figure, an
+identity witness, a constant measured in passing. They cost nothing to
+extract and they were paid for already.
+
+The caution that goes with it: **extract only what does not depend on the
+broken part**, and say in writing which part that is. A cell voided for a
+truncated sequence can still report what its one executed stage did; it
+cannot report anything that needed the stages that never ran.
+
 ### A value that travels through a shell must be audited against THAT shell
 
 A multi-stage probe took its stage list in one environment variable,
