@@ -867,6 +867,40 @@ this good by chance. Here, 0 of 2,000 random draws reached the observed
 residual — which is what made it a result instead of a shape. See
 `abba-methodology.md`, "Calibrate a fit tolerance against a null".
 
+### Name the layers a negative result actually clears, before you run it
+
+An elimination test's value is entirely in its branch labels, and those
+labels are written by whoever designs the cell — usually in a hurry,
+usually in one line, and nobody re-reads them once a number exists.
+
+A test swapped a CF card for a RAM disk to locate a stall. The branches
+as first written: **"no spikes = the CF media; spikes = DOS or the BIOS
+above it."** Both halves were wrong in the same direction. A RAM disk
+driver plugs into the DOS block-device layer, so it bypasses the driver
+below it, INT 13h, the controller *and* the media — **four candidates,
+not one.** And the BIOS sits *below* DOS, not above, so the second branch
+named the wrong follow-up.
+
+The first label is the dangerous one: it is the branch that lets the
+investigation stop, and as written it would have retired three live
+candidates by wording alone, in a report nobody would have re-derived.
+
+**Write the layer stack out and mark which rows the swap replaces, before
+the cell runs.** A test does not eliminate "the hardware" or "the OS" —
+it eliminates a contiguous span of a stack, and the span is a fact about
+the substitution you made, not about the component you had in mind. This
+is `### State the denominator and population before comparing two
+figures` applied to elimination rather than to arithmetic: **say what
+population each branch clears, in writing, before the branch is taken.**
+
+Its companion, from the same design: **a proxy for "different" is not
+"different".** The cell verified a different *volume* via cluster
+geometry, while the hypothesis was about a physical erase block — and a
+second partition on the same card would have passed that check while
+sharing every erase block it was meant to rule out. **Assert the property
+the hypothesis is actually about**, not a correlate of it that happens to
+be easy to read.
+
 ### Kill a hypothesis with a measurement, not with a pattern
 
 Five mechanism families for one stall were tested against pre-registered
