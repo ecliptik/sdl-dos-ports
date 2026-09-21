@@ -868,13 +868,19 @@ while the clock time did not. Both sessions concluded the cause had to be
 external, since "nothing in an engine is clocked to wall time", and spent
 a round looking at TSRs, packet drivers, DPMI housekeeping and SMIs.
 
-It was a **log file crossing a filesystem cluster boundary**. The log grew
-at a steady rate, so it reached 16,384 bytes at a fixed wall-clock moment,
-and the first new-cluster allocation cost a FAT scan, a FAT sector write
-and a directory update. Two runs on different binaries crossed the
-boundary at 16,103→16,861 and 16,141→16,899 — same flush, same tick. The
+It was **the log file reaching a particular byte offset**. The log grew at
+a steady rate, so it reached that offset at a fixed wall-clock moment, and
+something about writing there cost ~220 ms. Two runs on different binaries
+hit it at 16,103→16,861 and 16,141→16,899 — same flush, same tick. **The
 reproducibility that made it look external was just how deterministic the
-writing was.
+writing was.**
+
+(The mechanism first proposed for *what* is expensive at that offset — a
+FAT cluster allocation — was **falsified**: the volume's clusters are 32 KB
+and the logs never reached 32,768 at all. That retraction is its own
+lesson and does not touch this one. **The point here is that an internal
+quantity growing at a steady rate reproduces against the clock**,
+whatever is waiting for it at the far end.)
 
 **So when periodicity points outside the program, enumerate the internal
 quantities that grow with time before accepting it** — log and trace file
