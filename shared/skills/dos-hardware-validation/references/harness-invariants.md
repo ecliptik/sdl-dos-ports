@@ -869,6 +869,39 @@ this good by chance. Here, 0 of 2,000 random draws reached the observed
 residual — which is what made it a result instead of a shape. See
 `abba-methodology.md`, "Calibrate a fit tolerance against a null".
 
+### The command was right; the quantifier was wrong
+
+A campaign needed a RAM disk driver. Someone ran `DIR C:\DOS\*.SYS`, read
+one file in the output, and reported: **there is no `RAMDRIVE.SYS` on
+this machine.** The cell was declared blocked and a licensing question
+was about to be escalated to the operator.
+
+`RAMDRIVE.SYS` was in `C:\WINDOWS`. A whole-volume search found
+**eighteen `.SYS` files across eight directories**. And the inference was
+available from evidence already in hand — `AUTOEXEC.BAT` loads
+`C:\WINDOWS\SMARTDRV.EXE`, a file that had been fetched, verified and
+quoted an hour earlier, and Windows 3.x ships `RAMDRIVE.SYS` beside it.
+
+**Nothing went wrong with the command or with reading it.** The command
+was correct, the output was correct, the reading was correct. What failed
+was the **scope of the claim**: evidence about one directory was reported
+as a fact about the machine. `DIR C:\DOS\*.SYS` cannot return a statement
+about `C:\`, and no amount of care in running it makes it able to.
+
+This is the sibling of `### State the denominator and population before
+comparing two figures`, applied to search rather than arithmetic, and it
+is more dangerous because **a correct result carries no signal that your
+claim is wider than it is.** A bad measurement eventually contradicts
+something. A sound observation stretched past its scope agrees with
+everything, including the things it does not cover.
+
+**Write the scope into the claim, in the same breath as the evidence:**
+"no `RAMDRIVE.SYS` *in `C:\DOS`*" is a true sentence that invites the
+next search; "no `RAMDRIVE.SYS` on the machine" is a false one that ends
+it. When the conclusion is about to block work or trigger an escalation,
+**re-read the command that produced it and ask what population it
+actually sampled.**
+
 ### Relaxing a gate after seeing the data: the one test that separates the cases
 
 Sooner or later a pre-registered gate fails on a run you believe is
