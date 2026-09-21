@@ -120,6 +120,22 @@ question. Three of the four overturned or tightened something that would
 otherwise have been asserted**, including the one that identified the
 root cause outright.
 
+> **Correction, 2026-09-21 (proven from source; the effect on that
+> campaign's figures is NOT yet measured).** Two of those fields -- the
+> engine dirty flag and the `unchanged` half of the per-GUI tally -- were
+> read AFTER the engine had cleared the flag (one loop of the draw routine
+> re-renders each changed GUI and calls `ClearChanged()`; the fields were
+> read in the next loop). They could only ever report "unchanged", so
+> "100% of 421 observations" was a tautology, and the fix built on it
+> skipped the invalidation for changing GUIs as well. The identity and
+> size findings (which GUI, 460x260, masked) are unaffected. It surfaced
+> when the fix was being re-specified, from one read of the source order.
+> The rule it adds: before trusting a field, work out what it would print
+> if the answer were the opposite, and find the code path that lets it
+> print that. A field that cannot say "changed" has not measured
+> "unchanged". "A field turns a disagreement into a number" holds only
+> for a field that can come out either way.
+
 That campaign's own retrospective is the rule worth carrying: *the
 expensive part was never the hardware time -- it was the rounds spent
 reasoning from figures that did not describe what we thought they
