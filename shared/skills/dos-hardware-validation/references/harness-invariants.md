@@ -994,26 +994,62 @@ internally consistent, entirely plausible single-arm result, with no
 error anywhere in it** — from a cell that was supposed to run four arms.
 Nothing in the output announces the three missing stages.
 
-**The first diagnosis was wrong, and this entry originally published it
-as fact:** COMMAND.COM reads `|` as a pipe, the value crossed a DOS `SET`
-line, mechanism found. It fit, so it shipped. Then the separator was
-changed to `#` and **the identical truncation happened again** — and
-nothing reads `#` as anything.
+**This entry then went through a wrong diagnosis, a wrong withdrawal of
+that diagnosis, and finally a measurement. All three are kept, because
+the sequence is the lesson.**
 
-| character at that position | outcome |
+**The diagnosis:** COMMAND.COM reads `|` as a pipe. It fit instance one,
+so it shipped as mechanism. **The withdrawal:** the separator was changed
+to `#`, the identical truncation happened, and nothing reads `#` as
+anything — so one mechanism did not explain both instances, and the
+diagnosis was retracted.
+
+**Then somebody finally sent the characters through and read them back:**
+
+| sent at that position | arrived |
 |---|---|
-| `;` | **survived** |
-| `|` | truncated |
-| `#` | truncated |
+| `\|` | **truncated** |
+| `>` | **truncated** |
+| `%` | **silently stripped, rest intact** |
+| `#` | intact — twice, including the exact failing string |
+| `;` `^` `&` `,` space, plain, 100 chars | intact |
 
-Length does not explain it — the surviving case was shorter. Whitespace
-does not — the space sits earlier in all three. Both failures produced
-byte-identical output down to the line number, and the truncation point
-is the same *position* with two different characters at it. **The
-mangling layer is still unidentified**, and an echo-back probe is what
-will name it.
+**The pipe diagnosis was right and the withdrawal was wrong.** The
+withdrawal rested on "`#` was eaten", which was *inferred from a run that
+truncated* and never tested — **the identical error to the one it was
+correcting**, committed while writing the entry warning against it.
 
-Two rules, and the second is the one that cost a cell to learn.
+Four things to take:
+
+**A withdrawal is a claim and needs evidence like any other.** Retracting
+is a virtue in a culture that over-defends, and it becomes its own bias
+the moment retraction is the move that signals rigour. Here a correct
+finding was deleted from this file on the strength of an untested
+inference.
+
+**"One mechanism must explain every instance" survived intact — the
+input to it did not.** The rule was applied correctly to a
+mis-observation. A sound rule fed bad data produces a confident wrong
+answer, and the rule cannot warn you about that.
+
+**Test the mechanism directly instead of inferring it from the failure.**
+Two cells were voided and three explanations argued over a question that
+one echo-back probe answered in one run. The probe cost less than any of
+the arguments.
+
+**Stripping and truncation are different failures, and a presence check
+sees neither difference.** `%` arrived with the character silently
+removed and everything after it intact. An instrument asking "did the
+value arrive?" passes that. Compare **byte for byte against what was
+sent**.
+
+Also worth recording: `>` truncates as hard as `|` and was on nobody's
+candidate list, while `#`, already convicted, was innocent. **The
+plausible member of an alphabet set the prior and the prior was wrong in
+both directions at once.**
+
+Two rules on the original bug, and the second is the one that cost a cell
+to learn.
 
 **Remove the structure from the value rather than re-encoding it.** After
 two delimiters were eaten by a layer nobody could name, the fix was one
@@ -1031,9 +1067,19 @@ and only an explicit expectation separates them.
 **One mechanism has to explain every instance, or none of them is
 established.** This hub already carries that rule for measurements. Here
 it was violated for a *diagnosis*: a satisfying story for instance one,
-written down as mechanism, and never revisited when instance two failed
-to fit. A diagnosis is a claim like any other and is owed the same second
-instance — **"it fit" is not "it was tested."**
+written down as mechanism, and never revisited. A diagnosis is a claim
+like any other and is owed the same second instance — **"it fit" is not
+"it was tested."** (The irony recorded above: the story turned out to be
+correct, and the second instance that appeared to refute it was itself
+never tested. The rule was right, the observation fed to it was not.)
+
+**The `#` run's truncation is still unexplained.** `#` survives transit,
+so that cell truncated for some other reason — and splitting the value on
+`#` gives four stages while splitting on `|` gives one stage of three
+`;`-separated commands, where what actually ran was one command and one
+sweep. Neither. **A mechanism that explains one failure does not retire
+the other**, and the residue here is a live, narrower question rather
+than a closed one.
 
 ### Read the machine's own configuration before probing the device
 
