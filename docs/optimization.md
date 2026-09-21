@@ -131,6 +131,18 @@ and note the corollary, that a saving invisible in the rate can still be
 real and valuable where it lands, here as a two-thirds reduction in
 dropped frames.
 
+**And the inverse is a measurement technique worth reaching for: an
+UNPACED region reports every millisecond it is given, so it is a
+higher-resolution instrument than a paced one.** The same campaign
+noticed this from the other end — the reason moving work into startup
+*looks* free is that startup has no pacer, so the cost that the loop was
+partly absorbing becomes fully visible there. That is a liability when
+choosing where work should live, and an asset when trying to price it:
+**to measure something a paced loop's slack is hiding, measure it
+somewhere unpaced.** It is also why that campaign's one clearly
+reproducible small signal — a 200 ms difference between arms — was
+visible in its startup phase and nowhere else.
+
 **The recurring shape of a real win: general-case code doing per-unit
 bookkeeping for a per-unit quantity that is usually zero.** Three of one
 campaign's four largest wins had this form, and none of them were slow
