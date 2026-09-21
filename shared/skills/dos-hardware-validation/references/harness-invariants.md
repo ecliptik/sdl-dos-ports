@@ -1000,6 +1000,28 @@ instrument the borrowing port eventually needed — a four-phase bracket
 another port had already built behind a hint, for this exact symptom.
 **Reading the hub was correct both times; only the testing was wrong.**
 
+### Never edit a shell script while an instance of it is running
+
+Bash reads a script incrementally, by byte offset, as it executes. A
+length-changing edit to a file a running instance has not finished
+reading does not fail cleanly — **execution resumes at an offset that now
+points into different text, and runs whatever happens to be there.**
+
+A campaign edited its hardware-runner script while four cells were
+invoking it. The error was caught inside a minute and the file reverted
+to its exact prior bytes, with the in-flight cell verified unaffected —
+but the failure mode had it landed is the worst class available: **a
+corrupted run that still looks like a run**, producing plausible numbers
+from a script that executed something nobody wrote.
+
+**Stage edits to harness scripts and apply them between runs**, never
+during. Keep the modified version somewhere else — a scratchpad copy —
+and move it into place when nothing is executing. If a change is urgent
+enough to feel worth doing live, that urgency is itself the signal to
+wait for the current cell to finish: the cost of waiting is minutes, and
+the cost of the alternative is a result nobody can trust and nobody can
+identify as untrustworthy.
+
 ### Audit the harness's fetch list against every file the program writes
 
 An instrument that records faithfully into a file nobody collects is
