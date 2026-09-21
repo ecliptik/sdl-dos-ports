@@ -197,6 +197,9 @@ reasons; the mechanism moving is what confirms the model was right.
 - **Read the numbers, not the adjectives.** Check a surprising claim
   against the trusted baseline it should reconcile with before acting
   on it; send it back if it was never reconciled.
+- **Look at the screen before relaying a rate.** Open the cell's
+  physical-screen contact sheet for any moving-content figure; the
+  operator should never be the one who notices trails first.
 - **When the operator says "is it stuck?", look yourself** -- both
   capture channels, power state, lock state -- then tell the worker
   exactly what you saw. Twice this caught a real fault (a dead input

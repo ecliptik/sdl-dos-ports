@@ -92,6 +92,23 @@ only a camera was evidence. Stage 2 altered compositing, and the buffer
 hash caught a rendering defect the camera would have passed and no
 timing number would have shown.
 
+**The gate that could not see it, a third time** (2026-09-21). Both
+entries above were already written down when a campaign's standing gates
+(every fixture arm at both depths, and the demo harness's three captures,
+all compared by hash) turned out to read the engine's own RAM frame:
+`SaveScreenShot` copies the virtual screen, never what the present pushes
+to the display. Every arm passed. The operator, watching the monitor
+during ordinary hardware cells, saw chains of whole stale sprite copies
+and leftover speech text on two different binaries; a capture-card loop
+during a later cell reproduced it while the engine's own screenshots from
+the same cells were clean. Proven: what the gate reads (from source) and
+that the trails exist on the physical screen. Not known yet: the cause,
+and which earlier figures came from a renderer that leaves trails (skipped
+repaint work is exactly what raises a frame rate). The rule was in the
+checklist and in these case studies; it was not in the standing gate, so
+nothing enforced it. It only bites once a physical-screen shot at a
+pre-registered tick is a step of every moving-content cell.
+
 **`frames_skipped=0` on a path that was off** (2026-09-19). Read as "the
 emulator never falls behind"; the fixed-timestep code was disabled
 there because the hardware runner set an env var by default and the

@@ -243,6 +243,15 @@ statistical-repeatability approach for FPS claims rather than a single raw
 number — across-session FPS noise on real hardware has been measured at
 several times the within-session band, so a single run is not a result.
 
+Every cell that draws moving content also records a series of
+physical-screen frames taken during the timed run (capture card every ~10 s,
+camera every ~30 s, contact sheet in the results directory), and someone
+looks at the sheet before the cell's rate is written down. A hash of the
+engine's own frame cannot see what the present path did to the display
+(`docs/harness-lessons.md`, "a third time"), so the runner does this on every
+cell rather than relying on a per-patch check or on the operator watching the
+monitor. A rate from a cell whose sheet shows stale pixels is void.
+
 ## Validation discipline: `shared/skills/dos-hardware-validation/`
 
 Beyond the manual command sequence above, `shared/skills/dos-hardware-validation/`
