@@ -996,6 +996,23 @@ success case from your failure case by looking at the output.** When
 that is true, no amount of care in reading the result will help, because
 the reading is not where the information was lost.
 
+**The same shape one level up, in the tooling.** A watchdog polled a
+machine's power draw and reported "did not come up above standby within
+300s". Its poller printed **`-1` on any parse failure** of the CLI it
+called, and `-1` never exceeds an 8,000 mW threshold — so **that loop
+could only ever time out when the call failed to parse.** It emitted a
+confident statement about the hardware whose sole possible cause was a
+defect in itself. The machine had in fact been up throughout, confirmed
+by three independent readings taken before the watchdog expired.
+
+**A sentinel that falls on one side of your comparison converts every
+instrument failure into that verdict.** Pick sentinels that cannot pass
+the test *or* fail it — `None`, an exception, a separate `ok` flag — and
+make the caller distinguish "measured and below" from "could not
+measure". A monitor is an instrument like any other, and the rules in
+this file about instruments apply to the things watching the experiment
+exactly as they apply to the experiment.
+
 ### The command was right; the quantifier was wrong
 
 A campaign needed a RAM disk driver. Someone ran `DIR C:\DOS\*.SYS`, read
