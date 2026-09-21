@@ -103,6 +103,42 @@ until it divides everything**. A free parameter with an unbounded range
 fits any data, which is the same hole as a pre-registered range with an
 undefined middle.
 
+## A null must carry the observed data's own structural constraints
+
+The section above says calibrate a tolerance against a null. This one is
+about getting the null right, and it cost a published figure to learn.
+
+A lattice fit to eight event positions scored a worst residual of 0.057.
+Calibrated against 2,000 draws of eight **uniform random** points from
+the same range: **0 pass**. That was written into `HARDWARE.md` as
+evidence the lattice was real, with the caveat that a
+spacing-constrained null was still running and "will not move 0% to
+anything you would worry about."
+
+It moved it to **3.4%**.
+
+The reason is structural, not statistical noise. **Uniform draws clump** —
+two points three records apart are common — and a clumped set cannot lie
+on any lattice, so the uniform null is dominated by draws that could
+never have passed. The real events had a minimum spacing of ~30 records.
+Imposing that, the null becomes a far stronger competitor, and the same
+observation drops from "0 of 2,000" to roughly `p = 0.03`. At a
+minimum spacing of 25 the figure is 0.27% — **an order of magnitude of
+movement from one modelling choice**, which is itself the finding.
+
+**Build the null by drawing from the constraint set the observation
+lives in, not from the widest set the numbers could have come from.**
+Minimum spacing, monotonicity, a bounded count, a known range — every
+constraint the real data satisfies has to be in the null too, or the
+null is a strawman and the p-value is a flattering artifact of the
+comparison rather than a property of the data.
+
+**And report the null's construction alongside its number.** "0 of
+2,000" is not a fact about the lattice; it is a fact about the lattice
+*and* a sampling choice, and the two are not separable by a reader who
+only sees the first. When a figure is sensitive to that choice across an
+order of magnitude, say so and give the range.
+
 ## Do not compare dispersion across a shift
 
 `max/min` is **not scale-invariant under translation**. Add a constant to
