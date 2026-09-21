@@ -50,6 +50,28 @@ Both checks exist because a comparison run on an unstable baseline can
 produce a confident-looking delta that is actually measuring instability,
 not the lever.
 
+**Compute your invalidity conditions against the expected magnitudes
+before you run — a threshold written as a phrase may sit exactly where
+the result will land.** One campaign pre-registered an experiment whose
+validity required the intervention to change free disk space by "more
+than a few percent". Sizing the work beforehand showed it would change it
+by **under 4%** — right on the threshold, so the run would have produced
+a number with no principled way to decide whether to believe it.
+
+**And the fix was not a better number, it was a better quantity.** Total
+free space was the wrong thing to measure: what the experiment needed was
+whether the *allocator* behaved differently, and deleting hundreds of
+small files punches holes throughout the table while barely moving the
+total. The replacement condition is empirical — re-run the probe
+afterwards and see whether its own spike positions move. **That promotes
+the predecessor measurement into the experiment's control**, which is
+where it should have been from the start.
+
+Two habits follow. **Put real numbers into every invalidity condition at
+pre-registration time**, not at scoring time. And when one turns out to
+be marginal, ask whether the quantity is wrong before reaching for a
+different threshold on the same quantity.
+
 **A noise floor belongs to a fixture, not to a machine.** Measured on one
 real target in one campaign: 0.12 fps spread on an idle fixture and 0.24
 on a moving-content one, same machine, same session. Carrying the smaller
