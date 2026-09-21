@@ -1073,7 +1073,52 @@ like any other and is owed the same second instance — **"it fit" is not
 correct, and the second instance that appeared to refute it was itself
 never tested. The rule was right, the observation fed to it was not.)
 
-**The `#` run's truncation is still unexplained.** `#` survives transit,
+**RESOLVED, and the answer was in the probe's own source.** A nested
+`strtok`:
+
+```c
+for (stage = strtok(buf, "#"); stage; stage = strtok(NULL, "#")) {
+    run_cmds(stage, ...);        /* which itself does: */
+        for (tok = strtok(buf2, ";"); tok; tok = strtok(NULL, ";"))
+```
+
+**`strtok` keeps one global state pointer, and the inner loop destroys
+the outer loop's.** The outer `strtok(NULL, "#")` returns NULL on
+iteration two, so the run ends after stage one — with the environment
+value fully intact in memory the entire time.
+
+It accounts for every observation at once: the `#` run (value fine, loop
+terminated), the `|` run (truncated by the pipe **and** ended by the
+nested `strtok`), and the later cell working, because the replacement
+took a counted `for` loop over `getenv` with no `strtok` in it. **The
+delimiter-safety fix removed the real bug as a side effect**, which is
+why the cell suddenly worked and why nobody could see what had changed.
+
+Three things worth more than the bug:
+
+**A confirmed cause is not necessarily the operative cause.** The pipe
+truncation was real, measured directly, and **irrelevant to the
+outcome** — the `strtok` bug produced the identical result with a
+perfectly intact value. Reinstating the pipe diagnosis on measurement
+was correct, and it still explained nothing about why the cell failed. A
+verified mechanism can be a bystander; **check that your cause is
+load-bearing, not merely present.**
+
+**Suspect your own new code before the infrastructure.** Two hypotheses
+were argued at length — the environment transit, then a stale staged
+binary — and both were about long-standing shared machinery. The defect
+was in the freshly written probe, the one component with no history of
+working. It was never suspected precisely because its author had just
+read it.
+
+**Read the harness before hypothesising about it.** The stale-binary
+hypothesis was dead before it was raised: the runner already did a
+`stage-file` / `send-file` sha round trip and printed "all files verified
+byte-for-byte". One read of an existing script would have retired a
+hypothesis that instead got argued across two messages. This is the same
+failure as reasoning about `#` without testing `#`, one layer up.
+
+**What was previously recorded here as unexplained:** `#` survives transit,
 so that cell truncated for some other reason — and splitting the value on
 `#` gives four stages while splitting on `|` gives one stage of three
 `;`-separated commands, where what actually ran was one command and one
