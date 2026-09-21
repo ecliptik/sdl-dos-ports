@@ -411,11 +411,23 @@ hypothesis under test predicted, so the wrong binary would have produced
 a confident, wrong confirmation.
 
 **Verify the artifact contains the change before spending a cell on it.**
-`nm` for a new symbol, a version string in the boot log, or a build
-fingerprint that folds the library's own hash — anything that attests the
-binary rather than the build's exit code. This is the same "attest, don't
-recall" invariant applied one layer down: a clean build log is a claim
-about `make`, not about what is in the file.
+A clean build log is a claim about `make`, not about what is in the file
+— the same "attest, don't recall" invariant applied one layer down.
+
+**But pick a check that actually works on your toolchain, and confirm it
+can fail.** This entry originally recommended `nm` for a new symbol.
+On the DJGPP toolchain it was then found to return **zero matches for
+symbols that demonstrably link and fire** — so it had been cited twice as
+the verification while verifying nothing, and the real check both times
+was a **functional** one: the new counter printing a non-zero value under
+the emulator. A static-symbol query is easy to get silently wrong
+(stripping, local linkage, inlining, name decoration); an output line
+that only the new code can produce is not.
+
+**Prefer the functional check**: run the build and look for something the
+change emits. And test the check itself against a binary that *lacks* the
+change — a verification that passes on both is not a verification, which
+is this file's founding rule applied to its own advice.
 
 ### A counter reading zero must distinguish "false" from "never ran"
 
