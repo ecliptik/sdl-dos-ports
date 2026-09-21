@@ -480,6 +480,21 @@ the function's own entry. Then zero on the unconditional counter reports
 not-reached immediately, at that site, with no inference — and three
 patches cannot run in dead code, because the first one says so.
 
+**"Unconditional" is not enough: the entry counter goes on the FIRST
+line, or it is measuring something else.** The same session then placed
+an unconditional counter 950 lines into a 1,000-line function — past an
+early return two-thirds of the way through — and read its zero as "this
+function is never called". The function was called on every frame; the
+early return was simply always taken. **An unconditional counter after a
+branch is a branch counter wearing an entry counter's name**, and it
+produces exactly the same misleading zero the rule was written to
+eliminate. The correctly-placed counter in the same round, on the first
+line of a different function, gave the right answer immediately.
+
+A function long enough to need instrumenting is long enough to defeat
+placement-by-intuition. **Put the counter on line one, then place the
+others relative to it.**
+
 ### A decomposition instrument must assert that its parts sum to its whole
 
 An instrument bug that produces an *absurd* number gets caught. An
