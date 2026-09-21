@@ -779,6 +779,30 @@ between builds, the shift is data.** In this case the two pairs satisfied
 the same exact relation, which pointed at a mechanism that neither pair
 alone suggested.
 
+### An addressable saving is not the term's cost
+
+Measuring what something costs today tells you what it costs today. It
+does not tell you what removing it saves, because part of it is usually
+structural.
+
+A campaign measured 1,201 ms of file I/O in a benchmark run, traced it to
+a script re-opening its log file eight times, and projected the whole
+1,201 ms as the saving. **Two of the eight opens were irreducible** — the
+log's own single open, and a config read — so the real saving was 900 ms.
+The difference decided whether a gate cleared by 1.0x its noise spread or
+2.8x, which is the difference between a coin toss and a claim, and four
+hardware cells were about to be spent on the wrong one.
+
+**So predict and measure the post-fix residual, not just the pre-fix
+total.** What caught this was counting the opens *after* the fix rather
+than assuming the count would be zero — a single field, checked instead
+of assumed. Before quoting a saving, state what will remain and then
+verify it.
+
+This is a cousin of the residual error in the next entry and not the same
+one: there the phantom quantity was invented by subtraction, here a real
+measured quantity was assumed to be entirely removable.
+
 ### A residual is not a term -- subtraction is not measurement
 
 Taking a total, subtracting the terms you have measured, and treating the
