@@ -141,6 +141,15 @@ once a 30-record floor is imposed there are only 42 records of freedom
 left across seven gaps. **Near-even spacing is then close to forced**,
 and a lattice fit is measuring the constraint rather than the data.
 
+The cleanest way to see it needs no sampling at all. **Bound the
+statistic analytically against the constraint before simulating
+anything:** with seven gaps, a 245-record span and a floor of `f`, the
+largest possible gap is `245 - 6f`, so the max/min ratio is capped at
+`(245 - 6f)/f` — **2.17 at a floor of 30**, against 18.5 at a floor of
+10. A ratio that cannot exceed 2.17 is already nearly even, whatever the
+mechanism. Had anyone written that line first, neither the 0% nor the
+6.12% would have been published.
+
 And the floor was **taken from the observation itself**. Nothing
 independent establishes that these events have a refractory period. So
 the null either conditions on part of the finding (min gap 30, and the
@@ -161,9 +170,34 @@ sampling choice, inseparable to a reader who sees only the first.
 cannot justify, say that instead of picking a value.** Stop trading
 numbers. "This is undeterminable without an independent model of the
 event process" is a real finding and an honest one; a number chosen from
-a range spanning two orders of magnitude is neither. Note which side
-each participant's reproduction happened to favour — **ours each
-favoured our own prior**, which is the tell.
+a range spanning two orders of magnitude is neither.
+
+### The tell, and the cheap practice that defuses it
+
+Across this exchange two people reproduced the same calculation four
+times. **Every single reproduction came out favouring the reproducer's
+own prior** — the one who had fitted the lattice kept getting figures
+kind to it; the one auditing it kept getting figures unkind to it, in
+both directions, including after fixing a bug that moved the answer
+against the fixer. Nobody was arguing. Nobody noticed it in their own
+work. **Each caught it only in the other's.**
+
+That is not a reason to distrust calculation; it is a reason to expect
+this specific failure whenever someone computes a statistic whose value
+they have a stake in. It generalises the rule elsewhere in this hub that
+a number confirming your prior gets less scrutiny — here the bias
+operated one level earlier, in the *construction* of the calculation
+rather than in the reading of its output, where no amount of checking
+the output would have found it.
+
+**The practice: when your own calculation favours your prior, hand it
+over instead of leading with it.** Say what you computed, what you
+chose, and that it came out your way — and let the other party's
+reproduction be the one that gets quoted. This exchange converged
+instead of hardening for exactly that reason: each side withdrew a
+number that flattered it, twice, rather than defending it. The cost is
+one message. The alternative is two defensible numbers and no way to
+choose between them.
 
 ## Do not compare dispersion across a shift
 
