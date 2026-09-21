@@ -869,6 +869,41 @@ this good by chance. Here, 0 of 2,000 random draws reached the observed
 residual — which is what made it a result instead of a shape. See
 `abba-methodology.md`, "Calibrate a fit tolerance against a null".
 
+### A transform applied for comparison must never reach the artifact
+
+A machine's `CONFIG.SYS` was fetched so a modified copy could be pushed
+back. The fetch came through a text path that **doubled newlines**, so
+the file was normalised to make it diffable against a reference — and it
+diffed clean, which is how the fetch was confirmed authentic.
+
+The file then staged for the push was **LF-only, 1,307 bytes, zero
+carriage returns.** The normalisation had done its job and then followed
+the data into the artifact. Caught at the staging check; re-staged at
+1,349 bytes with 42 CRLF pairs.
+
+The rule "push back the bytes the machine gave you" was already written
+down and was being followed in intent. What defeated it is that **the
+bytes in hand were no longer the bytes the machine gave** — a transform
+had silently replaced them one step earlier, for a legitimate purpose, in
+a different part of the workflow.
+
+**Keep the verbatim fetch and the normalised copy as two separate
+files, and write from the verbatim one.** Never normalise in place. A
+comparison needs a canonical form; an artifact needs the original bytes;
+the moment those are the same file, the first requirement quietly
+overwrites the second.
+
+**And assert the property you are about to rely on, at the point of
+use** — here, a byte count and a CRLF count immediately before staging.
+A diff that passes proves the content matches under the transform, which
+is precisely the property that says nothing about the bytes.
+
+Worth knowing why this one was caught: **a boot file is the one place a
+line-ending difference is not cosmetic**, so the staging check was being
+read carefully. The same leak into a log path or a data file would have
+passed unremarked — so the guard belongs in the workflow, not in the
+operator's attention.
+
 ### An absence needs one control per way of being silent
 
 A cell whose informative outcome is **presence** needs one control: did
