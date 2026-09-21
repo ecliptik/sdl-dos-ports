@@ -926,6 +926,41 @@ identical to a known fault — and it was **caused by the state, not the
 cause of it.** See `### A confirmed cause is not necessarily the
 operative cause` above; this is the second instance in one campaign.
 
+### An uninitialised buffer does not read as garbage — it reads as data
+
+A probe added a per-cylinder histogram so a clustering claim would have a
+denominator. It came back with **17,681,718 writes across 704 cylinders,
+against 1,430 actual `INT 13h` calls** — and the counts rose in a tidy
+linear ramp, 513, 1027, 1541, each step +514.
+
+`__dpmi_allocate_dos_memory` does not zero the block, and the table lived
+past the end of the code being written into it, so it started as whatever
+the previous owner had left there. **The result was not obviously
+corrupt. A rising ramp across 704 cylinders is exactly the shape somebody
+interprets** — and it was attached to the one question the cell existed
+to answer.
+
+The expectation that garbage announces itself is the trap. Real memory
+is full of counters, tables and strings; reused DOS memory in particular
+holds structured remains. **Uninitialised storage reads as a plausible
+distribution far more often than it reads as noise.**
+
+**Two guards, and the second is the one that generalises.** Zero the
+allocation — necessary, easy to forget, and silent when forgotten. Then
+**tie every derived table to an independently counted quantity and assert
+the relation**: here, each histogrammed write is by construction one
+`INT 13h` call, so a histogram total exceeding the call counter is
+impossible and now prints `HISTOGRAM VOID` and scores nothing. That
+assertion holds whatever the cause — uninitialised memory, a double
+count, an index off the end — and it does not require anyone to have
+guessed which.
+
+**What actually caught it was the probe printing its own total**, which
+is `### A check catches the failure you anticipated` in its most
+expensive instance: nobody had anticipated an uninitialised histogram,
+and a per-cylinder table on its own would have been read as a write
+distribution.
+
 ### A check catches the failure you anticipated; a passive readout catches the one you did not
 
 Most of this file is about checks — gates, assertions, controls. They
