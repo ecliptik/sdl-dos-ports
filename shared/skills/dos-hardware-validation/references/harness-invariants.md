@@ -675,6 +675,32 @@ minutes and relays upward immediately is training a pace that leaves no
 room for the intervening check. Slowing the relay is the coordinator's
 job to fix, not the worker's.
 
+### Commit an analysis BEFORE the measurement that could confirm it
+
+Pre-registration usually means writing down a prediction before a run.
+The same discipline applies to **interpretations formed mid-investigation**
+— a reading of existing data, an argument about what some earlier result
+implies — when a measurement is already in flight that could appear to
+vindicate it.
+
+A campaign hit this productively. While a discriminating cell was on the
+hardware, a session re-read four earlier instrument arms and found an
+account of them that was **materially more favourable to the hypothesis
+the cell was about to test** than the account it had published an hour
+before. It committed the new reading, with its reasoning, before the cell
+reported. That is the difference between an argument and a
+rationalisation, and it cost nothing.
+
+The author's own formulation is the one to keep: **when a pending
+measurement could plausibly confirm a reading you have just formed, the
+reading gets committed before the measurement reports, or it does not get
+claimed at all.**
+
+Note what makes this cheap rather than bureaucratic: it only binds when a
+relevant measurement is *already running*, which is exactly the window in
+which a convenient re-reading is most likely to appear and least likely
+to be questioned.
+
 ### A scope opened before an `#ifdef` runs to the end of the enclosing block
 
 A timing scope declared before a preprocessor conditional, with no
