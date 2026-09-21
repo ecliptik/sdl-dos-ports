@@ -590,23 +590,34 @@ contamination. Anything present in every run is invisible to it by
 construction**, and the campaign that wrote the rule then spent a day
 chasing a cost that was exactly that.
 
-**A campaign believed for one round that exactly this had happened to
-it** — that 94% of a 7.53-second engine event was its own
-`debug_script_log` calls, enabled by default in both its emulator and
-hardware runners and therefore present in every measurement it had ever
-taken. It reached the operator as a retraction of a major finding before
-the next measurement showed the belief was false: the logging was **1.9
-milliseconds** across all nine dispatches, and the 38.4 seconds belonged
-to the engine call the bracket had accidentally swallowed. (That
-sub-episode is its own lesson — see the scope-bug and halt-condition
-entries below.)
+**A campaign found exactly this, after first finding a false version of
+it.** The false one: 94% of a 7.53-second engine event attributed to its
+own `debug_script_log` calls, which reached the operator as a retraction
+of a major finding before the next measurement showed the logging was
+**1.9 milliseconds** and the time belonged to an engine call a misplaced
+bracket had swallowed.
 
-So the worked example is a false alarm, and the rule stands on its logic
-rather than on that story: **a bracket-set diff compares two binaries and
-therefore cannot see anything present in both.** Overhead that every run
-carries is invisible to it by construction, and the failure mode is
-silent — every figure is consistently wrong in the same direction, which
-is precisely what a differential check is blind to.
+The real one, hours later and on a different phenomenon: a ~250 ms stall
+recurring inside the present path, which had survived **six** hypotheses.
+It was the port's own diagnostic doing an `fsync` from inside the flush —
+one write per hundred presents, most costing 21-36 ms on the CF card and
+one hitting **227 ms** on what was probably an erase cycle or FAT commit.
+The stall had been measured at **18.7x over-represented** against the
+present's share of CPU time, and that was the clue read backwards: **the
+present was over-represented because the present was where the disk
+writes had been put.**
+
+**Keep the two straight wherever both appear**, because the sentences are
+nearly identical and the evidence is not comparable — the false one was a
+scope bug, the true one had `fsync`-level attribution with phase maxima
+summing to the total within 0.002 ms in 23 of 24 blocks.
+
+The rule stands on its logic independently of either: **a bracket-set
+diff compares two binaries and therefore cannot see anything present in
+both.** Overhead that every run carries is invisible to it by
+construction, and the failure mode is silent — every figure is
+consistently wrong in the same direction, which is precisely what a
+differential check is blind to.
 
 **So price your own instrumentation directly, with at least one cell per
 campaign that has every optional channel, counter and log switched off.**
@@ -988,6 +999,28 @@ Worth noting what the hub got right here anyway: the same row named the
 instrument the borrowing port eventually needed — a four-phase bracket
 another port had already built behind a hint, for this exact symptom.
 **Reading the hub was correct both times; only the testing was wrong.**
+
+### Audit the harness's fetch list against every file the program writes
+
+An instrument that records faithfully into a file nobody collects is
+indistinguishable from an instrument that does not exist — and it fails
+silently, because nothing errors and no log is short.
+
+A campaign spent six hypotheses and several days on a recurring stall it
+could not locate. The decisive four-phase bracket had been written by
+**another port, years earlier, for this exact symptom** — unconditional,
+always on, writing to `LOGS\<TAG>SDL.LOG`. The harness's collection step
+had never fetched that filename. **The instrument had been recording on
+every cell of the campaign and been read on none of them.** The fix was
+one line in the run batch and one name in a fetch list.
+
+This is worse than the more common "the answer was already in a log
+nobody re-read", because there was no log to re-read: the data was
+generated, written, and discarded at collection time. **Enumerate what
+the program writes and diff it against what the harness fetches**, as a
+standing check rather than a one-off — and treat any file the program
+produces but the harness ignores as either a collection bug or an
+instrument that should be deleted.
 
 ### Grep the cell you already have before designing a new one
 
