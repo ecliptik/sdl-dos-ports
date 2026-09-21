@@ -463,6 +463,23 @@ is not "which other site" but "is this function on the path at all"** —
 one counter at the function's own entry answers it, and it is cheaper
 than the site-by-site search it replaces.
 
+**Which gives the mechanical fix for the enumerate-call-sites rule:
+instrument the callee, not the callers.** The same session miscounted
+call sites three times in one function — twice reporting "two sites"
+where there were three, with the conclusion surviving only because the
+third happened to sit on the same side of the branch as the other two.
+Enumerating N callers is an O(N) search with an O(1) alternative: **one
+unconditional counter at the top of the called function answers "is this
+reached on our path" for every site at once, including sites added
+later.** Reach for caller enumeration only when you need to know *which*
+site, not *whether*.
+
+**And make the "I was here" counter reflexive.** Every instrumented site
+should carry an unconditional hit count beside its conditional ones, at
+the function's own entry. Then zero on the unconditional counter reports
+not-reached immediately, at that site, with no inference — and three
+patches cannot run in dead code, because the first one says so.
+
 ### A decomposition instrument must assert that its parts sum to its whole
 
 An instrument bug that produces an *absurd* number gets caught. An
