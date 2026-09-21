@@ -926,6 +926,38 @@ identical to a known fault — and it was **caused by the state, not the
 cause of it.** See `### A confirmed cause is not necessarily the
 operative cause` above; this is the second instance in one campaign.
 
+### A check catches the failure you anticipated; a passive readout catches the one you did not
+
+Most of this file is about checks — gates, assertions, controls. They
+share a limitation worth naming: **a check can only catch a failure
+someone thought of in advance.** Everything you did not anticipate walks
+straight through a full set of passing gates.
+
+Three saves in one campaign came from something else entirely — a line
+of output that prints unconditionally, whether or not anyone is worried:
+
+| passive line | what it caught |
+|---|---|
+| MSCDEX's boot banner, `Drive D: = Driver OPTICAL unit 0` | that a config push had not taken — and it was already on screen before anyone asked |
+| an installer printing the offsets it resolved | a header field inserted mid-block, which would have pointed an interrupt vector into the data area |
+| `events=N bytes=B` instead of a computed rate | that the event count was unreliable, which the ratio had been hiding for three readings |
+
+None of those was a check. Nobody had anticipated any of those failures.
+**The information was simply present, and someone looked.**
+
+**So emit the state, not only the verdict.** Anything that resolves an
+address, an offset, a size, a drive letter or a version should print what
+it resolved. Anything that computes a ratio should print its terms.
+Anything that selects an artifact should print which one. The cost is a
+line of output; the return is that the day something fails in a way
+nobody modelled, the evidence is already in the log rather than needing
+a new run to obtain.
+
+**And read those lines when they go past.** A passive witness only pays
+if somebody looks at it — the drive-letter line sat in a capture that had
+already been read once for a different purpose before anyone noticed what
+it settled.
+
 ### A shared header between assembly and C is an ABI: append, never insert
 
 A probe's hand-written real-mode stub and its C installer agreed on a
