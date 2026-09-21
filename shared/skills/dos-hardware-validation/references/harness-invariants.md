@@ -448,6 +448,21 @@ counter, so zero is decomposable. And **instrumenting one of N call sites
 is not a measurement of the function** — enumerate the call sites first,
 and instrument all of them or state which one you measured.
 
+**And decompose zero at every level, not just one.** The campaign above
+then hit the same wall one layer up. The `skipped` counter it had built
+for exactly this purpose reported *not reached* — and that was read as
+"this call site is dead", so a **second site inside the same function**
+was instrumented next. The function itself was never called: the port
+takes a direct-framebuffer fast path that bypasses it entirely, and three
+patches ran in dead code before anyone asked.
+
+The hierarchy is **branch not taken → site not reached → function not
+called → path not taken**, and a zero at any level says nothing about the
+levels above it. When a counter reports not-reached, **the next question
+is not "which other site" but "is this function on the path at all"** —
+one counter at the function's own entry answers it, and it is cheaper
+than the site-by-site search it replaces.
+
 ### A decomposition instrument must assert that its parts sum to its whole
 
 An instrument bug that produces an *absurd* number gets caught. An
@@ -913,6 +928,34 @@ backwards from the measured time to the implied quantity, and check that
 against something known. Here, 0.70 ms at the machine's measured memory
 bandwidth implied a 77x77 sprite, which visibly contradicted the assumed
 100x200 -- the contradiction was available without any new instrument.
+
+### A cross-port finding tested with a broken instrument is worse than one never read
+
+The hub carries findings between ports so the next one does not pay
+twice. That only works if the test applied to a borrowed finding is
+sound — and **a false negative on someone else's correct result actively
+removes a true lead**, where simply not reading it would have left the
+lead open.
+
+One campaign hit this twice on the same `HARDWARE.md` row. The row
+described a multi-hundred-millisecond flush stall on a different card,
+narrowed by that port to one mechanism, with the one-variable test
+written down and never run. The borrowing session read it, instrumented
+the named guard, got zeros, and reported the mechanism falsified. The
+guard sites were in a code branch that port never executes — **the test
+never ran**, and a correct lead spent a round dead before the retraction.
+
+**So when testing a borrowed finding, verify the test applies to your
+path before trusting its result** — the other port's mechanism lives in
+their configuration, and yours may reach the same symptom by a different
+route. And when a borrowed lead comes back negative, hold it to the same
+standard as a positive: **a negative that would close a cross-port lead
+deserves the confirmation you would demand of a claim.**
+
+Worth noting what the hub got right here anyway: the same row named the
+instrument the borrowing port eventually needed — a four-phase bracket
+another port had already built behind a hint, for this exact symptom.
+**Reading the hub was correct both times; only the testing was wrong.**
 
 ### Grep the cell you already have before designing a new one
 
