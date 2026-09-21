@@ -783,6 +783,30 @@ on a different fixture entirely.** Characterising a distribution and then
 using a statistic unsuited to it is a distinct failure from not
 characterising it.
 
+### A threshold detector finds one population and hides its neighbour
+
+Any instrument that reports events "over N" partitions reality at N, and
+the events just below it become invisible — not absent, invisible. If a
+second population sits close under the threshold, the first one will look
+like the whole story.
+
+A campaign's stall detector fired at 250 ms and found a deterministic
+~240 ms event with a clean mechanism, confirmed three times across three
+binaries. A later cell carried a **168 ms** event in a different phase, at
+no special offset, which the detector never reported. It surfaced instead
+as **skipped frames rising from 12 to 17** — a different metric entirely,
+and only noticed because someone compared two arms that should have
+matched.
+
+Two populations, then: one deterministic and explained, one sporadic and
+not. **The clean mechanism would have absorbed the whole phenomenon** if
+nobody had looked below the line.
+
+**Set the threshold below the effect you care about, not at it** — and
+when a threshold-based finding looks complete, check the distribution
+just under the cut before believing it. A neighbouring population is the
+most likely thing a clean result is hiding.
+
 ### Check for multiple populations before taking a mean
 
 A mean over a mixture distribution describes no member of it, and the
