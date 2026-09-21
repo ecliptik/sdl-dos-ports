@@ -190,6 +190,23 @@ operated one level earlier, in the *construction* of the calculation
 rather than in the reading of its output, where no amount of checking
 the output would have found it.
 
+**Trigger the check on inconsistency, not on incentive.** The same
+campaign produced a hand-written table and a script that disagreed by
+~2x; the author flagged it, and the correction happened to make their own
+proposal look *cheaper* — the flattering direction, declared anyway. Asked
+about it afterwards, they noted they had not spotted which way the error
+leaned: **the habit fired on the two artifacts disagreeing, not on
+recognising an incentive.**
+
+That is the more reliable trigger of the two, and it is worth preferring
+deliberately. "Would this flatter me?" requires correctly identifying
+your own bias, which is the thing the bias is best at preventing. "Do my
+two sources of this number agree?" requires only arithmetic. **Build
+checks that fire on mechanical inconsistency** — a document against its
+script, a summary against its log, a constant against the run that
+measured it — and they will catch motivated errors as a side effect,
+without anyone having to be honest about their motivation first.
+
 **The practice: when your own calculation favours your prior, hand it
 over instead of leading with it.** Say what you computed, what you
 chose, and that it came out your way — and let the other party's
