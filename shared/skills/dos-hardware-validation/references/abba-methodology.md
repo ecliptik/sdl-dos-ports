@@ -72,6 +72,57 @@ pre-registration time**, not at scoring time. And when one turns out to
 be marginal, ask whether the quantity is wrong before reaching for a
 different threshold on the same quantity.
 
+## Calibrate a fit tolerance against a null before adopting it
+
+"Within 10% of an integer multiple" sounds like a criterion. It is only a
+criterion if random data **fails** it — and whether it does depends on
+the tolerance, the number of points and the search range, none of which
+are obvious by inspection.
+
+A campaign testing whether stall intervals fit a common period ran 20,000
+draws of six uniform random gaps through its own fitting procedure before
+fixing the threshold:
+
+| tolerance | null pass rate |
+|---|---|
+| 0.15 | 2.50% |
+| **0.10** | **0.38%** |
+| 0.05 | 0.00% |
+
+That turns a plausible-sounding number into a known false-positive rate,
+and it showed why the middle value was right: 0.15 would pass one random
+dataset in forty, while 0.05 risked rejecting a true signal over jitter
+in a 220 ms event measured on a 486. **Run your own procedure against
+noise and see how often it says yes.** It costs a loop and it converts a
+guess into a calibrated test.
+
+Pair it with closing the degrees of freedom the fit would otherwise have:
+that search constrained the period to `[max(gap)/4, max(gap)]`, which
+forces every multiplier into {1,2,3,4} so the period **cannot shrink
+until it divides everything**. A free parameter with an unbounded range
+fits any data, which is the same hole as a pre-registered range with an
+undefined middle.
+
+## Do not compare dispersion across a shift
+
+`max/min` is **not scale-invariant under translation**. Add a constant to
+every value in a set and the ratio of extremes shrinks — always, by
+construction, regardless of the data.
+
+A campaign nearly concluded that stall intervals were "more even in time
+than in bytes" from a 2.8x spread against 7.3x. The time figures were
+byte gaps converted by a per-record cost **plus each event's own ~220 ms**
+— a near-constant added to every gap. The comparison measured the
+addition. Sweeping the unmeasured per-record constant made the same seven
+events produce anywhere from 1.51x to 4.84x.
+
+**Any "more even in X than in Y" claim across a change of variable that
+shifts values is measuring the shift.** Use a scale-free statistic — a
+coefficient of variation, or a structural fit like the integer-multiple
+test above — and measure the constant rather than assuming it, since an
+assumed constant that drives the conclusion makes the conclusion a
+property of the assumption.
+
 ## Redesign so the denominator is known, rather than measuring it
 
 When a test needs a quantity you would have to model, look first for a
