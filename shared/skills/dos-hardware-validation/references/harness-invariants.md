@@ -869,6 +869,41 @@ this good by chance. Here, 0 of 2,000 random draws reached the observed
 residual — which is what made it a result instead of a shape. See
 `abba-methodology.md`, "Calibrate a fit tolerance against a null".
 
+### An absence needs one control per way of being silent
+
+A cell whose informative outcome is **presence** needs one control: did
+the thing you are looking for have a chance to appear. A cell whose
+informative outcome is **absence** needs one control **for every way the
+run could have gone quiet without meaning anything** — because all of
+them produce the same output as the finding.
+
+A device-comparison cell — does this stall happen on a different medium —
+accumulated four guards before it was safe to run, each blocking a
+different route to the same clean, quiet, zero-exit false result:
+
+| guard | the false absence it blocks |
+|---|---|
+| arms matched on **elapsed time**, not bytes | an arm too fast to contain one period. The RAM-disk arm as first written covered **0.06 of one** |
+| the original medium's arm as a **positive control** | the write pattern having killed the phenomenon, leaving two silent arms that cannot be told apart |
+| a **not-scorable duration floor** | an arm too short to contain an event, landing as a verdict instead of as nothing |
+| **bytes-written asserted against bytes-attempted** | an arm that never wrote. `fwrite` to a full DOS volume returns short rather than failing, so the loop completes in good time and reports zero |
+
+Four is not over-engineering. **It is the count of distinct ways that
+particular run could be quiet**, and every one of them was live: the
+first was a real defect in the design, and the fourth was a real
+possibility given a 2 MB disk taking 25-50 MB of writes through a wrap.
+
+**Before running any cell whose useful answer is "it did not happen",
+enumerate the ways it could fail to happen for uninteresting reasons and
+write a guard for each.** Then check that each guard **voids** rather
+than scores — "not scorable" and "absent" must be different outputs, or
+the guard has only moved the problem.
+
+The tell that you need this discipline: **you cannot distinguish your
+success case from your failure case by looking at the output.** When
+that is true, no amount of care in reading the result will help, because
+the reading is not where the information was lost.
+
 ### The command was right; the quantifier was wrong
 
 A campaign needed a RAM disk driver. Someone ran `DIR C:\DOS\*.SYS`, read
