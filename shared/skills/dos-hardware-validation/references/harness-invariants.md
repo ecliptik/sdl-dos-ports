@@ -867,6 +867,45 @@ this good by chance. Here, 0 of 2,000 random draws reached the observed
 residual — which is what made it a result instead of a shape. See
 `abba-methodology.md`, "Calibrate a fit tolerance against a null".
 
+### Read the machine's own configuration before probing the device
+
+Five cells were spent varying record size, position, operation count and
+timing against a periodic write stall, testing five mechanism families
+and killing all five. Nobody had read the machine's `CONFIG.SYS` and
+`AUTOEXEC.BAT`.
+
+When it was finally read -- as a side errand, while fetching a file for
+an unrelated restore -- the first line that mattered was a **resident
+disk cache hooking INT 13h**, sitting between the program and the media,
+matching every surviving observation, and belonging to a layer none of
+the five probes could distinguish from the media itself.
+
+**The configuration is the candidate list.** A stall, a periodicity, an
+unexplained cost on a device path is produced by *something that is
+loaded*, and what is loaded is written down on the machine in a file
+anyone can read in a minute. Probing the device without that list means
+inventing hypotheses about a stack whose contents are unknown -- which is
+how a search comes to test "FAT cluster boundary" and "rate per device
+byte" before it tests "the cache that is actually installed."
+
+**Do this at campaign open, not at hypothesis five.** Enumerate the
+residents, the drivers, the caches and the TSRs, and keep the list beside
+the measured-constants table. It costs one read, it is authoritative
+rather than inferred, and it turns an open-ended search into a bounded
+one.
+
+Two riders learned in the same hour. **Read the target's own copy, not a
+sibling repository's** -- a configuration reconstructed from elsewhere
+may be right, and you will not know which, and that is the same
+provenance failure as quoting a figure measured on another fixture. Use
+the sibling copy to *ask* the question and the machine's copy to answer
+it. And **record the numeric settings while you are there** (`BUFFERS=`,
+`FILES=`, cache sizes): a later follow-up then starts from "change this
+from 20" instead of "find out what it is", and the values themselves
+carry evidence -- a `BUFFERS=20` is 10 KB, which made a periodic flush in
+the DOS filesystem layer less plausible and a resident cache below it
+more so, before either had been tested.
+
 ### Name the layers a negative result actually clears, before you run it
 
 An elimination test's value is entirely in its branch labels, and those

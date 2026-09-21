@@ -295,6 +295,37 @@ startup-time bool), and both arms still carry the code, so a within-build
 A/B tells you the lever's value but *not* what the added code cost to
 include -- that question needs the dead-but-emitted test above.
 
+## The same argument one layer out: prefer a within-boot A/B
+
+The section above is about not rebuilding between arms. The identical
+argument applies to not **rebooting** between arms, and it is easy to
+miss because a machine-configuration lever does not look like a code
+lever.
+
+An investigation into a periodic stall identified a resident disk cache
+as its leading candidate and reached for the obvious test: change
+`CONFIG.SYS`, reboot, re-run. That test carries a reboot, a config file
+to restore and verify, a documented keyboard-hang hazard on the return
+boot, a mains cycle on thirty-year-old parts, and a boot-config change
+that sat outside the campaign's standing authorization. **The same cache
+reconfigures from an ordinary command line while resident** -- both arms
+from one boot, nothing to restore, and every boot-to-boot difference
+removed by construction rather than by hope.
+
+**Before designing a cell around a reboot, ask whether the component has
+a runtime interface.** Resident caches, mouse drivers, sound
+initialisers, VBE providers and TSRs frequently do. When one does, the
+within-boot A/B is strictly better on every axis: fewer confounds, less
+hardware risk, a smaller authorization footprint, and a faster turn.
+
+Two conditions, both the same ones the within-build rule carries. **The
+toggle needs its own `expect_log`** -- a status readout proving the arm
+actually took, since a reconfiguration that silently did nothing reads
+exactly like "not the cause". And **verify the invocation against the
+tool's own help output on the machine**, not against anyone's
+recollection of the manual; the running instance's status table is a
+measurement, an argument about argument grammar is not.
+
 ## Verdict table shape
 
 Key the verdict to the delta magnitude against the pre-registered
