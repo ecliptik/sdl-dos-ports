@@ -993,6 +993,18 @@ if somebody looks at it — the drive-letter line sat in a capture that had
 already been read once for a different purpose before anyone noticed what
 it settled.
 
+**The sharpest form of this trap: a check that prints only on failure is
+silent exactly when it succeeds.** A register-transparency gate called
+`INT 13h AH=08h` — which returns the drive's geometry — on every single
+run, and printed the registers **only on a mismatch**. Three cells
+collected CHS addresses that could not be converted to LBA, the
+coordinate where a flash device's structure would actually be visible,
+because the geometry had been fetched three times and thrown away three
+times. **The values a gate reads to make its decision are evidence in
+their own right**, and a gate that reports a verdict without them
+destroys data it already had in hand. Print what you checked, not only
+whether it passed.
+
 ### A shared header between assembly and C is an ABI: append, never insert
 
 A probe's hand-written real-mode stub and its C installer agreed on a
