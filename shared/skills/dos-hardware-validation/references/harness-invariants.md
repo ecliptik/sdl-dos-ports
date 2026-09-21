@@ -869,6 +869,66 @@ this good by chance. Here, 0 of 2,000 random draws reached the observed
 residual — which is what made it a result instead of a shape. See
 `abba-methodology.md`, "Calibrate a fit tolerance against a null".
 
+### Relaxing a gate after seeing the data: the one test that separates the cases
+
+Sooner or later a pre-registered gate fails on a run you believe is
+sound, and you will want to relax it. Usually that is rationalisation.
+Occasionally the gate is simply wrong. **One question separates them:
+would the relaxation have been made if the result had gone the other
+way?**
+
+Two cases from one campaign, hours apart:
+
+**Legitimate.** A host-side gate required exactly four status tables to
+prove four stages ran. A correct run emits **six**, because each of the
+two toggle commands prints one too. The gate was counting the wrong
+thing — **it would have voided every correct run, including a failing
+one** — and the six-table figure was derivable from the toggle's
+documented behaviour before the cell was ever run. Relaxed, and the
+stage count was carried instead by a stronger check that had also been
+pre-registered. A gate that voids every correct run is **broken, not
+strict**.
+
+**Not legitimate.** A fit missed its pre-registered threshold, and
+dropping one point brought it to a pass by 0.0045. The point was chosen
+*after* seeing which one spoiled the fit, and nothing recommended the
+drop except that it passed. Refused.
+
+The asymmetry is **independent falsifiability**, not the quality of the
+reasoning. The first gate's defect can be demonstrated from the
+instrument's specification with the results still sealed; the second
+cannot be argued at all without looking at the answer. **Write the
+justification and check whether it survives with the outcome column
+covered up.** If it does not, you are negotiating, not correcting.
+
+And declare it either way. The relaxation above was announced up front,
+before the verdicts it enabled — which is what let it be audited instead
+of discovered.
+
+### Excluding a noisy statistic from a test excludes it from scrutiny
+
+A cell's event counts swung 2x across identical configurations, so
+counts were deliberately excluded from every verdict and every stability
+bar — correctly, since a statistic that noisy cannot carry a conclusion.
+
+The four arms then returned **6, 7, 8, 15** events, in stage order,
+strictly increasing, with the lever explaining none of it. Nobody
+noticed, because the one statistic set aside as unreliable was also the
+one nobody was looking at. It surfaced only because a reader went
+through the raw numbers that no test consumed.
+
+(The trend did not survive — checked against every comparable run on
+disk, the counts at cumulative-bytes zero were 7, 10, 14, 11 and 6,
+bracketing the whole within-run range, so the intermittency account
+stood and the ordering stayed a 1-in-24 oddity. **The lesson is about
+the examination, not the outcome.**)
+
+**Excluding a statistic from a test is a decision about verdicts, not
+about attention.** When you set one aside, say so explicitly and put its
+raw values in the report anyway, unscored and labelled as such. The cost
+of the exclusion is that nothing will flag a pattern in it — so
+something has to look on purpose.
+
 ### Do not let an instrument divide by a number it cannot trust
 
 A probe printed a summary line of the form `RATE = one event per N
