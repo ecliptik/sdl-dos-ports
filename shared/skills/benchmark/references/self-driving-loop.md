@@ -207,3 +207,48 @@ reasons; the mechanism moving is what confirms the model was right.
    have it read the plan section first.
 5. Dispatch the next unchecked slice with stop conditions. Ask only
    what is genuinely undecided.
+
+## 7. Before designing a cell, ask what is already on disk
+
+A real-hardware campaign trains an instinct to answer questions by
+running one more cell. Tally where a long night's decisive moves actually
+came from and that instinct looks expensive. From one campaign's
+stall investigation, in order:
+
+| finding | what settled it |
+|---|---|
+| event positions lie on a lattice | logs already collected |
+| a cumulative-writes drift explains the counts | logs already collected -- **falsified** |
+| the probe's stage list truncated after stage one | the probe's own source (a nested `strtok`) |
+| a 1.3 KB transfer times out at exactly 180 s | the harness's source (a composed path) |
+| "no `RAMDRIVE.SYS` on this machine" | one more `DIR` -- **it was in `C:\WINDOWS`** |
+| the stall magnitude is 4.00 BIOS ticks | the same logs -- **circular, withdrawn** |
+| a count-to-4 wait explains it | the same logs -- **refuted, bounded above by 4** |
+| a byte counter drives the period | **a cell.** Nothing on disk could have said it |
+
+**Seven of eight were reads.** The eighth needed hardware and was the
+single hardest result of the campaign -- it killed a family outright
+where four pattern arguments had only wounded it.
+
+That ratio is not an argument against cells; it is an argument about
+**order**. A cell costs a boot, a queue slot, thermal cycling on old
+parts, and an hour of latency before anyone learns anything. A read
+costs minutes and often returns a *better* answer, because it can
+address the mechanism directly rather than through its symptoms.
+
+**So before writing a pre-registration, ask three questions.** Does data
+already collected bear on this -- including runs voided for other
+reasons, which keep every observation that did not depend on the broken
+part? Does the source of the thing under test answer it -- the probe's,
+the harness's, the engine's? And is the question actually about the
+machine at all, or about something we wrote?
+
+**Two failure modes this catches, both seen in one night.** A claim about
+"the machine" resting on evidence about one directory. And two
+hypotheses argued at length about long-standing shared infrastructure
+when the defect sat in freshly written code with no history of working.
+
+**And the corollary: read before escalating.** A licensing question was
+minutes from reaching an operator over a driver that was already on the
+card. A boot-config change was queued to buy an elimination that a cell
+already running would deliver for free. Both were one read away.
