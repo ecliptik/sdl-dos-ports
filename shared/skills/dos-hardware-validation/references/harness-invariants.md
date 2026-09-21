@@ -677,6 +677,24 @@ brackets nest. All three of these were caught by reading rather than by
 measuring, which means the check is cheap and belongs before the
 hypothesis, not after it.
 
+**A fourth instance, recorded because of who made it and what it nearly
+cost.** The session that wrote this rule then quoted a phase's share of
+frame time — 47% — from a *different fixture at a different colour depth
+and four times the pixel count*. On the fixture actually under test the
+figure was **4.9%**. It was the input to a significance test: the
+phenomenon accounted for 92% of the stall time, so against 47% it looked
+proportional and the investigation would have concluded the cost came
+from outside the code entirely, while against 4.9% it is **18.7x
+over-represented** and the code path is implicated. **The wrong
+denominator would have inverted the conclusion and closed the search.**
+
+Knowing the rule is evidently not sufficient to follow it, so make the
+check mechanical rather than intentional: **when quoting any share or
+percentage, write the fixture name beside it**, in the message and in the
+notes. A figure carrying its own population cannot be misapplied silently
+— and the person most likely to misapply it is whoever is most fluent
+with the numbers.
+
 ### Prefer a decomposable rate over a percentile on a heavy-tailed run
 
 A percentile is computed over a distribution. When that distribution has
