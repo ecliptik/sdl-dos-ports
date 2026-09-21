@@ -115,29 +115,55 @@ evidence the lattice was real, with the caveat that a
 spacing-constrained null was still running and "will not move 0% to
 anything you would worry about."
 
-It moved it to **3.4%**.
+It moved. Two people then produced **six different numbers for the same
+eight points**, spanning 0.00% to 6.12%, before anyone noticed they were
+all answering different questions.
 
-The reason is structural, not statistical noise. **Uniform draws clump** —
-two points three records apart are common — and a clumped set cannot lie
-on any lattice, so the uniform null is dominated by draws that could
-never have passed. The real events had a minimum spacing of ~30 records.
-Imposing that, the null becomes a far stronger competitor, and the same
-observation drops from "0 of 2,000" to roughly `p = 0.03`. At a
-minimum spacing of 25 the figure is 0.27% — **an order of magnitude of
-movement from one modelling choice**, which is itself the finding.
+The immediate cause is that **uniform draws clump** — two points three
+records apart are common — and a clumped set cannot lie on any lattice,
+so the uniform null was dominated by draws that could never have passed
+whatever the data looked like. It was a strawman. Imposing the events'
+observed minimum spacing of ~30 records makes the null a real competitor.
 
-**Build the null by drawing from the constraint set the observation
-lives in, not from the widest set the numbers could have come from.**
-Minimum spacing, monotonicity, a bounded count, a known range — every
-constraint the real data satisfies has to be in the null too, or the
-null is a strawman and the p-value is a flattering artifact of the
-comparison rather than a property of the data.
+But the repair exposed the actual problem. Sweeping the assumed minimum
+spacing, with a correct uniform-over-feasible-configurations sampler:
 
-**And report the null's construction alongside its number.** "0 of
-2,000" is not a fact about the lattice; it is a fact about the lattice
-*and* a sampling choice, and the two are not separable by a reader who
-only sees the first. When a figure is sensitive to that choice across an
-order of magnitude, say so and give the range.
+| assumed minimum gap | free slack over 7 gaps | null pass rate |
+|---|---|---|
+| 10 records | 182 | **0.00%** |
+| 20 | 112 | 0.18% |
+| 25 | 77 | 0.53% |
+| 30 (observed minimum was 31) | **42** | **6.12%** |
+
+**The entire result is the minimum-spacing assumption.** Look at the
+slack column: eight events across 245 records have a mean gap of 35, so
+once a 30-record floor is imposed there are only 42 records of freedom
+left across seven gaps. **Near-even spacing is then close to forced**,
+and a lattice fit is measuring the constraint rather than the data.
+
+And the floor was **taken from the observation itself**. Nothing
+independent establishes that these events have a refractory period. So
+the null either conditions on part of the finding (min gap 30, and the
+lattice says little) or ignores a real physical constraint (min gap 10,
+and the lattice looks decisive) — **and the data cannot settle which.**
+
+Three rules, in increasing order of how much they would have saved:
+
+**Build the null from the constraint set the observation lives in** —
+every constraint the real data satisfies belongs in the null too, or the
+p-value is an artifact of the comparison.
+
+**Report the null's construction alongside its number.** "0 of 2,000" is
+not a fact about the lattice; it is a fact about the lattice *and* a
+sampling choice, inseparable to a reader who sees only the first.
+
+**When a statistic's value is dominated by a modelling choice the data
+cannot justify, say that instead of picking a value.** Stop trading
+numbers. "This is undeterminable without an independent model of the
+event process" is a real finding and an honest one; a number chosen from
+a range spanning two orders of magnitude is neither. Note which side
+each participant's reproduction happened to favour — **ours each
+favoured our own prior**, which is the tell.
 
 ## Do not compare dispersion across a shift
 
