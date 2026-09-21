@@ -1009,18 +1009,36 @@ points into different text, and runs whatever happens to be there.**
 
 A campaign edited its hardware-runner script while four cells were
 invoking it. The error was caught inside a minute and the file reverted
-to its exact prior bytes, with the in-flight cell verified unaffected —
-but the failure mode had it landed is the worst class available: **a
-corrupted run that still looks like a run**, producing plausible numbers
-from a script that executed something nobody wrote.
+to its exact prior bytes — **and the running cell died anyway, `rc=127`**,
+having resumed at an offset that landed in the middle of an embedded
+Python heredoc roughly a thousand lines from where it had been.
+
+**Two corrections that make this worse than it first appears, both
+learned the hard way after this entry was first written.**
+
+**Reverting is not a remedy.** The running process had already taken its
+new offset; restoring the original bytes changed nothing for it. Once the
+edit lands, the in-flight instance is committed to whatever it is going
+to do.
+
+**"Still running" is not "unaffected".** The first check performed was
+that the cell was still executing, and it was — right up until it wasn't.
+Liveness says nothing about integrity here. **Verify the exit code and
+the completeness of the output**, not that the process exists.
+
+This one survived on luck: the corruption surfaced in the *collection
+verification* step, after the file fetch had already returned, so the
+data sat recoverable in the daemon's pulled store and was rescued by hash
+before the next cell cleared it. Landing a few hundred lines earlier
+would have produced the worst class available — **a corrupted run that
+still looks like a run**.
 
 **Stage edits to harness scripts and apply them between runs**, never
 during. Keep the modified version somewhere else — a scratchpad copy —
 and move it into place when nothing is executing. If a change is urgent
 enough to feel worth doing live, that urgency is itself the signal to
-wait for the current cell to finish: the cost of waiting is minutes, and
-the cost of the alternative is a result nobody can trust and nobody can
-identify as untrustworthy.
+wait: the cost of waiting is minutes, and the cost of the alternative is
+a lost cell at best.
 
 ### Audit the harness's fetch list against every file the program writes
 

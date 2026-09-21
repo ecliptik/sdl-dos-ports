@@ -106,6 +106,31 @@ discriminates between the candidates and read it before writing the
 mechanism down — the bisect result stands on its own; the story attached
 to it needs separate evidence.
 
+**In a pacing-limited loop, only work that makes the loop LATE converts
+into clock.** Removing work that fits inside the existing slack changes
+nothing measurable in the rate — it just widens the slack. This is the
+single most common reason a saving measures far below its projection on
+this class of target, and it caught one campaign three times in a row on
+the same estimate.
+
+That campaign found its diagnostic logging was costing ~1.2 s of a 127 s
+run and predicted the removal would be worth 0.10-0.25 in tick rate. It
+then revised the arithmetic upward to 0.37 after finding more writes.
+**Measured: +0.05.** The loop's steady-state tick rate was 40.01-40.06 in
+*both* arms — pacing-limited, not work-limited, for most of its length.
+Removing 24 batches of ~26 ms grew the slack inside each tick and showed
+up as **skipped frames falling from 12 to 4**, not as time. The only part
+that converted was the work that had actually made the loop late: a
+single 270 ms stall, 0.2% of the run, worth 0.08 — against +0.05
+measured.
+
+As the author put it: both revisions answered the wrong question. Not
+*what does the instrument cost*, but **what fraction of its cost is being
+paid out of slack.** Ask that before quoting any saving on a paced loop —
+and note the corollary, that a saving invisible in the rate can still be
+real and valuable where it lands, here as a two-thirds reduction in
+dropped frames.
+
 **The recurring shape of a real win: general-case code doing per-unit
 bookkeeping for a per-unit quantity that is usually zero.** Three of one
 campaign's four largest wins had this form, and none of them were slow
