@@ -926,6 +926,35 @@ identical to a known fault — and it was **caused by the state, not the
 cause of it.** See `### A confirmed cause is not necessarily the
 operative cause` above; this is the second instance in one campaign.
 
+### An assumption under a safety check costs more than one under an analysis
+
+A campaign needed to verify that a raw sector write would land on
+unallocated space before issuing it. The check was about to be built on
+a file's starting cluster taken from an **undocumented** field of the
+DOS 6.22 FindFirst structure — the same class of unverified API
+assumption that had already been caught and rejected twice that night
+when it sat under an *analysis*.
+
+Underneath a safety check it is a different proposition entirely.
+**An unverified assumption under an analysis costs a result. An
+unverified assumption under a mitigation costs the thing the mitigation
+was protecting** — here, the boot drive of a machine that cannot be
+physically re-imaged.
+
+**Hold safety-critical arithmetic to a higher standard than the analysis
+it guards**, and prefer a check that **fails loudly on an error anywhere
+in its chain** over one that verifies a single link and assumes the rest.
+The replacement here was a round trip: write a recognisable pattern
+through the documented file API, compute where it should physically
+live, and read that absolute sector back. It tests the geometry, the
+address translation, the allocation mapping and the file's real
+placement **in one shot**, using no undocumented field — and it cannot
+pass while any step is wrong.
+
+The tell that you are in this situation: **the consequence of the check
+being wrong is not a bad number.** When that is true, "this is probably
+how it works" stops being an acceptable input.
+
 ### An uninitialised buffer does not read as garbage — it reads as data
 
 A probe added a per-cylinder histogram so a clustering claim would have a
