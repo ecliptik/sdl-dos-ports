@@ -72,6 +72,45 @@ pre-registration time**, not at scoring time. And when one turns out to
 be marginal, ask whether the quantity is wrong before reaching for a
 different threshold on the same quantity.
 
+## Redesign so the denominator is known, rather than measuring it
+
+When a test needs a quantity you would have to model, look first for a
+configuration in which that quantity is **exactly known** instead.
+
+Testing whether an event fires at a fixed rate per byte written, one
+campaign planned to instrument bytes-to-device per arm of a four-arm
+probe. The better move was to **delete the arms**: with them gone, the
+sweep's 393,216 bytes were the only device bytes in the run, and the
+denominator needed no modelling at all.
+
+The instrumentation would not have worked anyway, for a reason worth
+separating: **only an explicit sync guarantees a commit**, so for the
+buffered arms the true device-byte count was **unknown, not merely
+unmeasured** — no instrument placed in the program could have recovered
+it. **Check whether a quantity is measurable at all before planning to
+measure it**; where it is not, the experiment has to be reshaped rather
+than better instrumented.
+
+## A rate hypothesis needs its distribution predicted, not just its count
+
+"About N events per M bytes" can be satisfied by a process that is
+nothing like a rate — several events bunched together and a long empty
+stretch produce the right total for entirely the wrong reason.
+
+So pre-register the **spacing** alongside the count. The campaign above
+wrote three conditions rather than one: the count (8-12 events in the
+known byte total), the **magnitude** (unchanged from earlier runs, since
+a rate hypothesis gives no reason for the operation to cost differently),
+and the **evenness** (gaps within roughly 2x of each other). Only the
+third can distinguish a rate from a burst, and it is the one a
+count-only registration silently omits.
+
+Note also what a confirmed rate does and does not buy, which that
+registration stated in advance: it **names the family without settling
+the mechanism** — it does not say whether the counter lives in the
+device, the OS or the firmware, and the experiment that separates those
+is a different one.
+
 **A noise floor belongs to a fixture, not to a machine.** Measured on one
 real target in one campaign: 0.12 fps spread on an idle fixture and 0.24
 on a moving-content one, same machine, same session. Carrying the smaller
