@@ -926,6 +926,32 @@ identical to a known fault — and it was **caused by the state, not the
 cause of it.** See `### A confirmed cause is not necessarily the
 operative cause` above; this is the second instance in one campaign.
 
+### A shared header between assembly and C is an ABI: append, never insert
+
+A probe's hand-written real-mode stub and its C installer agreed on a
+header block at the top of the stub — a busy flag, the handler offset,
+the ring offset. A new field was added **in the middle**, shifting the
+three below it by two bytes. The C side then read the busy flag as the
+handler's entry point and **installed an interrupt vector pointing into
+the data area.**
+
+Nothing about that announces itself as a layout bug. It is a machine
+executing its own buffer, on the interrupt path of a disk controller.
+
+**Treat any structure two toolchains both index into as an ABI**, with
+the rule every ABI has: **append at the end, never insert, never
+reorder.** This applies to assembly-and-C headers, to a struct written
+by one program and read by another, and to any on-disk record format a
+later version will parse.
+
+**And the reason it was caught is the reusable half: the installer
+printed the offsets it had resolved.** A passive line of output, emitted
+whether or not anyone was worried, turned a vector-into-data crash into
+a visible mismatch before the code ran. **Make anything that resolves an
+address, an offset or a size print what it resolved** — it costs one
+line, it needs no one to suspect anything, and it is the difference
+between reading a bug and debugging a hang on real hardware.
+
 ### A transform applied for comparison must never reach the artifact
 
 A machine's `CONFIG.SYS` was fetched so a modified copy could be pushed
