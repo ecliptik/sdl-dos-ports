@@ -922,37 +922,58 @@ cannot report anything that needed the stages that never ran.
 ### A value that travels through a shell must be audited against THAT shell
 
 A multi-stage probe took its stage list in one environment variable,
-`|`-separated. The harness turns each `--env` into a DOS `SET` line, and
-**COMMAND.COM reads `|` as a pipe**, so the variable was truncated at the
-first stage before the program ever saw it:
+`|`-separated. It arrived truncated at the first stage:
 
 ```
 FSPROBE_SEQ=SMARTDRV /S|SMARTDRV C- ;SMARTDRV /S|...
                         ^ everything from here silently lost
 ```
 
-The probe then ran stage one, swept once, and exited zero. **A complete,
+The probe ran stage one, swept once, and exited zero. **A complete,
 internally consistent, entirely plausible single-arm result, with no
 error anywhere in it** — from a cell that was supposed to run four arms.
 Nothing in the output announces the three missing stages.
 
-**Audit a delimiter against the interpreter it actually passes through,
-not against the one you wrote the program in.** On COMMAND.COM that
-means `|`, `<`, `>` and `%` at minimum. The value crossed a host shell, a
-transfer, a DOS `SET` and a C `getenv` — four parsers, and it only had to
-be wrong in one.
+**The first diagnosis was wrong, and this entry originally published it
+as fact:** COMMAND.COM reads `|` as a pipe, the value crossed a DOS `SET`
+line, mechanism found. It fit, so it shipped. Then the separator was
+changed to `#` and **the identical truncation happened again** — and
+nothing reads `#` as anything.
 
-**Changing the separator is the workaround. The fix is a self-describing
-count.** Have the caller pass the number of stages it intends and have
-the program assert the number it parsed against it, refusing to run
-otherwise. That catches this bug, and it catches the next delimiter that
-turns out to be special in a layer nobody audited — which the separator
-change by itself does not. The general form: **any structured value
-crossing a parser boundary should carry its own element count.**
+| character at that position | outcome |
+|---|---|
+| `;` | **survived** |
+| `|` | truncated |
+| `#` | truncated |
 
-This is the same shape as `### A counter reading zero must distinguish
-"false" from "never ran"`. Truncation and absence produce identical
-output, and only an explicit expectation can tell them apart.
+Length does not explain it — the surviving case was shorter. Whitespace
+does not — the space sits earlier in all three. Both failures produced
+byte-identical output down to the line number, and the truncation point
+is the same *position* with two different characters at it. **The
+mangling layer is still unidentified**, and an echo-back probe is what
+will name it.
+
+Two rules, and the second is the one that cost a cell to learn.
+
+**Remove the structure from the value rather than re-encoding it.** After
+two delimiters were eaten by a layer nobody could name, the fix was one
+environment variable per stage plus a declared count. Separate variables
+cannot truncate into each other, a missing one is visible *as* missing,
+and — the point — **this is correct whether or not the mangling is ever
+explained.** A delimiter is a guess about every parser in the path;
+separate variables are a guess about none of them. Pair it with a
+self-describing count: have the caller pass the number of elements it
+intends and the program refuse to run on a mismatch, printing what it
+received. Truncation and absence produce identical output, exactly as in
+`### A counter reading zero must distinguish "false" from "never ran"`,
+and only an explicit expectation separates them.
+
+**One mechanism has to explain every instance, or none of them is
+established.** This hub already carries that rule for measurements. Here
+it was violated for a *diagnosis*: a satisfying story for instance one,
+written down as mechanism, and never revisited when instance two failed
+to fit. A diagnosis is a claim like any other and is owed the same second
+instance — **"it fit" is not "it was tested."**
 
 ### Read the machine's own configuration before probing the device
 
