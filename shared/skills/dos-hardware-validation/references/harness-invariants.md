@@ -839,9 +839,11 @@ The rule above is about events below a threshold. This one is about events
 *above* it that the instrument still misses, which is worse, because the
 detector is nominally working and its output looks like a complete list.
 
-Two runs of the same sweep, same binary, same parameters. One reported
-**7** stall events, the other **10**. Two conclusions were drawn from the
-difference and both were wrong:
+Three runs of the same sweep, same binary, same parameters, reported
+**7**, **10** and **14** events. **A 2x range in detected count with
+nothing varied** — and the third only turned up because a voided cell was
+mined for what it could still say. Two conclusions were drawn from the
+first pair and both were wrong:
 
 - **"Position is not reproducible."** Six of seven positions were
   identical. The comparison that killed the position hypothesis had varied
@@ -866,6 +868,41 @@ lattice will find *something*, so the question is how often it finds one
 this good by chance. Here, 0 of 2,000 random draws reached the observed
 residual — which is what made it a result instead of a shape. See
 `abba-methodology.md`, "Calibrate a fit tolerance against a null".
+
+### A value that travels through a shell must be audited against THAT shell
+
+A multi-stage probe took its stage list in one environment variable,
+`|`-separated. The harness turns each `--env` into a DOS `SET` line, and
+**COMMAND.COM reads `|` as a pipe**, so the variable was truncated at the
+first stage before the program ever saw it:
+
+```
+FSPROBE_SEQ=SMARTDRV /S|SMARTDRV C- ;SMARTDRV /S|...
+                        ^ everything from here silently lost
+```
+
+The probe then ran stage one, swept once, and exited zero. **A complete,
+internally consistent, entirely plausible single-arm result, with no
+error anywhere in it** — from a cell that was supposed to run four arms.
+Nothing in the output announces the three missing stages.
+
+**Audit a delimiter against the interpreter it actually passes through,
+not against the one you wrote the program in.** On COMMAND.COM that
+means `|`, `<`, `>` and `%` at minimum. The value crossed a host shell, a
+transfer, a DOS `SET` and a C `getenv` — four parsers, and it only had to
+be wrong in one.
+
+**Changing the separator is the workaround. The fix is a self-describing
+count.** Have the caller pass the number of stages it intends and have
+the program assert the number it parsed against it, refusing to run
+otherwise. That catches this bug, and it catches the next delimiter that
+turns out to be special in a layer nobody audited — which the separator
+change by itself does not. The general form: **any structured value
+crossing a parser boundary should carry its own element count.**
+
+This is the same shape as `### A counter reading zero must distinguish
+"false" from "never ran"`. Truncation and absence produce identical
+output, and only an explicit expectation can tell them apart.
 
 ### Read the machine's own configuration before probing the device
 
