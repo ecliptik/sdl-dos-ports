@@ -27,12 +27,15 @@ real hardware):
     It gave overwrites=0 on 5 Days (OVW2, OVW4), but AGS Quest (music is
     SB PCM) still showed overwrites=1, peak 789/743 = capacity plus one
     46 ms chunk, in every run -- the WaitDevice-yield path above. Those
-    AGS Quest runs came from the screen-equality gate, which ran with
-    DOSBox-X's SB switched off (the ISR never drains, so the ring fills
-    once and stays full); the same gate, before any guard, read
-    1237-3350 overwrites per run and peak fill 50-148 s. Those sizes
-    reflect the non-draining ring, not a real device; the single
-    residual write past a full ring is what located the second path.
+    AGS Quest runs came from the screen-equality gate; the same gate,
+    before any guard, read 1237-3350 overwrites per run and peak fill
+    50-148 s. (Corrected 2026-09-23: this message first said the gate
+    ran with DOSBox-X's SB switched off. It did not -- its freeze-capture
+    runs are interactive, never -silent, and their manifests show
+    pcm_irqs 193-249, so the SB was playing, with detection skipped.
+    The fill sizes are real mixer-speed overrun of a draining ring.)
+    The single residual write past a full ring is what located the
+    second path.
     The check has to sit where both writers pass under the lock.
   - This version (cells SBL1-SBL4, SB live): overwrites=0 and
     ring_max_ms <= 743 in every run, including AGS Quest SB PCM music
