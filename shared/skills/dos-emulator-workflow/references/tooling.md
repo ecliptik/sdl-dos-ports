@@ -193,3 +193,46 @@ global kill has aborted a live, unrelated review more than once. Source
 `dosbox-teardown.sh` and call `dbx_kill_conf "$CONF"` (conf-scoped,
 comm-filtered so it can never self-kill the calling shell) instead of
 reaching for `pkill` directly in any new script.
+
+## The host-wide DOSBox-X lock: `/tmp/dos-port-dosbox.lock`
+
+**Rule:** timing-, rate- and screen-dependent DOSBox-X runs are
+EXCLUSIVE. DOSBox-X at `cycles=max` tracks host wall-clock, so a second
+instance on the same box changes what such a run measures: MIDI
+lateness, silent IRQs, ring fill, tick rates, device-paced clip ends,
+and a freeze capture's timing. That is also why concurrent lab runs make
+timing cells non-comparable. Runs whose result is a count unaffected by
+host load (a `-silent` smoke test, boot-to-banner, a build probe) can be
+SHARED.
+
+- **`dosbox-run.sh`** takes `flock` on the lock for the life of its
+  DOSBox-X.
+  - Default: EXCLUSIVE with `--sb-live` or `--interactive` (the mode
+    freeze-capture gates use), SHARED otherwise.
+  - Override with `--lock shared|exclusive|none` or `DOSBOX_LOCK_MODE`.
+  - It waits `DOSBOX_LOCK_WAIT` seconds (default 3600), then exits 75.
+  - The holder is written to `/tmp/dos-port-dosbox.lock.who`. A waiter
+    prints it; it shows the last holder, not necessarily the current one.
+- **A multi-run tool** (a gate, an ABBA series, `ratchet.sh`) takes the
+  lock EXCLUSIVE once around the whole series, with `flock -x` on the
+  same file, and exports `DOSBOX_LOCK_HELD=1`. The `dosbox-run.sh` calls
+  inside it then skip the lock. A child that opens its own fd and asks
+  again would deadlock against its parent.
+- **`ratchet.sh`** holds it EXCLUSIVE per unit (each run, own-command
+  check and control), not for its whole invocation, so other work can
+  interleave between units.
+  - It takes the lock before its `ps` quiet-wait, so no lock-honouring
+    run can start inside the quiet window.
+  - The quiet-wait stays as a fallback while any launcher on the box
+    does not take the lock yet (a port still on an older subtree pin, a
+    harness that calls `dosbox-x` directly). `--no-host-wait` drops it
+    once they all do.
+- **`dosbox-launch.sh` takes no lock.** An interactive review window can
+  stay open for hours and would stall every gate. It runs on its own
+  display (`:0`), and a human watching is not a measurement.
+- **Display isolation is a separate requirement, not a lock:** every
+  capture tool must track its own DOSBox-X (pid or stage) and grab only
+  its own display. Never pick "the" `dosbox-x` out of `ps`: that was the
+  root cause of an `--sb-live` run corrupting a gate's frames. Kill only
+  your own pid or your own display (`dbx_kill_display` in
+  `dosbox-teardown.sh`), never `pkill -x dosbox-x`.

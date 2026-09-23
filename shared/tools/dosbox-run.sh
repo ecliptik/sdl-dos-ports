@@ -22,6 +22,14 @@
 # Interactive mode (opens the window -- prefer dosbox-launch.sh for playtest):
 #   tools/dosbox-run.sh --exe build/hello.exe --interactive
 #
+# HOST-WIDE LOCK: every run takes flock on /tmp/dos-port-dosbox.lock for the
+# life of its DOSBox-X -- EXCLUSIVE for --sb-live and --interactive runs,
+# SHARED otherwise. DOSBox-X at cycles=max tracks host wall-clock, so a
+# second instance changes what a timing-, rate- or screen-dependent run
+# measures; those need the host to themselves, while plain -silent runs
+# whose result is a count can share it. See --lock below and the lock
+# section of shared/skills/dos-emulator-workflow/references/tooling.md.
+#
 # DOS has no LFN support. Filenames passed via --include are staged to C:\
 # with uppercased basenames; the exe is also uppercased. If you need the
 # exe to reference other files, they must be 8.3 and on C:\.
@@ -45,13 +53,14 @@ ENVS=() # --env KEY=VALUE, repeatable -- see usage below
 # don't always honor `2>&1` cleanly -- prefer printf-to-stdout in tests where possible.
 MERGE_STDERR=0
 SB_LIVE=0 # --sb-live: emulated SB really plays (see header)
+LOCK_MODE="${DOSBOX_LOCK_MODE:-}" # --lock shared|exclusive|none (default by run type)
 CWSDPMI="${CWSDPMI:-$SCRIPT_DIR/../vendor/cwsdpmi/cwsdpmi.exe}"
 
 usage() {
   cat <<'USAGE'
 Usage: dosbox-run.sh --exe PATH [--args "..."] [--stdout PATH] [--include PATH]...
                      [--fast | --conf PATH] [--interactive] [--keep-stage] [--merge-stderr]
-                     [--sb-live]
+                     [--sb-live] [--lock shared|exclusive|none]
 
   --exe PATH         DOS executable to run (required). Basename is placed at C:\.
   --args "..."       Arguments passed to the exe (quoted as a single string).
@@ -94,6 +103,17 @@ Usage: dosbox-run.sh --exe PATH [--args "..."] [--stdout PATH] [--include PATH].
                      should mean something. Clip timing becomes device-paced, so
                      a run that waits on sounds is no longer tick-deterministic
                      across two runs -- keep screen-equality A/B rows sound-off.
+  --lock MODE        Host-wide lock on /tmp/dos-port-dosbox.lock (flock), held
+                     while DOSBox-X runs. Default: exclusive with --sb-live or
+                     --interactive (timing/screen-dependent), shared otherwise.
+                     "none" skips it (only for a caller that knows why).
+                     Env: DOSBOX_LOCK_MODE (same values), DOSBOX_LOCK_WAIT
+                     (seconds to wait, default 3600; then exit 75),
+                     DOSBOX_LOCK_FILE (default /tmp/dos-port-dosbox.lock),
+                     DOSBOX_LOCK_HELD=1 (a parent -- a gate, an ABBA series,
+                     ratchet.sh -- already holds the lock exclusively around
+                     this call: don't take it again, which would deadlock).
+                     The holder is written to <lockfile>.who.
   -h, --help         Show this help.
 USAGE
 }
@@ -111,6 +131,7 @@ while [[ $# -gt 0 ]]; do
     --merge-stderr) MERGE_STDERR=1; shift ;;
     --env)         ENVS+=("$2"); shift 2 ;;
     --sb-live)     SB_LIVE=1; shift ;;
+    --lock)        LOCK_MODE="$2"; shift 2 ;;
     -h|--help)     usage; exit 0 ;;
     *) echo "dosbox-run.sh: unknown arg: $1" >&2; usage; exit 2 ;;
   esac
@@ -217,6 +238,34 @@ esac
   done
   printf '%s' "$INVOKE_LINE"
 } > "$STAGE/RUN.BAT"
+
+# Host-wide lock ------------------------------------------------------------
+# Taken as late as possible (staging above needs no lock) and held by fd 8
+# until this script exits; the dosbox-x child inherits the fd, so if this
+# script is killed while DOSBox-X lives on, the lock stays held until
+# DOSBox-X is gone too -- which is exactly what it protects.
+if [[ -z "$LOCK_MODE" ]]; then
+  if [[ "$SB_LIVE" == "1" || "$INTERACTIVE" == "1" ]]; then LOCK_MODE=exclusive; else LOCK_MODE=shared; fi
+fi
+case "$LOCK_MODE" in shared|exclusive|none) ;; *) echo "dosbox-run.sh: --lock must be shared, exclusive or none" >&2; exit 2 ;; esac
+if [[ "${DOSBOX_LOCK_HELD:-0}" == "1" ]]; then
+  LOCK_MODE=none   # the caller holds it exclusively around us
+fi
+if [[ "$LOCK_MODE" != "none" ]]; then
+  LOCK_FILE="${DOSBOX_LOCK_FILE:-/tmp/dos-port-dosbox.lock}"
+  LOCK_WAIT="${DOSBOX_LOCK_WAIT:-3600}"
+  exec 8>>"$LOCK_FILE" || { echo "dosbox-run.sh: cannot open $LOCK_FILE" >&2; exit 75; }
+  if [[ "$LOCK_MODE" == "exclusive" ]]; then FLOCK_OPT=-x; else FLOCK_OPT=-s; fi
+  if ! flock -n "$FLOCK_OPT" 8; then
+    echo "dosbox-run.sh: waiting (up to ${LOCK_WAIT}s) for the $LOCK_MODE DOSBox-X lock; last holder: $(cat "$LOCK_FILE.who" 2>/dev/null || echo unknown)" >&2
+    if ! flock -w "$LOCK_WAIT" "$FLOCK_OPT" 8; then
+      echo "dosbox-run.sh: DOSBox-X lock still busy after ${LOCK_WAIT}s; not running" >&2
+      exit 75
+    fi
+  fi
+  printf 'pid=%s tool=dosbox-run.sh mode=%s exe=%s since=%s\n' "$$" "$LOCK_MODE" "$(basename "$EXE")" \
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$LOCK_FILE.who" 2>/dev/null || true
+fi
 
 # Invoke DOSBox-X -----------------------------------------------------------
 DBX_ARGS=(-conf "$CONF" -nopromptfolder
