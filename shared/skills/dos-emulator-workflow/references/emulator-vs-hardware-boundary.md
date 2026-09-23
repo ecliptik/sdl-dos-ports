@@ -69,10 +69,13 @@ Sometimes the only way to get useful signal out of DOSBox-X for a given
 subsystem is to explicitly work around a place where its emulation
 diverges from real hardware -- `SDL_DOS_AUDIO_SB_SKIP_DETECTION` (see
 `tooling.md`) is the concrete example already baked into this hub's own
-shipped confs: real-hardware-validated SB16 detection logic never
-succeeds under DOSBox-X's emulated DSP-reset behavior, so the shipped
-confs skip detection and trust the configured `BLASTER` line instead,
-purely so audio can init under emulation at all.
+runner: it skips detection and trusts the configured `BLASTER` line.
+**Corrected 2026-09-22:** the "emulator limitation" it worked around was
+our own runner's `-silent` flag switching the emulated Sound Blaster
+off. DOSBox-X's SB answers detection fine without it (`tooling.md`).
+That is the second lesson here: before building an escape hatch around
+"the emulator can't do X", rule out your own invocation, then write
+down which experiment showed the limitation.
 
 **The rule this generalizes to**: any env var, conf setting, or code path
 that exists specifically to work around an emulator limitation must be

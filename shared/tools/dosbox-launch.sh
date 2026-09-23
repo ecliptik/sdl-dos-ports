@@ -122,12 +122,14 @@ export DISPLAY="${DOSBOX_DISPLAY:-:0}"
 # binaries that aren't yet staged. The BLASTER env var matches the
 # [sblaster] block in dosbox-x.conf; SDL3-DOS reads it.
 #
-# SDL_DOS_AUDIO_SB_SKIP_DETECTION -- escape hatch from patches/SDL/0001. The
-# real-HW timing fixes in that patch are correct, but DOSBox-X's emulated SB16
-# returns 0xFF on the DSP detection read regardless of timing tuning. Setting
-# this env var tells SDL3-DOS to skip detection and trust BLASTER, which is the
-# only way audio inits in the emulator. Real hardware (g2k Phase 8) MUST NOT
-# set this -- it would mask a legitimate Vibra16S regression.
+# SDL_DOS_AUDIO_SB_SKIP_DETECTION -- escape hatch from patches/SDL/0001.
+# CORRECTED 2026-09-22: this comment used to say DOSBox-X's emulated SB16
+# returns 0xFF on the DSP detection read regardless of timing tuning. That was
+# an artifact of dosbox-run.sh's `-silent`, which switches the emulated SB off;
+# this launcher never passes -silent, and here detection passes (dsp_ver=4,
+# IRQ-5 firing) with or without the skip. It stays set for now only to keep
+# interactive runs unchanged; it is not needed. Real hardware MUST NOT set it
+# -- it would mask a real card-detection failure.
 
 if [[ "$STAGE" == "1" ]]; then
   echo "Running 'make stage' to populate build/stage/..."

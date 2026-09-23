@@ -80,13 +80,32 @@ capture-mechanism requirement.
 
 ## Emulator-only escape hatches baked into the shipped confs
 
-The shipped `dosbox-x*.conf` and `dosbox-run.sh`'s generated `RUN.BAT`
-set `SDL_DOS_AUDIO_SB_SKIP_DETECTION=1` unconditionally. This exists
-because DOSBox-X's emulated SB16 returns a fixed failure value on the DSP
-detection read regardless of timing tuning, so without this env var,
-SDL3-DOS's real-hardware-validated SB16 detection logic never succeeds
-under emulation at all -- audio simply doesn't init. **This is an
-emulator-only escape hatch.** See
+`dosbox-run.sh`'s generated `RUN.BAT` (default mode) and
+`dosbox-launch.sh` set `SDL_DOS_AUDIO_SB_SKIP_DETECTION=1`. **This is an
+emulator-only escape hatch.**
+
+**Corrected 2026-09-22 -- the reason this section used to give was
+wrong.** It said DOSBox-X's emulated SB16 returns a fixed failure value
+on the DSP detection read regardless of timing tuning. The real cause is
+`dosbox-run.sh`'s own `-silent` flag, which switches the emulated Sound
+Blaster off entirely: the DSP answers nothing (0xFF) and no IRQ ever
+fires. Without `-silent`, detection passes (`dsp_ver=4`, IRQ 5 firing)
+with or without the skip, on both shipped confs (hub AUDOPEN probe plus
+dosags DSPV1-3). The consequence that matters: **in `dosbox-run.sh`'s
+default mode the skip makes the driver open a device that never plays.**
+Mixer-side figures are real, but device-side ones (IRQ counts, ring
+drain, clip timing, anything "audible") mean nothing. dosags reported
+"all SB paths play" and a ring-fill anomaly from exactly such runs
+before this was found.
+
+**For an audio result that means something, pass `--sb-live`.** It drops
+`-silent`, runs under a private `xvfb-run -a` display (or
+`DOSBOX_DISPLAY`), sends host audio to SDL's dummy driver, and leaves
+detection on, as on real hardware. Clip timing then becomes device-paced,
+so a run whose script waits on a sound is no longer tick-identical across
+two runs. Keep screen-equality A/B rows sound-off rather than live.
+
+See
 `references/emulator-vs-hardware-boundary.md` for the general rule this
 is an instance of, and why setting it on real hardware would actively
 mask a real regression rather than just being redundant.

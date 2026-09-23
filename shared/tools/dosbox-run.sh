@@ -5,6 +5,16 @@
 # a temp C:\, writes a RUN.BAT that invokes the exe with stdout redirected to
 # STDOUT.TXT, runs DOSBox-X with `-silent -exit`, and copies STDOUT.TXT out.
 #
+# AUDIO: under `-silent` DOSBox-X's emulated Sound Blaster does not answer at
+# all (DSP reads 0xFF, no IRQ ever fires). The default mode therefore sets
+# SDL_DOS_AUDIO_SB_SKIP_DETECTION=1 so audio init still "succeeds" -- but the
+# device never plays: any audio figure from a default-mode run is mixer-side
+# only. Pass --sb-live for a run where the SB really plays (no -silent, a
+# private Xvfb display, host audio to SDL's dummy driver, detection ON exactly
+# as on real hardware). Proven 2026-09-22 with the hub's AUDOPEN probe and
+# dosags DSPV1-3: -silent -> 0xFF / 0 IRQs; no -silent -> dsp_ver=4, IRQ-5
+# firing, with or without skip-detection, on both shipped confs.
+#
 # Typical use:
 #   tools/dosbox-run.sh --exe build/hello.exe --stdout /tmp/hello.out
 #   tools/dosbox-run.sh --exe build/hello.exe --fast
@@ -34,12 +44,14 @@ ENVS=() # --env KEY=VALUE, repeatable -- see usage below
 # --merge-stderr: capture stderr too (e.g. SDL_Log goes there). DOSBox-X / DOS shells
 # don't always honor `2>&1` cleanly -- prefer printf-to-stdout in tests where possible.
 MERGE_STDERR=0
+SB_LIVE=0 # --sb-live: emulated SB really plays (see header)
 CWSDPMI="${CWSDPMI:-$SCRIPT_DIR/../vendor/cwsdpmi/cwsdpmi.exe}"
 
 usage() {
   cat <<'USAGE'
 Usage: dosbox-run.sh --exe PATH [--args "..."] [--stdout PATH] [--include PATH]...
                      [--fast | --conf PATH] [--interactive] [--keep-stage] [--merge-stderr]
+                     [--sb-live]
 
   --exe PATH         DOS executable to run (required). Basename is placed at C:\.
   --args "..."       Arguments passed to the exe (quoted as a single string).
@@ -72,6 +84,16 @@ Usage: dosbox-run.sh --exe PATH [--args "..."] [--stdout PATH] [--include PATH].
                      RUN.BAT by hand for exactly this); mirrors tests/harness/
                      run-rig.sh's own --env flag (real-hardware side) for the
                      DOSBox-X side.
+  --sb-live          Run with DOSBox-X's Sound Blaster actually playing: drop
+                     `-silent` (which disables the emulated SB outright), run
+                     under a private `xvfb-run -a` display (or DOSBOX_DISPLAY if
+                     set), send host audio to SDL_AUDIODRIVER=dummy unless set,
+                     and do NOT set SDL_DOS_AUDIO_SB_SKIP_DETECTION, so SB
+                     detection runs as it does on real hardware. Use it for any
+                     run whose audio figures (IRQ counts, ring fill, clip timing)
+                     should mean something. Clip timing becomes device-paced, so
+                     a run that waits on sounds is no longer tick-deterministic
+                     across two runs -- keep screen-equality A/B rows sound-off.
   -h, --help         Show this help.
 USAGE
 }
@@ -88,6 +110,7 @@ while [[ $# -gt 0 ]]; do
     --keep-stage)  KEEP_STAGE=1; shift ;;
     --merge-stderr) MERGE_STDERR=1; shift ;;
     --env)         ENVS+=("$2"); shift 2 ;;
+    --sb-live)     SB_LIVE=1; shift ;;
     -h|--help)     usage; exit 0 ;;
     *) echo "dosbox-run.sh: unknown arg: $1" >&2; usage; exit 2 ;;
   esac
@@ -178,11 +201,16 @@ esac
   printf '@ECHO OFF\r\n'
   printf 'SET BLASTER=A220 I5 D1 H5 T6\r\n'
   # SDL_DOS_AUDIO_SB_SKIP_DETECTION -- escape hatch from patches/SDL/0001.
-  # DOSBox-X's emulated SB16 returns 0xFF on the DSP detection read regardless
-  # of timing tuning, so SDL3-DOS audio init fails without this in the emulator.
-  # Real hardware (g2k Phase 8) MUST NOT set this -- would mask Vibra16S regressions.
-  # See tools/dosbox-launch.sh for the matching parity-config injection.
-  printf 'SET SDL_DOS_AUDIO_SB_SKIP_DETECTION=1\r\n'
+  # Needed ONLY because the default mode runs `-silent`, which switches the
+  # emulated SB off (DSP reads 0xFF, no IRQ). CORRECTED 2026-09-22: this
+  # comment used to say DOSBox-X's SB16 returns 0xFF "regardless of timing
+  # tuning"; that was the -silent artifact -- without -silent detection passes
+  # (dsp_ver=4). With skip set here the driver opens a device that never plays.
+  # --sb-live leaves it unset. Real hardware MUST NOT set it (it would mask a
+  # real card-detection failure).
+  if [[ "$SB_LIVE" != "1" ]]; then
+    printf 'SET SDL_DOS_AUDIO_SB_SKIP_DETECTION=1\r\n'
+  fi
   for e in "${ENVS[@]:-}"; do
     [[ -z "$e" ]] && continue
     printf 'SET %s\r\n' "$e"
@@ -200,6 +228,27 @@ if [[ "$INTERACTIVE" == "1" ]]; then
   # Visible run -- user drives; don't auto-exit.
   export DISPLAY="${DOSBOX_DISPLAY:-:0}"
   dosbox-x "${DBX_ARGS[@]}"
+elif [[ "$SB_LIVE" == "1" ]]; then
+  # No -silent: it disables the emulated SB. Needs a display instead.
+  DBX_ARGS+=(-c "EXIT" -exit -nogui -nomenu)
+  export SDL_AUDIODRIVER="${SDL_AUDIODRIVER:-dummy}"
+  if [[ -n "${DOSBOX_DISPLAY:-}" ]]; then
+    DISPLAY="$DOSBOX_DISPLAY" dosbox-x "${DBX_ARGS[@]}" >/dev/null 2>&1 || {
+      rc=$?
+      echo "dosbox-run.sh: dosbox-x exited non-zero ($rc)" >&2
+      exit $rc
+    }
+  else
+    if ! command -v xvfb-run >/dev/null 2>&1; then
+      echo "dosbox-run.sh: --sb-live needs xvfb-run (or DOSBOX_DISPLAY set)" >&2
+      exit 2
+    fi
+    xvfb-run -a dosbox-x "${DBX_ARGS[@]}" >/dev/null 2>&1 || {
+      rc=$?
+      echo "dosbox-run.sh: dosbox-x exited non-zero ($rc)" >&2
+      exit $rc
+    }
+  fi
 else
   DBX_ARGS+=(-c "EXIT" -silent -exit -nogui -nomenu)
   dosbox-x "${DBX_ARGS[@]}" >/dev/null 2>&1 || {
