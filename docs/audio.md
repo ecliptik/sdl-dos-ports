@@ -217,6 +217,20 @@ verification than what's noted here. Organized architecture-wide first
   DJGPP; a glibc/modern-platform build of the same bug would have just
   misprinted, not crashed, so this class of bug can survive host-side
   testing and only surface as a "hardware crash" on the DOS target.
+- **MIDI dispatched from the main loop is only as smooth as the frame
+  rate** (proven on real hardware, dosags 2026-09-23). A scheduler ticked
+  once per game-loop iteration plays every event due by the wall clock,
+  all at once. When rendering is slow, the fixed-timestep catch-up ticks
+  run back to back, so events go out in one batch per rendered frame. On
+  a 486DX2-66 at 640x480, a 6 fps intro sent notes in clumps about
+  157 ms apart: 465 of 483 lateness gaps were 150-200 ms, and 72% of
+  events were more than 50 ms late. The average tempo was still right,
+  within 1% against the RTC. The operator heard it as music that
+  "speeds up randomly". Main-loop stalls add bursts on top. Tick MIDI
+  from something steady, such as the SB IRQ hook (`SDL_DOSMidiTickRegister`,
+  `0072`, which doskutsu uses) or a timer that doesn't disturb `uclock()`
+  (see the PIT hazard above). Measure it with a lateness field (due time
+  against dispatch time), not by ear.
 - **No graceful silent-degrade by default.** With no usable sound device,
   `SDL_INIT_AUDIO` failing is fatal by default — the process exits clean
   to DOS rather than continuing without sound. An "audio device absent,
@@ -286,6 +300,36 @@ verification than what's noted here. Organized architecture-wide first
   zero IRQs ever fire — looks exactly like a driver bug, is actually a
   config/hardware mismatch. `BLASTER` I/D/H values are load-bearing
   hardware facts, not preferences to tune.
+- **The silence gate shortens sounds that contain silence** (proven on
+  real hardware, dosags 2026-09-22/23). `0054`'s "Shape A" check drops
+  every mixed chunk that is all silence in the *device* format, and it
+  doesn't know whether a sound is still playing. A clip's own silent
+  stretches were dropped, so each effect came out short: 9.0 s instead of
+  9.3 s, and 3.1 s instead of 3.5 s, on a PicoGUS. The card also idled
+  through those stretches, which shows up as bursts of silent IRQs. On
+  the 8-bit path it also drops quiet audio: anything under about -48 dBFS
+  converts to all 0x80, which the check reads as silence. The fix is
+  opt-in: `0143`'s `SDL_DOSAudioSetContentActive(bool)`, which the port
+  holds true while a sound is still owed to the device, so silent chunks
+  are written instead of skipped. A port that never calls it keeps the
+  old behaviour. A port whose sounds contain silence should call it. The
+  witness is chunk accounting: IRQs that played data must equal the
+  chunks the played clips need. It came out exact on hardware with the
+  fix (1432/1432, 1554/1554).
+- **`SDL_DOSAudioPump()` could write over audio the card hadn't played
+  yet.** The pump iterates without checking for room, and the background
+  thread's `WaitDevice` checks for room without holding the lock. Either
+  writer could lap the ISR's read cursor, so a clip was consumed at
+  mixing speed. `0142` moves the room check into `GetDeviceBuf`, which
+  both writers pass through under the lock. `0141`'s overwrite counter is
+  the witness. It read 38 and 19 overwrites on DOSBox-X before the fix, 0
+  after, and 0 on real hardware since.
+- **"`SDL/0063` WaitDevice ring-drain timeout -- IRQ-5 wedged" can be
+  false.** It also fires when the main thread's pump keeps the ring full
+  for more than a second, with IRQs firing normally (hub probe for
+  `0142`). Before `0142` that timeout was a third way to write into a
+  full ring. Don't read the message as proof the IRQ stopped; check the
+  IRQ counters.
 
 ### WaveBlaster / MIDI daughterboard
 
