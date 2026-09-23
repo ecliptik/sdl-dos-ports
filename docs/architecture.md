@@ -59,6 +59,33 @@ scripting VMs — not video-mode or audio-hardware plumbing).
 | DJGPP / CWSDPMI | toolchain, not vendored | not patched |
 | MS-DOS | target OS | not patched |
 
+## Interrupt handlers and DPMI locking
+
+Anything an interrupt handler touches has to be locked in memory, because
+CWSDPMI can page. When physical memory runs out it swaps to
+`c:\cwsdpmi.swp`, and its own doc lists a page fault in a hardware
+interrupt as fatal ("lock all pages!"). **Found 2026-09-23 while porting
+dosags' MIDI fix:** the series' per-function locks,
+`DOS_LockCode(func, func_End)`, never covered the Sound Blaster handler.
+Under DJGPP gcc 12 -O2 the `_End` markers are laid out *before* their
+functions (handler -64 bytes, ring-copy helper -3504), and CWSDPMI still
+returned success for the wrapped lengths. Correct ranges wouldn't have
+been enough anyway: the handler calls `memcpy`, `__udivdi3`, a sibling
+mixer and a port callback. `shared/patches/sdl3-dos/0145` fixes it by
+locking the whole code image, `[start, etext)` from the linker, once
+before any handler is installed. It also logs any per-function range
+of length zero or less, as a permanent witness. The cost is that about
+1.5 MB of code is never swappable. The bug has never been seen failing;
+it only matters when CWSDPMI actually pages, as on a low-RAM machine or
+a big data set. **Rules for new ISR code in any port:**
+- don't trust a `func` / `func_End` range; function order is the
+  compiler's choice;
+- lock the data the handler reads (including flags tested on the hot
+  path) at install time, not first use;
+- keep the handler to integer work and port I/O: no malloc, printf,
+  FPU, `uclock()` or SDL calls. This is `0144`'s contract, and doskutsu's
+  `0072` works within it too.
+
 ## Seams that matter
 
 Each seam is a place ports have historically hit friction — see the
