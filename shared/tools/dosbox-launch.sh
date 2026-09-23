@@ -110,6 +110,13 @@ if [[ -n "$(dbx_pids_on_display "$LAUNCH_DISPLAY")" ]]; then
   echo "dosbox-x is already running on $LAUNCH_DISPLAY. Use --kill-first to restart it." >&2
   exit 1
 fi
+# A DOSBox-X from another sandbox or user is invisible to the pid check above
+# (its environ is unreadable) but its window is on the display. It is not
+# ours to kill, even with --kill-first: refuse.
+if dbx_window_on_display "$LAUNCH_DISPLAY"; then
+  echo "a DOSBox-X window is already on $LAUNCH_DISPLAY and it is not one this session can identify (another sandbox or user): not launching and not killing it. Use another DOSBOX_DISPLAY, or stop that run." >&2
+  exit 1
+fi
 
 if [[ ! -f "$CONF" ]]; then
   echo "dosbox-launch.sh: conf not found: $CONF" >&2

@@ -87,3 +87,17 @@ dbx_kill_display() {
   done
   return 0
 }
+
+# dbx_window_on_display <display>
+#   Exit 0 if the X server on <display> has a top-level window whose WM_CLASS
+#   is dosbox-x -- whoever owns it. dbx_pids_on_display cannot see a DOSBox-X
+#   started from another sandbox or user (its /proc environ is unreadable),
+#   but its window is on the display all the same, and it would land in any
+#   root-window capture there. The X server is the authority on what is on a
+#   display. Exit 1 if there is none, or no X server answers.
+dbx_window_on_display() {
+  local disp="$1"
+  [[ -n "$disp" ]] || return 1
+  command -v xwininfo >/dev/null 2>&1 || return 1
+  xwininfo -display "$disp" -root -children 2>/dev/null | grep -q '("dosbox-x"'
+}
