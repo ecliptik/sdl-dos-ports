@@ -144,7 +144,7 @@ game-specific" rule — the cases above are specifically about a port
 discovering something true about the *shared* platform layer while
 working on its own engine, not about promoting engine code itself.
 
-## Two gotchas beyond the basics above
+## Gotchas beyond the basics above
 
 - **`LC_ALL=C` when enumerating or sorting patch files.** Locale-aware
   collation (the shell's default) treats `-` as punctuation promoted next
@@ -168,6 +168,16 @@ working on its own engine, not about promoting engine code itself.
   before generating the new patch, or the resulting file will fail to
   apply cleanly (or worse, apply with silently wrong context) for the
   next person who runs the series from scratch.
+- **A rolled-back vendor tree does not rebuild by itself unless the build
+  depends on the tree's state.** Checking `vendor/SDL` out one commit back
+  (to build a control without the newest patch), forward again, or editing
+  it by hand changes no patch file, so a library that depends only on the
+  patch files is never rebuilt. The "control" is then the real library with
+  a different build stamp; dosags only caught it because the control had to
+  fail and didn't. `shared/build/sdl3-dos.mk` makes each SDL library depend
+  on `build/vendor-state/<vendor>.state`, which is rewritten only when the
+  tree's HEAD or uncommitted diff changes. A port with its own build rules
+  for a vendored library needs the same dependency.
 - **Uncommitted vendor-tree work is one `apply-patches.sh` run away from
   gone.** `apply-patches.sh` hard-resets a vendor tree to its pinned SHA
   before applying the patch series -- routine, and destructive to
