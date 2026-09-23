@@ -282,8 +282,12 @@ SHARED.
     freeze-capture gates use), SHARED otherwise.
   - Override with `--lock shared|exclusive|none` or `DOSBOX_LOCK_MODE`.
   - It waits `DOSBOX_LOCK_WAIT` seconds (default 3600), then exits 75.
-  - The holder is written to `/tmp/dos-port-dosbox.lock.who`. A waiter
-    prints it; it shows the last holder, not necessarily the current one.
+  - The holder is written to `/tmp/dos-port-dosbox.lock.who` and removed
+    on release. A waiter prints it marked `(alive)` or
+    `(STALE: pid N is not running)`: a holder that was killed never
+    releases, so the recorded pid is checked. `.who` is informational,
+    and the flock itself is the truth. To ask "is the lock free?", test it
+    (`flock -n -x /tmp/dos-port-dosbox.lock true`); never read `.who`.
 - **A multi-run tool** (a gate, an ABBA series, `ratchet.sh`) takes the
   lock EXCLUSIVE once around the whole series, with `flock -x` on the
   same file, and exports `DOSBOX_LOCK_HELD=1`. The `dosbox-run.sh` calls

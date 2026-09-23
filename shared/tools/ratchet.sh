@@ -71,7 +71,9 @@
 #     DOSBOX_LOCK_HELD=1 in the unit's environment so the dosbox-run.sh calls
 #     inside it do not take the lock again (that would deadlock). dosbox-run.sh
 #     takes the same lock (shared for plain runs, exclusive for --sb-live and
-#     --interactive), so lock-honouring runs never overlap a unit.
+#     --interactive), so lock-honouring runs never overlap a unit. The holder
+#     is recorded in <lock>.who (removed on release; a waiter's message marks
+#     it alive or STALE).
 #   - then, as a FALLBACK for launchers that do not take the lock yet: wait
 #     until no dosbox-x has run anywhere on the host for --quiet-for seconds in
 #     a row (default 15); a capture watcher that finds its stage as "the"
@@ -414,6 +416,23 @@ on_signal() {
 }
 trap on_signal INT TERM
 
+# .who is informational -- the flock is the truth: readers mark the recorded
+# holder alive or STALE; a unit removes it on release if it still names us.
+who_describe() {   # $1 = .who file
+    local line pid
+    line="$(head -n 1 "$1" 2>/dev/null)" || true
+    [[ -n "$line" ]] || { echo "none recorded"; return 0; }
+    pid="${line#pid=}"; pid="${pid%% *}"
+    if [[ "$pid" =~ ^[0-9]+$ && -d "/proc/$pid" ]]; then echo "$line (alive)"
+    else echo "$line (STALE: pid $pid is not running)"; fi
+}
+who_clear() {      # $1 = .who file: remove it if it still names this process
+    local line
+    line="$(head -n 1 "$1" 2>/dev/null)" || return 0
+    [[ "$line" == "pid=$$ "* ]] && rm -f "$1"
+    return 0
+}
+
 WAIT_DEADLINE=0
 host_quiet() {     # 0 = no dosbox-x on the host for QUIET_FOR s in a row
     (( HOST_WAIT )) || return 0
@@ -449,12 +468,12 @@ run_unit() {
             U_WAIT=$(( $(date +%s) - w0 ))
             if (( INTERRUPTED )); then U_STATUS="INTERRUPTED"; return; fi
             U_STATUS="BLOCKED"
-            echo "ratchet.sh: $label BLOCKED: DOSBox-X lock $DBX_LOCK busy for ${BUSY_WAIT}s; holder: $(cat "$DBX_LOCK.who" 2>/dev/null || echo unknown)" >> "$dir/output.txt"
+            echo "ratchet.sh: $label BLOCKED: DOSBox-X lock $DBX_LOCK busy for ${BUSY_WAIT}s; last recorded holder: $(who_describe "$DBX_LOCK.who")" >> "$dir/output.txt"
             return
         fi
         printf 'pid=%s tool=ratchet.sh mode=exclusive unit=%s since=%s\n' "$$" "$label" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$DBX_LOCK.who" 2>/dev/null
         if ! host_quiet; then
-            exec 8>&-
+            who_clear "$DBX_LOCK.who"; exec 8>&-
             U_WAIT=$(( $(date +%s) - w0 ))
             if (( INTERRUPTED )); then U_STATUS="INTERRUPTED"; return; fi
             U_STATUS="BLOCKED"
@@ -496,7 +515,9 @@ run_unit() {
     [[ -n "$(ps -eo pid=,sid= | awk -v s="$CUR_SID" '$2 == s { print $1 }')" ]] && kill_session "$CUR_SID"
     CUR_SID=""
     stop_xvfb
-    [[ -z "$nolock" ]] && exec 8>&-  # release the DOSBox-X lock
+    if [[ -z "$nolock" ]]; then       # release the DOSBox-X lock
+        who_clear "$DBX_LOCK.who"; exec 8>&-
+    fi
     U_SECS=$(( $(date +%s) - U_T0 ))
     if (( timed_out )); then
         U_STATUS="TIMEOUT"; echo "ratchet.sh: $label TIMEOUT after ${tmo}s; session killed" >> "$dir/output.txt"
