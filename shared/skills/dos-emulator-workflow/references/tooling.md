@@ -1,7 +1,7 @@
 # DOSBox-X tooling mechanics
 
 Covers `shared/tools/dosbox-launch.sh`, `dosbox-run.sh`,
-`dosbox-teardown.sh`, and the three `.conf` variants. All three scripts
+`dosbox-teardown.sh`, `ratchet.sh`, and the three `.conf` variants. All four scripts
 are already fully generic (usable as-is by any port) -- this is a guide
 to using them well, not a spec of what they do (read the scripts' own
 `--help`/header comments for the authoritative flag list, which can
@@ -193,6 +193,77 @@ global kill has aborted a live, unrelated review more than once. Source
 `dosbox-teardown.sh` and call `dbx_kill_conf "$CONF"` (conf-scoped,
 comm-filtered so it can never self-kill the calling shell) instead of
 reaching for `pkill` directly in any new script.
+
+## The ratchet: `ratchet.sh` and a port's `tests/ratchet.yaml`
+
+`shared/tools/ratchet.sh` runs a port's deterministic DOSBox-X checks and
+fails on any regression. The script's header is the format spec, and
+`shared/tools/ratchet-example.yaml` is a commented example. The file is a
+strict flat subset of YAML: still valid YAML, but parsed with awk, so the
+tool needs only bash and the usual system tools (no yq here). Its parts:
+
+- **`runs:`** -- named commands, each executed once per invocation, so a
+  multi-minute cell is not repeated for every number read from it.
+- **`checks:`** -- each reads one number, from a run (`run: <name>`) or
+  from its own `command:`:
+  - `key: overwrites` reads `overwrites=<n>`; or `regex:` with one
+    capture group.
+  - `match:` narrows the read to the lines that matter.
+  - The number is compared with a `limit` (`eq`, `le`, `ge`).
+- **`build:`** -- optional, run once before anything else.
+
+- **Exit code is the verdict.**
+  - 0: pass.
+  - 1: a non-quarantined check FAIL, ERROR or TIMEOUT, a failed control,
+    or a failed build. A hang is a regression. A missing field is a
+    failure too: ERROR means no number could be read.
+  - 2: nothing failed, but something was BLOCKED or INTERRUPTED.
+  - 3: the tool itself could not run (config error, lock held).
+- **Limits only move by review.** A value better than its limit is
+  IMPROVED. With `--propose-lower`, the tool writes
+  `tests/ratchet.yaml.proposed` beside the original and never touches the
+  real file.
+- **Controls prove a check still has power.** A check's optional
+  `control:` is a command that breaks what the check guards (a
+  `DOSAGS_BREAK_*` build, the pre-fix binary). It runs only with
+  `--controls` (on demand or weekly, not nightly). The control must make
+  the check FAIL (OK). If it passes, the check is powerless (NOPOWER); if
+  it produces no number, it proves nothing (NONUMBER). Both count as
+  failures.
+- **Quarantine is a human decision.** Every run appends to
+  `build/ratchet/state.tsv`. A check with 2+ non-passing and 1+ passing
+  results in its last 10 is reported SHOULD QUARANTINE.
+  `quarantine: true` keeps it reported but not gating. A check that fails
+  every time is a regression, not a flake, and is not flagged.
+- **One unit at a time, under the lock.** Every run, own-command check
+  and control holds the host-wide DOSBox-X lock (next section)
+  EXCLUSIVE. Its `dosbox-run.sh` calls see `DOSBOX_LOCK_HELD=1` and don't
+  take it again.
+  - As a fallback for launchers that don't take the lock yet, it then
+    waits until no `dosbox-x` has run on the host for `--quiet-for`
+    seconds in a row (default 15). `--no-host-wait` drops that once
+    every launcher honours the lock.
+  - Lock plus quiet-wait give up after `--busy-wait` (900 s): BLOCKED.
+  - The timeout starts after the waits.
+  - A freeze-capture watcher that finds "the" dosbox-x in `ps` can be
+    handed the wrong screen by any concurrent instance; an `--sb-live`
+    run was caught doing it.
+- **Displays by `kind`:**
+  - `sb-live`: display variables unset, so `dosbox-run.sh --sb-live`
+    uses its own `xvfb-run -a`.
+  - `capture`: `DOSBOX_DISPLAY_NUM`/`DOSBOX_DISPLAY` exported (default
+    251, the ratchet's own number); an Xvfb is started there if none
+    answers.
+  - `plain`: no display.
+- **Unattended safety.**
+  - `flock` on `/tmp/sdl-dos-ports-ratchet.lock`: one ratchet per host.
+  - Each unit runs in its own session. On timeout the whole session
+    (DOSBox-X, xvfb-run, Xvfb) gets TERM, then KILL.
+  - SIGTERM stops the running unit and still writes the report.
+- **Output:** `build/ratchet/<run>/ratchet-report.txt` and
+  `ratchet-summary.txt` (the one line a nightly job posts); `latest`
+  points at the newest run. Don't give ratchet commands `--keep-stage`:
+  the stages pile up in `/tmp` night after night.
 
 ## The host-wide DOSBox-X lock: `/tmp/dos-port-dosbox.lock`
 
