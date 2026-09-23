@@ -117,12 +117,18 @@ Validation: DOSBox-X only; hardware confirmation pending.
         the configuration that garbles on the DreamBlaster;
       - dosags' WB cells (MIWI) therefore ran on the poll, and no run
         here or in dosags exercised kind 2 in the ISR.
-  - KNOWN LIMITATION: in ISR mode the song clock is the SB's own IRQ
-    clock, so it follows the card's actual playback rate. Against the
-    RTC it reads 0.988-0.996 on DOSBox-X, up to about 1% slow, where the
-    poll cells read 0.997-1.003. The PicoGUS SB 2.0 time constant gives
-    about -0.33%. A rate correction (slot length from uclock) is a
-    planned follow-up, not in this patch.
+  - KNOWN LIMITATION: in ISR mode a port that advances song time by
+    the nominal IRQ period follows the card's actual playback rate.
+    (Corrected 2026-09-23: this first said 0.988-0.996 on DOSBox-X and
+    about -0.33% on the PicoGUS. Both were wrong. The DOSBox-X 0.988 was
+    an error in dosags' own witness, which truncated each gap to whole
+    ms. DOSBox-X's measured period is nominal, 46436-46447 us. On real
+    hardware the PicoGUS in SB 2.0 mode at 11025 Hz measured 46127 us
+    against 46439 nominal, 0.68% fast (dosags SB5O). A port should
+    advance song time by the period measured against uclock, as dosags
+    ags 0208 does. With that, OPL3 on the 486 read 0 of 12233 writes
+    late at a 6 fps render rate, with the song clock 0.998 against the
+    RTC.)
 
 Source: dosags patches/SDL/0193 (From 097def7cde2c, committed in dosags
 dc8279f), re-derived against the hub series. One hunk's context is a
