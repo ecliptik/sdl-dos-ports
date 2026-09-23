@@ -1,4 +1,4 @@
-From 27dc98362d984f30faa60f69272fb934d14769b8 Mon Sep 17 00:00:00 2001
+From 210b6c74b78daea85b534021210c0b97adc07aef Mon Sep 17 00:00:00 2001
 From: Micheal Waltz <micheal@ecliptik.com>
 Date: Wed, 23 Sep 2026 10:39:49 -0700
 Subject: [PATCH] [SDL3-DOS] dos: patch 0144 -- deferred MIDI port writes,
@@ -70,17 +70,20 @@ Ordering and bounds:
   - CloseDevice with deferral on stops it (later writes go direct) and
     discards the queue, counted.
 
-A port that never calls SDL_DOSMidiDeferEnable (doskutsu, every
-SDL_mixer port) sees:
+Cost for a port that never calls SDL_DOSMidiDeferEnable (doskutsu's
+SDL/0072 path, every SDL_mixer port):
   - one test of a locked byte per IRQ (g_mdq_kind != 0, false);
-  - one test of a locked byte per OPL register write / MPU byte, including
-    the ones its own SDL/0072 ISR callback makes (g_mdq_kind == 1 or == 2,
-    false, so the capture call is never reached);
+  - per OPL register write / MPU byte, including the ones its own
+    SDL/0072 ISR callback makes: the inline test
+    `g_mdq_kind == k && !g_mdq_hold && ...` on two locked bytes. The
+    dosags message counts this as two tests; with deferral off,
+    g_mdq_kind == k is false and short-circuits, so one byte is read
+    and the capture call is never reached;
   - one SDL_DOSMidiDeferHold call per Detect/InitChip/Shutdown, returning
     false without touching anything.
 The SDL/0072 tick itself (hook, callback, now_ms) is not touched.
 
-Validation (all DOSBox-X; hardware confirmation pending):
+Validation: DOSBox-X only; hardware confirmation pending.
   - Hub scratch probe, dosbox-run.sh --sb-live, a conf identical to
     dosbox-x-fast.conf but oplmode=opl3, device 11025 Hz via
     SDL_DOSAudioSetDeviceFrameRate (512-frame IRQs, 46.44 ms):
@@ -97,20 +100,29 @@ Validation (all DOSBox-X; hardware confirmation pending):
         detected. The first version of this patch: 28 IRQs and 56 writes
         inside.
   - dosags (PLAN.md "MIDI TIMING FIX RESULT", ags-0207-clean
-    7d43b8e155ed), 5 Days a Stranger, OPL3:
+    7d43b8e155ed, cells MISI4/MITI4 vs MISP4/MITP4), 5 Days a Stranger,
+    OPL3:
       1.5 s stalls every 150 ticks: late_max_ms 0, 0 of 22468 writes late,
         the ISR kept writing through every stall; the poll control reached
         1560 ms.
       ~6 fps render throttle: 0 of 27112 writes late; the poll control
         had 9583 of 11686 events more than 50 ms late.
-    In isr mode the song clock is the device's IRQ clock, so it follows
-    the device rate: 0.988-0.996 of the RTC under DOSBox-X.
-  - WaveBlaster: the WB ISR path is NOT demonstrated. dosags' WB cells
-    (MIWI) ran on the main-loop poll: the cold-init MPU transport
-    defaults to the SDL/0098 320 us TX-delay (confirmed in this series'
-    code), which kind 2 refuses. Only the blind transport
-    (SDL_HINT_DOS_AUDIO_WB_TX_DELAY=0 plus SDL_HINT_DOS_AUDIO_WB_DRR_POLL=0)
-    would take it, and no run here or in dosags exercised that.
+  - OPL3 only. WaveBlaster stays on the main-loop poll, by design, and
+    the WB ISR path is NOT demonstrated:
+      - the cold-init MPU transport paces each byte with the SDL/0098
+        320 us busy-wait (the DreamBlaster input-overrun fix; this
+        series' code comment: "freeze-proof + fixes H20 garble");
+      - a busy-wait like that has no place in an ISR, so kind 2 accepts
+        only the blind transport (no status read, no delay), which is
+        the configuration that garbles on the DreamBlaster;
+      - dosags' WB cells (MIWI) therefore ran on the poll, and no run
+        here or in dosags exercised kind 2 in the ISR.
+  - KNOWN LIMITATION: in ISR mode the song clock is the SB's own IRQ
+    clock, so it follows the card's actual playback rate. Against the
+    RTC it reads 0.988-0.996 on DOSBox-X, up to about 1% slow, where the
+    poll cells read 0.997-1.003. The PicoGUS SB 2.0 time constant gives
+    about -0.33%. A rate correction (slot length from uclock) is a
+    planned follow-up, not in this patch.
 
 Source: dosags patches/SDL/0193 (From 097def7cde2c, committed in dosags
 dc8279f), re-derived against the hub series. One hunk's context is a
