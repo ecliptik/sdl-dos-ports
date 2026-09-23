@@ -9,7 +9,7 @@
 # Usage:
 #   tools/dosbox-launch.sh                         # open DOSBox-X at C:\ (repo root)
 #   tools/dosbox-launch.sh --fast                  # use dosbox-x-fast.conf
-#   tools/dosbox-launch.sh --kill-first            # kill any running instance first
+#   tools/dosbox-launch.sh --kill-first            # kill the instance on this DISPLAY first
 #   tools/dosbox-launch.sh --exe build/game.exe    # auto-run on launch
 #   tools/dosbox-launch.sh --stage                 # mount build/stage/ as C:
 #   tools/dosbox-launch.sh --stage --exe GAME.EXE  # stage + auto-run
@@ -25,7 +25,8 @@
 #   DISPLAY=:0 xdotool search --name DOSBox windowactivate --sync
 #   DISPLAY=:0 xdotool type --delay 40 'GAME'
 #   DISPLAY=:0 xdotool key Return
-#   pkill -x dosbox-x                                     # stop it
+#   Ctrl+F9 in the window, or --kill-first on the next launch  # stop it
+#   (never `pkill -x dosbox-x`: it kills every workstream's DOSBox-X)
 
 set -euo pipefail
 
@@ -54,7 +55,8 @@ usage() {
 Usage: dosbox-launch.sh [--fast] [--kill-first] [--stage] [--exe PATH]
 
   --fast, -f         Use dosbox-x-fast.conf (cycles=max) instead of parity config
-  --kill-first, -k   Kill any running dosbox-x process first
+  --kill-first, -k   Kill the dosbox-x already running on this DISPLAY first
+                     (only that one: other displays belong to other work)
   --stage, -s        Run `make stage` and mount build/stage/ as C: (where
                      GAME.EXE + CWSDPMI.EXE + data/ sit together -- the
                      layout NXEngine-evo's ResourceManager expects on DOS).
@@ -88,14 +90,24 @@ if [[ -n "$CONF_OVERRIDE" ]]; then
   echo "dosbox-launch.sh: conf overridden via DOSBOX_CONF -> $CONF"
 fi
 
-if [[ "$KILL_FIRST" == "1" ]] && pgrep -x dosbox-x >/dev/null 2>&1; then
-  echo "Stopping running dosbox-x..."
-  pkill -x dosbox-x || true
+# Scope every "is it running / kill it" to DOSBox-X on OUR display. This
+# used to be a host-wide `pgrep -x` refusal plus a global `pkill -x dosbox-x`
+# for --kill-first, which killed other workstreams' runs (a gate capturing on
+# its own Xvfb display, an --sb-live cell under xvfb-run) -- the hazard
+# dosbox-teardown.sh documents. See dbx_pids_on_display there.
+# shellcheck source=./dosbox-teardown.sh
+source "$SCRIPT_DIR/dosbox-teardown.sh"
+LAUNCH_DISPLAY="${DOSBOX_DISPLAY:-:0}"
+
+if [[ "$KILL_FIRST" == "1" ]] && [[ -n "$(dbx_pids_on_display "$LAUNCH_DISPLAY")" ]]; then
+  echo "Stopping the dosbox-x running on $LAUNCH_DISPLAY..."
+  dbx_kill_display "$LAUNCH_DISPLAY"
   sleep 1
+  dbx_kill_display "$LAUNCH_DISPLAY" KILL
 fi
 
-if pgrep -x dosbox-x >/dev/null 2>&1; then
-  echo "dosbox-x is already running. Use --kill-first to restart." >&2
+if [[ -n "$(dbx_pids_on_display "$LAUNCH_DISPLAY")" ]]; then
+  echo "dosbox-x is already running on $LAUNCH_DISPLAY. Use --kill-first to restart it." >&2
   exit 1
 fi
 
@@ -186,4 +198,4 @@ echo "  screenshot:  DISPLAY=:0 scrot -u /tmp/dosbox.png"
 echo "  focus:       DISPLAY=:0 xdotool search --name DOSBox windowactivate --sync"
 echo "  type:        DISPLAY=:0 xdotool type --delay 40 'GAME'"
 echo "  key:         DISPLAY=:0 xdotool key Return"
-echo "  stop:        pkill -x dosbox-x    (or Ctrl+F9 in the window)"
+echo "  stop:        Ctrl+F9 in the window, or kill $DBX_PID (never pkill -x dosbox-x)"
