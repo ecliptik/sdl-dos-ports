@@ -420,6 +420,10 @@ SHARED.
   - The `/proc/*/fd` scan lists the processes that really hold it.
   - Anything there that is not `dosbox-x`, a shell or a `.sh` tool (an
     `Xvfb`, a `sleep`, a `python`) is a helper that inherited the fd.
+    A `timeout`, `env` or `setsid` wrapper is judged by its children: it
+    passes as "a wrapper around a cell" when a child is DOSBox-X or a
+    shell/`.sh` running the cell. It stays SUSPECT, naming the child, when
+    what it wraps is anything else, such as an Xvfb or a keep-alive.
     `dbxlock_describe` flags it SUSPECT. Kill it (by pid, never
     `pkill`), and fix whatever started it without closing the lock fds.
   - If the kernel shows a lock but no visible process has the file open,

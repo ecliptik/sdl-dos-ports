@@ -179,6 +179,20 @@ _dbxlock_expected_comm() {
     return 1
 }
 
+# _dbxlock_children PID: "pid comm" of each direct child (one /proc pass;
+# only run for a wrapper holder, so the cost stays off the common path).
+_dbxlock_children() {
+    local p st rest pp comm
+    for p in /proc/[0-9]*; do
+        st="$(cat "$p/stat" 2>/dev/null)" || continue
+        rest="${st##*) }"; set -- $rest; pp="${2:-}"
+        if [[ "$pp" == "$WANT_PPID" ]]; then
+            comm="$(cat "$p/comm" 2>/dev/null)"
+            echo "${p#/proc/} $comm"
+        fi
+    done
+}
+
 # dbxlock_holders [FILE]: the KERNEL's view of who holds the lock, which
 # .who cannot give. Two sources:
 #   /proc/locks   -- one line per flock on the file's inode (and one per
@@ -217,6 +231,24 @@ dbxlock_holders() {
             comm="$(cat "$p/comm" 2>/dev/null)"; seen=1
             if _dbxlock_expected_comm "$comm"; then
                 echo "  open by pid $pid ($comm)"
+            elif [[ "$comm" == "timeout" || "$comm" == "env" || "$comm" == "setsid" ]]; then
+                # a wrapper: fine when it wraps a cell (its lifetime is the
+                # cell's), SUSPECT when what it wraps is a long-lived helper
+                # (an Xvfb, a keep-alive, a sleep loop) -- that is how the
+                # orphaned-Xvfb lock leak looked
+                local kids kid kcomm cell=""
+                kids="$(WANT_PPID="$pid" _dbxlock_children)"
+                while read -r kid kcomm; do
+                    [[ -n "$kid" ]] || continue
+                    if _dbxlock_expected_comm "$kcomm"; then cell="$kid $kcomm"; break; fi
+                done <<< "$kids"
+                if [[ -n "$cell" ]]; then
+                    echo "  open by pid $pid ($comm) -- a wrapper around a cell (child pid ${cell%% *}, ${cell#* })"
+                elif [[ -z "$kids" ]]; then
+                    echo "  open by pid $pid ($comm) -- SUSPECT: a $comm wrapper with no child left, still holding the lock fd"
+                else
+                    echo "  open by pid $pid ($comm) -- SUSPECT: a $comm wrapper whose child is $(head -n 1 <<< "$kids" | awk '{print "pid " $1 " (" $2 ")"}'), not a DOSBox-X cell"
+                fi
             else
                 echo "  open by pid $pid ($comm) -- SUSPECT: not DOSBox-X or its shell; a helper that inherited the lock fd?"
             fi
