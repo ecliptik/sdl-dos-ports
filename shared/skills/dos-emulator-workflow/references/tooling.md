@@ -309,7 +309,9 @@ SHARED.
   - `/tmp/dos-port-dosbox.lock.who` has one line per holder
     (`pid=... mode=...`) and per queued writer
     (`waiting: pid=... mode=exclusive`). Each process removes its own
-    lines. A waiter prints the file with every line marked `(alive)` or
+    lines, and every edit also prunes lines whose process is gone or was
+    replaced (checked by the recorded `pstart=`, the process start
+    time). So a taker killed while queued leaves no permanent line. A waiter prints the file with every line marked `(alive)` or
     `(STALE: pid N is not running)`: a process that was killed never
     cleans up, so the recorded pid is checked. `.who` is informational,
     and the flock itself is the truth. To ask "is the lock free?", test it

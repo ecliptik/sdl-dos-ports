@@ -66,8 +66,10 @@
 #
 # .who ($DBXLOCK_FILE.who): informational, one line per holder or waiting
 # writer, each removed by its own process on release/acquire:
-#   pid=<pid> tool=... mode=shared|exclusive ... since=<utc>
-#   waiting: pid=<pid> tool=... mode=exclusive ... since=<utc>
+#   pid=<pid> pstart=<start time> tool=... mode=shared|exclusive ... since=<utc>
+#   waiting: pid=<pid> pstart=<start time> tool=... mode=exclusive ... since=<utc>
+# Every edit prunes lines whose process is gone or was replaced (see
+# _dbxlock_line_live), so a taker killed while queued leaves no permanent line.
 # Readers of it mark each line (alive) or (STALE: pid N is not running) --
 # a holder killed outright cannot clean up. The flock is the truth: to ask
 # whether the lock is free, test it; never read .who.
@@ -104,23 +106,65 @@ DBXLOCK_FILE="${DOSBOX_LOCK_FILE:-/tmp/dos-port-dosbox.lock}"
 
 _dbxlock_utc() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 
+# _dbxlock_pstart PID: the process's start time (field 22 of /proc/<pid>/stat,
+# clock ticks since boot). With the pid it identifies one process for good:
+# a reused pid has a different start time. Empty if the pid is gone.
+_dbxlock_pstart() {
+    local st rest
+    st="$(cat "/proc/$1/stat" 2>/dev/null)" || return 0
+    [[ -n "$st" ]] || return 0
+    rest="${st##*) }"                 # comm may contain spaces or parentheses
+    set -- $rest                      # fields 3.. of stat; starttime is the 20th
+    echo "${20:-}"
+}
+
+# _dbxlock_line_live LINE: is the process a .who line names still the one that
+# wrote it?
+#   - pid gone                                        -> stale
+#   - pstart=N recorded and the pid's start time != N  -> stale (pid reused)
+#   - no pstart (an older line or another writer) and tool=<x>.sh whose name
+#     is no longer in the pid's cmdline                -> stale (pid reused)
+#   - otherwise (e.g. a label-style tool=lab-x with no pstart) -> live; a
+#     reused pid can hide such a line until it dies, a small accepted risk
+#     that ends as those lines age out.
+_dbxlock_line_live() {
+    local line="$1" pid ps tool
+    pid="${line#waiting: }"; pid="${pid#pid=}"; pid="${pid%% *}"
+    [[ "$pid" =~ ^[0-9]+$ && -d "/proc/$pid" ]] || return 1
+    if [[ " $line " =~ [[:space:]]pstart=([0-9]+)[[:space:]] ]]; then
+        [[ "$(_dbxlock_pstart "$pid")" == "${BASH_REMATCH[1]}" ]]; return
+    fi
+    if [[ " $line " =~ [[:space:]]tool=([^[:space:]]+\.sh)[[:space:]] ]]; then
+        tool="${BASH_REMATCH[1]}"
+        tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null | grep -qF -- "$tool" || return 1
+    fi
+    return 0
+}
+
+# All edits run under an exclusive flock on <lock>.who.lock, and every edit
+# also PRUNES stale lines (holders and waiters whose process is gone or was
+# replaced -- a taker killed while queued can never remove its own "waiting:"
+# line). Pruning inside the same flock-protected edit means it cannot race a
+# live writer adding or dropping its own line.
 _dbxlock_who_edit() {   # $1 = add|drop|dropwait, $2 = line (add)
-    local who="$DBXLOCK_FILE.who" tmp
+    local who="$DBXLOCK_FILE.who" tmp line
     exec 6>>"$DBXLOCK_FILE.who.lock" || return 0
     flock -x -w 5 6 || { exec 6>&-; return 0; }
-    case "$1" in
-        add) printf '%s\n' "$2" >> "$who" 2>/dev/null ;;
-        drop|dropwait)
-            if [[ -f "$who" ]]; then
-                tmp="$who.$$"
-                if [[ "$1" == "drop" ]]; then
-                    grep -v -e "^pid=$$ " -e "^waiting: pid=$$ " "$who" > "$tmp" 2>/dev/null || true
-                else
-                    grep -v -e "^waiting: pid=$$ " "$who" > "$tmp" 2>/dev/null || true
-                fi
-                if [[ -s "$tmp" ]]; then mv -f "$tmp" "$who"; else rm -f "$tmp" "$who"; fi
-            fi ;;
-    esac
+    tmp="$who.$$"
+    : > "$tmp" 2>/dev/null || { exec 6>&-; return 0; }
+    if [[ -f "$who" ]]; then
+        while IFS= read -r line; do
+            [[ -n "$line" ]] || continue
+            case "$1" in
+                drop) [[ "$line" == "pid=$$ "* || "$line" == "waiting: pid=$$ "* ]] && continue ;;
+                dropwait) [[ "$line" == "waiting: pid=$$ "* ]] && continue ;;
+            esac
+            _dbxlock_line_live "$line" || continue
+            printf '%s\n' "$line" >> "$tmp"
+        done < "$who"
+    fi
+    [[ "$1" == "add" ]] && printf '%s\n' "$2" >> "$tmp"
+    if [[ -s "$tmp" ]]; then mv -f "$tmp" "$who"; else rm -f "$tmp" "$who"; fi
     exec 6>&-
     return 0
 }
@@ -208,7 +252,7 @@ dbxlock_acquire() {
     deadline=$(( $(date +%s) + wait_s ))
     exec 7>>"$DBXLOCK_FILE.intent" || return 1
     exec 8>>"$DBXLOCK_FILE" || { exec 7>&-; return 1; }
-    [[ "$mode" == "exclusive" ]] && _dbxlock_who_edit add "waiting: pid=$$ $desc mode=exclusive since=$(_dbxlock_utc)"
+    [[ "$mode" == "exclusive" ]] && _dbxlock_who_edit add "waiting: pid=$$ pstart=$(_dbxlock_pstart $$) $desc mode=exclusive since=$(_dbxlock_utc)"
     # 1) intent
     if ! flock -n "$opt" 7; then
         if [[ "${DBXLOCK_QUIET:-0}" != "1" ]]; then
@@ -234,7 +278,7 @@ dbxlock_acquire() {
     # 3) release intent: held main now; see the header for why not later
     flock -u 7; exec 7>&-
     [[ "$mode" == "exclusive" ]] && _dbxlock_who_edit dropwait
-    _dbxlock_who_edit add "pid=$$ $desc mode=$mode since=$(_dbxlock_utc)"
+    _dbxlock_who_edit add "pid=$$ pstart=$(_dbxlock_pstart $$) $desc mode=$mode since=$(_dbxlock_utc)"
     return 0
 }
 
