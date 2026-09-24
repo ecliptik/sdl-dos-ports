@@ -534,7 +534,9 @@ run_unit() {
         envs+=(DOSBOX_DISPLAY_NUM="$dnum" DOSBOX_DISPLAY=":$dnum")
         unset_vars=()
         if ! xdpyinfo -display ":$dnum" >/dev/null 2>&1; then
-            Xvfb ":$dnum" -screen 0 1280x1024x24 -nolisten tcp >/dev/null 2>&1 &
+            # every lock fd closed: an orphaned Xvfb must never hold the host
+            # lock (fd 8) or the ratchet's own run lock (fd 9)
+            Xvfb ":$dnum" -screen 0 1280x1024x24 -nolisten tcp 5>&- 6>&- 7>&- 8>&- 9>&- >/dev/null 2>&1 &
             XVFB_PID=$!
             for _ in 1 2 3 4 5 6 7 8 9 10; do xdpyinfo -display ":$dnum" >/dev/null 2>&1 && break; sleep 0.5; done
         fi

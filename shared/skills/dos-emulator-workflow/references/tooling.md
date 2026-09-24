@@ -367,6 +367,42 @@ SHARED.
   - Call `dbxlock_display_acquire` directly, not inside `$(...)`: the
     flock belongs to the calling shell, and a command substitution's
     subshell would drop it at once. Read `DBXLOCK_DISPLAY`.
+- **Nothing that can outlive a cell may inherit a lock fd.** A process
+  started while a lock fd is open inherits it and keeps the lock for its
+  whole life. In dosags (2026-09-24), an orphaned Xvfb inherited fd 8
+  from a lock-holding shell and held the lock SHARED after its parent
+  exited, and every exclusive writer deadlocked.
+  - The hub tools start every Xvfb, and every other helper that may
+    outlive the cell, with fds 5-9 closed (`5>&- 6>&- 7>&- 8>&- 9>&-`).
+  - Only the cell's own DOSBox-X keeps fd 8 (the host lock) and fd 5
+    (its display), on purpose: those must last exactly as long as it
+    does.
+  - `dosbox-run.sh` starts its own Xvfb for that reason (not
+    `xvfb-run`, whose Xvfb inherited the fds), with a lock-free watchdog
+    that stops the Xvfb once DOSBox-X is gone.
+  - A port harness that holds the lock in a shell and starts anything
+    long-lived must do the same.
+
+  **Troubleshooting a stuck lock** (a writer waiting forever):
+  ```
+  source .sdl-dos-ports/shared/tools/dosbox-lock-lib.sh; dbxlock_describe
+  # by hand:
+  INO=$(stat -c %i /tmp/dos-port-dosbox.lock)
+  grep ":$INO " /proc/locks        # READ = shared, WRITE = exclusive, "->" = a waiter
+  find /proc/[0-9]*/fd -lname /tmp/dos-port-dosbox.lock 2>/dev/null |
+    cut -d/ -f3 | sort -u | while read p; do echo "$p $(cat /proc/$p/comm)"; done
+  ```
+  - `/proc/locks` says THAT the lock is held, and in which mode. Its pid
+    is the process that placed the lock, which for `flock -s 8` is the
+    flock utility, normally already gone. So it does not say who holds
+    the lock.
+  - The `/proc/*/fd` scan lists the processes that really hold it.
+  - Anything there that is not `dosbox-x`, a shell or a `.sh` tool (an
+    `Xvfb`, a `sleep`, a `python`) is a helper that inherited the fd.
+    `dbxlock_describe` flags it SUSPECT. Kill it (by pid, never
+    `pkill`), and fix whatever started it without closing the lock fds.
+  - If the kernel shows a lock but no visible process has the file open,
+    the holder is in another sandbox or belongs to another user.
 - **Display isolation is a separate requirement, not a lock:** every
   capture tool must track its own DOSBox-X (pid or stage) and grab only
   its own display. Never pick "the" `dosbox-x` out of `ps`: that was the

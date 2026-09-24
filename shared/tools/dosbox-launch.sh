@@ -113,7 +113,10 @@ source "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/dosbox-lock-lib.sh"
 #   - unset or :0: the human's desktop, no display lock (as before).
 # The flock is inherited by DOSBox-X (and, in auto mode, by the small
 # supervisor that stops our Xvfb when DOSBox-X exits), so it lasts exactly
-# as long as the session, after this script has returned.
+# as long as the session, after this script has returned. Everything this
+# launcher starts has the other lock fds (6-9) closed, and our Xvfb all of
+# 5-9: a caller that holds the host lock on fd 8 and launches a session must
+# not have that session -- or an orphaned Xvfb -- keep its lock alive.
 AUTO_DISPLAY=0
 if [[ "${DOSBOX_DISPLAY:-}" == "auto" ]]; then
   if ! dbxlock_display_acquire "" "${DOSBOX_DISPLAY_WAIT:-10}" >/dev/null; then
@@ -233,11 +236,11 @@ if [[ "$AUTO_DISPLAY" == "1" ]]; then
   # our own Xvfb (without the display fd, so it cannot outlive the session
   # by holding it), then DOSBox-X under a supervisor that holds the display
   # flock and stops the Xvfb once DOSBox-X exits
-  Xvfb "$DISPLAY" -screen 0 1280x1024x24 -nolisten tcp 5>&- >/dev/null 2>&1 &
+  Xvfb "$DISPLAY" -screen 0 1280x1024x24 -nolisten tcp 5>&- 6>&- 7>&- 8>&- 9>&- >/dev/null 2>&1 &
   XVFB_PID=$!
   for _ in 1 2 3 4 5 6 7 8 9 10; do xdpyinfo -display "$DISPLAY" >/dev/null 2>&1 && break; sleep 0.5; done
   echo "Launching DOSBox-X (DISPLAY=$DISPLAY, allocated, headless Xvfb pid $XVFB_PID, config=$CONF_NAME)..."
-  ( dosbox-x "${DBX_ARGS[@]}"; kill "$XVFB_PID" 2>/dev/null ) &
+  ( dosbox-x "${DBX_ARGS[@]}"; kill "$XVFB_PID" 2>/dev/null ) 6>&- 7>&- 8>&- 9>&- &
   SUP_PID=$!
   DBX_PID=""
   for _ in 1 2 3 4 5 6 7 8 9 10; do
@@ -246,7 +249,7 @@ if [[ "$AUTO_DISPLAY" == "1" ]]; then
   DBX_PID="${DBX_PID:-$SUP_PID}"
 else
   echo "Launching DOSBox-X (DISPLAY=$DISPLAY, config=$CONF_NAME)..."
-  dosbox-x "${DBX_ARGS[@]}" &
+  dosbox-x "${DBX_ARGS[@]}" 6>&- 7>&- 8>&- 9>&- &
   DBX_PID=$!
 fi
 echo "DOSBox-X running (PID $DBX_PID)."

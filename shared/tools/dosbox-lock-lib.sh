@@ -79,7 +79,19 @@
 #       when WAIT_S seconds pass first. Prints one "waiting" line to stderr
 #       (with the current .who) if it has to wait, unless DBXLOCK_QUIET=1.
 #   dbxlock_release                    remove our .who lines, close fd 8.
-#   dbxlock_describe                   the .who lines, each marked alive/STALE.
+#   dbxlock_describe                   the .who lines, each marked alive/STALE,
+#                                      then the kernel's view (dbxlock_holders).
+#   dbxlock_holders [FILE]             who really holds it: /proc/locks (with
+#                                      ORPHANED for a dead placer) and /proc/*/fd
+#                                      (SUSPECT for a holder that is not
+#                                      DOSBox-X, a shell or a .sh tool).
+# LONG-LIVED CHILDREN: anything started while a lock fd is open inherits it
+# and keeps the lock alive for its whole life. Start every process that may
+# outlive the cell -- Xvfb above all -- with fds 5, 6, 7, 8 and 9 closed
+# (`5>&- 6>&- 7>&- 8>&- 9>&-`). Only the cell's own DOSBox-X keeps fd 8 (the
+# lock) and fd 5 (its display), deliberately: they must last exactly as
+# long as it does. (dosags, 2026-09-24: an orphaned Xvfb that inherited fd 8
+# held the lock SHARED after its parent exited; every writer deadlocked.)
 # fds used: 8 main (held), 7 intent (transient), 6 .who edits (transient),
 # 5 display (held; see DISPLAY ALLOCATION below).
 # DOSBOX_LOCK_HELD=1 is the CALLER's business: when a parent already holds
@@ -113,15 +125,80 @@ _dbxlock_who_edit() {   # $1 = add|drop|dropwait, $2 = line (add)
     return 0
 }
 
-dbxlock_describe() {
-    local who="$DBXLOCK_FILE.who" line pid
-    if [[ ! -s "$who" ]]; then echo "none recorded"; return 0; fi
+# _dbxlock_expected_comm COMM: is this a process that may legitimately hold
+# the lock -- DOSBox-X itself, a shell, or a .sh tool (a script's comm is
+# its file name, cut to 15 characters)?
+_dbxlock_expected_comm() {
+    case "$1" in
+        dosbox-x|dosbox-x-fast|bash|sh|dash|zsh|ksh|flock|*.sh|*.s|dosbox-launch.*|dosbox-run.s*) return 0 ;;
+    esac
+    return 1
+}
+
+# dbxlock_holders [FILE]: the KERNEL's view of who holds the lock, which
+# .who cannot give. Two sources:
+#   /proc/locks   -- one line per flock on the file's inode (and one per
+#                    blocked waiter, "->"). Its pid is the process that PLACED
+#                    the lock -- for `flock -s 8` that is the short-lived flock
+#                    utility, normally already gone -- so it says THAT the lock
+#                    is held and how, not by whom.
+#   /proc/*/fd    -- every process we can see with the file open: the real
+#                    holders. Any that is not DOSBox-X, a shell or a .sh tool
+#                    (an Xvfb, a sleep, a python) is flagged SUSPECT: a helper
+#                    that inherited the lock fd and keeps it alive.
+# A lock held while no visible process has the file open is held from
+# another sandbox or user (their /proc/<pid>/fd is unreadable) -- said so.
+dbxlock_holders() {
+    local f="${1:-$DBXLOCK_FILE}" ino real line pid comm mode p fdl found=0 seen=0
+    [[ -e "$f" ]] || { echo "  (no lock file $f)"; return 0; }
+    ino="$(stat -c %i "$f" 2>/dev/null)"; real="$(readlink -f "$f")"
     while IFS= read -r line; do
-        [[ -n "$line" ]] || continue
-        pid="${line#waiting: }"; pid="${pid#pid=}"; pid="${pid%% *}"
-        if [[ "$pid" =~ ^[0-9]+$ && -d "/proc/$pid" ]]; then echo "  $line (alive)"
-        else echo "  $line (STALE: pid $pid is not running)"; fi
-    done < "$who"
+        [[ "$line" == *" FLOCK "* && "$line" == *":$ino "* ]] || continue
+        found=1
+        mode=shared; [[ "$line" == *" WRITE "* ]] && mode=exclusive
+        pid="$(awk '{ for (i = 1; i <= NF; i++) if ($i ~ /^[0-9a-f]+:[0-9a-f]+:[0-9]+$/) { print $(i-1); exit } }' <<< "$line")"
+        if [[ "$line" == *" -> "* ]]; then
+            echo "  kernel: pid $pid ($(cat "/proc/$pid/comm" 2>/dev/null)) is WAITING for it $mode"
+        elif [[ "$pid" =~ ^[0-9]+$ && -d "/proc/$pid" ]]; then
+            echo "  kernel: held $mode (placed through pid $pid, $(cat "/proc/$pid/comm" 2>/dev/null))"
+        else
+            echo "  kernel: held $mode (placed through pid $pid, now gone -- normal for the flock utility)"
+        fi
+    done < /proc/locks
+    (( found )) || echo "  kernel: no flock on $f"
+    for p in /proc/[0-9]*; do
+        pid="${p#/proc/}"
+        for fdl in "$p"/fd/*; do
+            [[ "$(readlink "$fdl" 2>/dev/null)" == "$real" ]] || continue
+            comm="$(cat "$p/comm" 2>/dev/null)"; seen=1
+            if _dbxlock_expected_comm "$comm"; then
+                echo "  open by pid $pid ($comm)"
+            else
+                echo "  open by pid $pid ($comm) -- SUSPECT: not DOSBox-X or its shell; a helper that inherited the lock fd?"
+            fi
+            break
+        done
+    done
+    (( found && ! seen )) && echo "  no visible process has it open: held from another sandbox or user (their /proc/<pid>/fd is unreadable here)"
+    return 0
+}
+
+dbxlock_describe() {
+    local who="$DBXLOCK_FILE.who" line pid comm
+    if [[ ! -s "$who" ]]; then
+        echo "  .who: none recorded"
+    else
+        while IFS= read -r line; do
+            [[ -n "$line" ]] || continue
+            pid="${line#waiting: }"; pid="${pid#pid=}"; pid="${pid%% *}"
+            if [[ "$pid" =~ ^[0-9]+$ && -d "/proc/$pid" ]]; then
+                comm="$(cat "/proc/$pid/comm" 2>/dev/null)"
+                if _dbxlock_expected_comm "$comm"; then echo "  $line (alive)"
+                else echo "  $line (alive, SUSPECT: pid $pid is $comm)"; fi
+            else echo "  $line (STALE: pid $pid is not running)"; fi
+        done < "$who"
+    fi
+    dbxlock_holders "$DBXLOCK_FILE"
     return 0
 }
 

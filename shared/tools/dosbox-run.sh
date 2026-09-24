@@ -300,13 +300,13 @@ fi
 #   - pinned (DOSBOX_DISPLAY set, other than :0): take that display's flock;
 #     a second cell pinned to the same display waits for this one;
 #   - unpinned --sb-live: allocate a free display from DOSBOX_DISPLAY_RANGE
-#     (default 300-399) and run xvfb-run on it (was: xvfb-run -a's own
-#     pick, which two concurrent runs could race). Done for any lock mode:
+#     (default 300-399) and start our own Xvfb on it (was: xvfb-run -a's
+#     own pick, which two concurrent runs could race). Done for any lock mode:
 #     under DOSBOX_LOCK_HELD the mode is the parent's and unknown here, and
 #     allocating costs an exclusive run nothing;
 #   - unpinned --interactive goes to :0, the human's desktop: no display
 #     lock (a person watching, not a capture).
-# The flock sits on fd 5, which DOSBox-X and xvfb-run inherit.
+# The flock sits on fd 5, which DOSBox-X (only) inherits.
 ALLOC_DISPLAY=""
 if [[ "$SB_LIVE" == "1" || "$INTERACTIVE" == "1" ]]; then
   if [[ -n "${DOSBOX_DISPLAY:-}" ]]; then
@@ -332,34 +332,61 @@ DBX_ARGS=(-conf "$CONF" -nopromptfolder
           -c "C:"
           -c "CALL RUN.BAT")
 
+# FDs: DOSBox-X keeps fd 8 (the host lock) and fd 5 (its display flock) --
+# deliberately, so they last exactly as long as it does. Every other lock
+# fd (6, 7, 9) is closed for it, and anything else that could outlive the
+# cell (Xvfb) gets all of 5-9 closed: an orphaned helper holding fd 8 keeps
+# the lock forever (dosags, 2026-09-24: an Xvfb held it SHARED after its
+# parent exited, and every writer deadlocked).
 if [[ "$INTERACTIVE" == "1" ]]; then
   # Visible run -- user drives; don't auto-exit.
   export DISPLAY="${DOSBOX_DISPLAY:-:0}"
-  dosbox-x "${DBX_ARGS[@]}"
+  dosbox-x "${DBX_ARGS[@]}" 6>&- 7>&- 9>&-
 elif [[ "$SB_LIVE" == "1" ]]; then
   # No -silent: it disables the emulated SB. Needs a display instead.
   DBX_ARGS+=(-c "EXIT" -exit -nogui -nomenu)
   export SDL_AUDIODRIVER="${SDL_AUDIODRIVER:-dummy}"
   if [[ -n "${DOSBOX_DISPLAY:-}" ]]; then
-    DISPLAY="$DOSBOX_DISPLAY" dosbox-x "${DBX_ARGS[@]}" >/dev/null 2>&1 || {
+    DISPLAY="$DOSBOX_DISPLAY" dosbox-x "${DBX_ARGS[@]}" 6>&- 7>&- 9>&- >/dev/null 2>&1 || {
       rc=$?
       echo "dosbox-run.sh: dosbox-x exited non-zero ($rc)" >&2
       exit $rc
     }
   else
-    if ! command -v xvfb-run >/dev/null 2>&1; then
-      echo "dosbox-run.sh: --sb-live needs xvfb-run (or DOSBOX_DISPLAY set)" >&2
+    if ! command -v Xvfb >/dev/null 2>&1; then
+      echo "dosbox-run.sh: --sb-live needs Xvfb (or DOSBOX_DISPLAY set)" >&2
       exit 2
     fi
-    xvfb-run -n "$ALLOC_DISPLAY" dosbox-x "${DBX_ARGS[@]}" >/dev/null 2>&1 || {
-      rc=$?
+    # Our own Xvfb rather than xvfb-run, so it can be started with every
+    # lock fd closed (xvfb-run's Xvfb inherited fds 5 and 8 and, orphaned,
+    # would hold both). A watchdog -- also holding no lock fd -- stops it
+    # once DOSBox-X is gone, even if this script was killed first.
+    Xvfb ":$ALLOC_DISPLAY" -screen 0 1280x1024x24 -nolisten tcp 5>&- 6>&- 7>&- 8>&- 9>&- >/dev/null 2>&1 &
+    XVFB_PID=$!
+    for _ in $(seq 1 50); do
+      [[ -S "/tmp/.X11-unix/X$ALLOC_DISPLAY" ]] && break
+      kill -0 "$XVFB_PID" 2>/dev/null || break
+      sleep 0.1
+    done
+    if ! kill -0 "$XVFB_PID" 2>/dev/null; then
+      echo "dosbox-run.sh: Xvfb failed to start on :$ALLOC_DISPLAY" >&2
+      exit 2
+    fi
+    DISPLAY=":$ALLOC_DISPLAY" dosbox-x "${DBX_ARGS[@]}" 6>&- 7>&- 9>&- >/dev/null 2>&1 &
+    DBX_PID=$!
+    ( exec 5>&- 6>&- 7>&- 8>&- 9>&-
+      while kill -0 "$DBX_PID" 2>/dev/null; do sleep 1; done
+      kill "$XVFB_PID" 2>/dev/null ) >/dev/null 2>&1 &
+    rc=0; wait "$DBX_PID" || rc=$?
+    kill "$XVFB_PID" 2>/dev/null || true
+    if [[ "$rc" != "0" ]]; then
       echo "dosbox-run.sh: dosbox-x exited non-zero ($rc)" >&2
-      exit $rc
-    }
+      exit "$rc"
+    fi
   fi
 else
   DBX_ARGS+=(-c "EXIT" -silent -exit -nogui -nomenu)
-  dosbox-x "${DBX_ARGS[@]}" >/dev/null 2>&1 || {
+  dosbox-x "${DBX_ARGS[@]}" 6>&- 7>&- 9>&- >/dev/null 2>&1 || {
     rc=$?
     echo "dosbox-run.sh: dosbox-x exited non-zero ($rc)" >&2
     exit $rc
