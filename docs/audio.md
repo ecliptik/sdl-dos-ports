@@ -180,6 +180,15 @@ verification than what's noted here. Organized architecture-wide first
   so doskutsu's SFX go silent with `=0`; Passage's audio is a plain
   sample stream with no SfxSynth, which is why `=0` was a clean fix
   there. Check which of those your port is before copying the fix.
+- **The same 10 ms throttle used to sleep the app's own pump -- and
+  removing that bought far less than it looked.** Until `0146`, a port
+  that calls `SDL_DOSAudioPump()` from its game loop slept that loop 10 ms
+  on every silent buffer. `0146` (from dosags SDL 0213) skips the sleep on
+  the pump path only; the device thread keeps it. On a 486, dosags saw the
+  pump fall from 8.1 ms to 0.4 ms, but the tick rate moved only 39.000 ->
+  39.135. The sleep had mostly fallen in idle time. Take `0146` for the
+  pump path's correctness, and measure your own KPI before counting on
+  it. See `docs/optimization.md`'s worked example ("D2").
 - **A worse variant of the above can hang indefinitely, and it's
   CPU-tier-specific.** If the audio thread is in-band/non-silent and never
   yields back while the main thread parks at a per-flip yield, the ring
