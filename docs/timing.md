@@ -143,9 +143,20 @@ Source: dosags-worker's disassembly of DJGPP libc's `uclock.o`
   which only 486-class CPUs use: without RDTSC they fall back to the
   PIT. Pentium-class runs time that ISR with RDTSC and don't touch ch0
   there.
-  **Status: a candidate, not an explanation.** No measured outlier has
-  been shown to come from it. dosags lab-journeys' H35-TSC cell is
-  testing it.
+  **Status (dosags lab/journeys 929b1279, the H35-TSC test): FINDING.**
+  `isr_max` outliers under the PIT fallback are a PIT-read artefact, not
+  real ISR time.
+  - Under RDTSC (n=2 cells), the maximum ISR time equals the derived peak
+    drain (6903 us measured vs 7003 us derived, -1.4%), and no reading
+    reached 10 ms.
+  - On the PIT, 43 of 46 cells had readings >= 10 ms (22-54 ms).
+  The test did NOT separate the two possible mechanisms:
+  - a single-delta wrap or reload misread (see the next bullet);
+  - this latch race, which remains a candidate mechanism.
+  **Practical rule:** on 486-class builds, which time the ISR with the
+  PIT, never judge a single `isr_max` reading. Derive the bound instead,
+  as burst x per-write cost (the most entries one IRQ handled, times the
+  cost of one write).
 - **A single PIT delta wraps at 54.9 ms** (65536 counts). Time a wait
   longer than that by summing steps that are each shorter than 54.9 ms,
   or use a clock that folds in the BIOS tick (`uclock()` itself does).
