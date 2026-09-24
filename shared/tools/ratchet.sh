@@ -58,12 +58,13 @@
 # A check's control runs with the check's lock mode.
 #
 # LOCK MODE (runs and own-command checks): exclusive by default. "lock:
-# shared" is for units at FIXED DOSBox-X cycles only, which are unaffected
-# by other instances on the host (tooling.md, fixed-cycles rule): such a unit
+# shared" is for units at FIXED DOSBox-X cycles only, whose input comes from
+# inside the guest or that have none (tooling.md): such a unit
 # takes the host lock SHARED, may overlap other shared runs, and skips the
 # ps quiet-wait (waiting for no dosbox-x anywhere would serialise it anyway).
 # Checked when the file is read (exit 3 on a contradiction):
 #   --fast in the command -> error (dosbox-x-fast.conf is cycles=max);
+#   xdotool in the command -> error (host-injected input: see tooling.md);
 #   --conf/-conf PATH     -> PATH's last "cycles =" must be "fixed N" or a
 #                            number, else error ("verified" when it is);
 #                            a conf not found yet -> "unverified";
@@ -334,6 +335,7 @@ check_shared() {
     [[ "$mode" =~ ^(shared|exclusive)$ ]] || die "$label: lock must be shared or exclusive"
     [[ "$mode" == "shared" ]] || { LOCKCHECK="exclusive"; return 0; }
     [[ " $cmd " =~ [[:space:]]--fast[[:space:]] ]] && die "$label: lock: shared, but the command uses --fast (cycles=max); shared is for FIXED-cycles runs only"
+    [[ "$cmd" == *xdotool* ]] && die "$label: lock: shared, but the command drives input with xdotool; host-injected input lands on a different emulated tick under load, so it takes EXCLUSIVE"
     conf=""
     if [[ " $cmd " =~ [[:space:]]-?-conf[[:space:]=]+([^[:space:]]+) ]]; then conf="${BASH_REMATCH[1]}"; conf="${conf//\"/}"; conf="${conf//\'/}"; fi
     if [[ -z "$conf" ]]; then LOCKCHECK="shared, asserted by the author (no conf on the command line to check)"; return 0; fi

@@ -54,13 +54,14 @@ ENVS=() # --env KEY=VALUE, repeatable -- see usage below
 MERGE_STDERR=0
 SB_LIVE=0 # --sb-live: emulated SB really plays (see header)
 LOCK_MODE="${DOSBOX_LOCK_MODE:-}" # --lock shared|exclusive|none (default by run type)
+HOST_INPUT="${DOSBOX_HOST_INPUT:-}" # --no-host-input sets "none" (see --lock)
 CWSDPMI="${CWSDPMI:-$SCRIPT_DIR/../vendor/cwsdpmi/cwsdpmi.exe}"
 
 usage() {
   cat <<'USAGE'
 Usage: dosbox-run.sh --exe PATH [--args "..."] [--stdout PATH] [--include PATH]...
                      [--fast | --conf PATH] [--interactive] [--keep-stage] [--merge-stderr]
-                     [--sb-live] [--lock shared|exclusive|none]
+                     [--sb-live] [--lock shared|exclusive|none] [--no-host-input]
 
   --exe PATH         DOS executable to run (required). Basename is placed at C:\.
   --args "..."       Arguments passed to the exe (quoted as a single string).
@@ -109,6 +110,15 @@ Usage: dosbox-run.sh --exe PATH [--args "..."] [--stdout PATH] [--include PATH].
                      while DOSBox-X runs. Default: exclusive with --sb-live or
                      --interactive (timing/screen-dependent), shared otherwise.
                      "none" skips it (only for a caller that knows why).
+                     SHARED on a run with a display (--sb-live or
+                     --interactive) also needs --no-host-input (env
+                     DOSBOX_HOST_INPUT=none): the caller asserts that the
+                     cell's input comes from inside the guest (AutoPilot,
+                     tick-keyed scripts) or that it has none. Input injected
+                     from the host (xdotool clicks and keys) arrives at
+                     wall-clock times and lands on a different emulated tick
+                     when the host is loaded -- not deterministic even at
+                     fixed cycles -- so such a cell takes EXCLUSIVE.
                      Env: DOSBOX_LOCK_MODE (same values), DOSBOX_LOCK_WAIT
                      (seconds to wait, default 3600; then exit 75),
                      DOSBOX_LOCK_FILE (default /tmp/dos-port-dosbox.lock),
@@ -139,6 +149,7 @@ while [[ $# -gt 0 ]]; do
     --env)         ENVS+=("$2"); shift 2 ;;
     --sb-live)     SB_LIVE=1; shift ;;
     --lock)        LOCK_MODE="$2"; shift 2 ;;
+    --no-host-input) HOST_INPUT=none; shift ;;
     -h|--help)     usage; exit 0 ;;
     *) echo "dosbox-run.sh: unknown arg: $1" >&2; usage; exit 2 ;;
   esac
@@ -257,6 +268,13 @@ if [[ -z "$LOCK_MODE" ]]; then
   if [[ "$SB_LIVE" == "1" || "$INTERACTIVE" == "1" ]]; then LOCK_MODE=exclusive; else LOCK_MODE=shared; fi
 fi
 case "$LOCK_MODE" in shared|exclusive|none) ;; *) echo "dosbox-run.sh: --lock must be shared, exclusive or none" >&2; exit 2 ;; esac
+if [[ "$LOCK_MODE" == "shared" && ( "$SB_LIVE" == "1" || "$INTERACTIVE" == "1" ) && "$HOST_INPUT" != "none" ]]; then
+  echo "dosbox-run.sh: refusing --lock shared on a run with a display (--sb-live/--interactive) without --no-host-input." >&2
+  echo "  Host-injected input (xdotool) lands on a different emulated tick when the host is loaded, so it is not" >&2
+  echo "  deterministic even at fixed cycles: such a cell takes EXCLUSIVE. Pass --no-host-input only when the cell's" >&2
+  echo "  input comes from inside the guest (AutoPilot, tick-keyed scripts) or it has none." >&2
+  exit 2
+fi
 if [[ "${DOSBOX_LOCK_HELD:-0}" == "1" ]]; then
   LOCK_MODE=none   # the caller holds it exclusively around us
 fi

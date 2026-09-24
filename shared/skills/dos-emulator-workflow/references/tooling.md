@@ -389,3 +389,23 @@ EXCLUSIVE stays the rule for:
 - `--sb-live` cells at `cycles=max`.
 Where a result depends on emulated time, say in the record which cycles
 mode the cell ran.
+
+**Fixed cycles do not make host-driven input deterministic** (dosags,
+2026-09-24). Fixed cycles make EMULATED time deterministic. But input
+injected from the host (`xdotool` clicks and keys, sent at wall-clock
+times) lands on a different emulated tick when the host is loaded.
+lab-journeys saw +439 MIDI events from exactly that. So SHARED is only
+for cells whose input comes from inside the guest (AutoPilot, tick-keyed
+scripts) or that have no input at all. A cell with host-driven input
+takes EXCLUSIVE, at any cycles setting. The tools enforce what they can
+see:
+- `dosbox-run.sh` refuses `--lock shared` on a run with a display
+  (`--sb-live`, `--interactive`), the kind host input can reach, unless
+  the caller passes `--no-host-input` (or `DOSBOX_HOST_INPUT=none`).
+  Passing it asserts that the cell's input comes from inside the guest,
+  or that it has none. A `-silent` run has no display for host input to
+  reach.
+- `ratchet.sh` rejects `lock: shared` on a unit whose command mentions
+  `xdotool`.
+Neither tool can see an `xdotool` run from a separate process, so the
+assertion is the caller's.
