@@ -481,6 +481,50 @@ See also `video.md` ("No low-res mode on the card") for the largest
 structural lever found so far -- presenting unscaled instead of
 scale-to-fill -- and `timing.md` for the 1.3 ms clock read.
 
+## Measuring on real hardware and in the lab: three rules from dosags (2026-09-24)
+
+**An unscored warm-up cell after every power-on.** The first cell after
+the target machine powers on reads off: it doesn't match the cells that
+follow on the same build. This is an operator rule for dosags: every
+round that powers the target on runs one warm-up cell first. It uses the
+same fixture and build, is recorded as "warm-up", and is never scored.
+Scored cells start with the second run. The same holds for any port's
+campaign, and a pre-registration should list the warm-up cell explicitly
+so it can't later be counted or dropped by choice.
+
+**Fixed-cycles DOSBox-X is deterministic, but blind to 486 CPI and code
+layout.** At fixed cycles the emulator executes a fixed number of
+instructions per emulated millisecond. It sees how many instructions a
+change removes, not what each one costs on a 486. Cache and
+prefetch-queue behaviour, alignment, and where hot code lands relative
+to other code are all invisible to it. HYPOTHESIS, pending an ABBA
+confirmation on hardware: a code-layout change alone (no change in
+instructions executed) moved a 486 result by about 0.5 ms per tick.
+Until that is confirmed or refuted:
+- rank candidate changes in the lab at fixed cycles;
+- decide on hardware;
+- don't credit or blame a change for a sub-millisecond hardware delta
+  that an unrelated layout shift could also explain.
+
+**Worked example: confirm the KPI, not the intermediate metric (dosags
+"D2").**
+- **The finding.** SDL's audio silence throttle -- the `SDL_Delay(10)`
+  in the SB driver's silence gate -- was running inside the app's own
+  `SDL_DOSAudioPump()` call on the main thread. (The hub's reference
+  series still has that throttle in `PlayDevice`.)
+- **The fix.** dosags' SDL 0213 v2 stopped it sleeping there.
+- **The intermediate metric moved a lot.** On the 486 at 16 bpp, the
+  pump's time fell from 8.1 ms to 0.4 ms.
+- **The KPI barely moved.** The tick rate went from 39.000 to 39.135:
+  +0.135, against 0.02 of N-N noise. That is real, but the
+  pre-registered target was FALSIFIED.
+- **Why.** The sleep had mostly fallen in time the loop would have spent
+  idle anyway. The remaining limiter is load stalls.
+- **The lesson.** An 8 ms saving in the metric the change aimed at
+  bought 0.135 ticks per second, which is exactly the gap
+  pre-registration against the KPI is there to catch.
+- **Source.** dosags lab/metric fd267c43, LAB-S32 19.12.
+
 ## Setting a performance KPI
 
 Write a KPI down *before* chasing it, in a form that can't be satisfied by

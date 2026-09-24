@@ -94,6 +94,14 @@ detail) -- non-negotiable, not just good practice when convenient:
 - Hand off raw data between sessions, not a narrated summary.
 - Batch questions into fewer, longer real-hardware rounds -- a
   file-transfer round-trip pays a fixed tax regardless of scope.
+- After every power-on of the target, run one **unscored warm-up cell**
+  (same fixture and build, recorded as warm-up): the first cell after
+  power-on reads off. List it in the pre-registration. See
+  `docs/optimization.md`.
+- Rank candidates in the lab at fixed-cycles DOSBox-X, but decide on
+  hardware. Fixed cycles are deterministic, but blind to 486 CPI and
+  code-layout effects: a layout change alone was seen to move a 486
+  result by about 0.5 ms/tick, a HYPOTHESIS pending ABBA confirmation.
 - Decide a dedicated capture mode before you need sub-second visual
   timing verification, not after (see `dos-rig-operations`'s
   screen-capture reference).
@@ -127,7 +135,11 @@ next reader trusts it precisely because it's written down.
 A change can verifiably move the intermediate quantity it was designed to
 influence and still not move the KPI — confirm the actual target metric
 moved before crediting the fix. See `docs/optimization.md`'s
-stalls-vs-tightening finding for a real case.
+stalls-vs-tightening finding for a real case. A second one is dosags
+"D2": removing an audio `SDL_Delay(10)` from the main-thread pump cut the
+pump from 8.1 ms to 0.4 ms. The tick rate moved only 39.000 -> 39.135
+(noise 0.02), so the pre-registered target was falsified: the sleep had
+mostly fallen in idle time, and load stalls are the limiter.
 
 ## 8. Record the result
 
