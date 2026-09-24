@@ -186,10 +186,14 @@ working on its own engine, not about promoting engine code itself.
   other absolute path. So identical code built in two worktrees, or two
   clones, gets two different stamps, and the binaries differ only in
   those 12-13 stamp bytes. In dosags (2026-09-24) that looked like a code
-  difference that wasn't there. Hash CONTENTS, keyed by RELATIVE path, in
-  a fixed order: `(cd "$ROOT" && LC_ALL=C sort <list> | xargs cat)`, or
-  `sha256sum` run from the root with relative names. Replace absolute
-  roots in echoed flags with a placeholder
+  difference that wasn't there. Hash CONTENTS keyed by RELATIVE path, in
+  a fixed order, with each file's name in the input. The one recommended
+  form:
+  `(cd "$ROOT" && LC_ALL=C sort <list> | xargs sha256sum) | sha256sum`.
+  Each input line is `<hash>  <relative path>`, so a rename, or bytes
+  moving from one file into the next, changes the stamp. A bare
+  `xargs cat` of the files would not catch either. Replace absolute roots
+  in echoed flags with a placeholder
   (`$(subst $(REPO_ROOT),@ROOT@,...)`). The hub's own hashes follow this
   rule:
   - `shared/scripts/series-sha.sh` folds in basenames only, plus

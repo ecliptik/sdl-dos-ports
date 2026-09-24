@@ -153,12 +153,23 @@ Source: dosags-worker's disassembly of DJGPP libc's `uclock.o`
 **Recommended pattern** (no shared patch implements it yet):
 - One IRQ-safe PIT read routine, used by every piece of port or shared
   code that reads ch0: interrupts off around the three port operations
-  (`pushf; cli; out 0x43,0; in 0x40; in 0x40; popf`). Inside an ISR,
-  interrupts are already off.
+  (`pushf; cli; out 0x43,0; in 0x40; in 0x40; popf`), and around nothing
+  more. While IF=0, IRQ 0 ticks are held back, so the window stays at
+  those three or four port operations, never a longer section. The
+  routine is needed in mainline code, and inside an ISR that has
+  re-enabled interrupts: dosags' SDL 0226 v2 does `sti` during its MIDI
+  drain, and any such handler must use it too. Only an ISR that has NOT
+  re-enabled interrupts is already safe.
 - `uclock()` itself is libc and cannot be patched. Where an ISR also
-  latches ch0, either keep ch0 reads out of that ISR (RDTSC where present,
-  or count IRQs), or call `uclock()` with interrupts off (`pushf; cli;
-  uclock(); popf`).
+  latches ch0, the robust choice is to keep ch0 reads out of that ISR
+  (RDTSC where present, or count IRQs).
+- If you must wrap `uclock()` in `pushf; cli; ... popf` instead: its
+  FIRST call must never run with IF=0. That call waits for the BIOS tick
+  at 0x46C to change, and with interrupts off IRQ 0 never fires and the
+  machine hangs. Make one warm-up `uclock()` call with interrupts ON
+  before any cli-wrapped call. Keep the wrap to that single call, because
+  each read already spans several port operations and holds IRQ 0 back
+  while it runs.
 - Never reprogram ch0 with a mode or count that `uclock()` doesn't
   expect (see "Your clock can lie" above).
 
