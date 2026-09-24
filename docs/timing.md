@@ -111,6 +111,57 @@ same span the in-engine measurement covers -- an unaccounted-for
 startup/teardown window on one side of the comparison but not the other
 produces a confident, wrong verdict in either direction.
 
+## PIT channel 0 on DJGPP: what `uclock()` does to it, and a latch race
+
+Source: dosags-worker's disassembly of DJGPP libc's `uclock.o`
+(2026-09-24), re-checked in the hub against the same toolchain's
+`i586-pc-msdosdjgpp/lib/libc.a`.
+
+- **The first call reprograms ch0 to MODE 2.** On its first call,
+  `uclock()` writes `0x34` to port 0x43, then `0xFF` twice to port 0x40:
+  channel 0, lo/hi access, MODE 2 (rate generator), count 0xFFFF. It then
+  waits for the BIOS tick at 0x46C to change, to align with it. From then
+  on, ch0 counts DOWN by 1 per 1.193182 MHz clock (838 ns per count). The
+  BIOS's MODE 3 counts by 2. IRQ 0 still fires at 18.2 Hz. Code that
+  reads ch0 and assumes MODE 3 misreads elapsed time by a factor of two.
+  The hub's SB audio IRQ timer (SDL/0039, PIT mode) converts with 838 ns
+  per count, which is right for MODE 2; its comment still says "mode 3".
+- **Every read is unprotected.** Each `uclock()` call reads the BIOS
+  tick, sends latch command `0x00` to port 0x43, reads port 0x40 twice
+  (lo, then hi) and re-reads the BIOS tick. It retries only if the tick
+  changed. There is no `cli` around the three port operations.
+- **The race.** The 8254 has one latch and one lo/hi flip-flop per
+  channel, shared by everything that reads it. An ISR that also latches
+  and reads ch0 can fire between `uclock()`'s latch and its two reads.
+  - A latch command is ignored while a latch is still pending, so the ISR
+    can read `uclock()`'s latched value.
+  - `uclock()` can then read the live counter, with the flip-flop out of
+    step.
+  - Rare, wild values on both sides. The BIOS-tick check does not catch
+    it, because the tick has not changed.
+  In the hub that other reader is the SB audio IRQ timer in PIT mode,
+  which only 486-class CPUs use: without RDTSC they fall back to the
+  PIT. Pentium-class runs time that ISR with RDTSC and don't touch ch0
+  there.
+  **Status: a candidate, not an explanation.** No measured outlier has
+  been shown to come from it. dosags lab-journeys' H35-TSC cell is
+  testing it.
+- **A single PIT delta wraps at 54.9 ms** (65536 counts). Time a wait
+  longer than that by summing steps that are each shorter than 54.9 ms,
+  or use a clock that folds in the BIOS tick (`uclock()` itself does).
+
+**Recommended pattern** (no shared patch implements it yet):
+- One IRQ-safe PIT read routine, used by every piece of port or shared
+  code that reads ch0: interrupts off around the three port operations
+  (`pushf; cli; out 0x43,0; in 0x40; in 0x40; popf`). Inside an ISR,
+  interrupts are already off.
+- `uclock()` itself is libc and cannot be patched. Where an ISR also
+  latches ch0, either keep ch0 reads out of that ISR (RDTSC where present,
+  or count IRQs), or call `uclock()` with interrupts off (`pushf; cli;
+  uclock(); popf`).
+- Never reprogram ch0 with a mode or count that `uclock()` doesn't
+  expect (see "Your clock can lie" above).
+
 ## An engine's portable clock can cost 1.3 ms PER READ, and its sleep a whole 55 ms tick
 
 The `gettimeofday()` finding above is about *resolution*. This one is
