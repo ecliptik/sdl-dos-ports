@@ -1,4 +1,4 @@
-From 2332c9065b74aeba09a3c86a3b3c2bddb72aeb3f Mon Sep 17 00:00:00 2001
+From 7181532bae791e4fa5d0716228a13aa9537614f4 Mon Sep 17 00:00:00 2001
 From: Micheal Waltz <micheal@ecliptik.com>
 Date: Thu, 24 Sep 2026 15:45:50 -0700
 Subject: [PATCH] [SDL3-DOS] dos: patch 0146 -- the silence throttle never
@@ -75,11 +75,11 @@ states the rule without the dosags-only thread clause. Tags renumbered
 Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01Nz9XeKeVG8Ab7dm8esJsMu
 ---
- src/audio/dos/SDL_dosaudio_sb.c | 38 ++++++++++++++++++++++++++++++++-
- 1 file changed, 37 insertions(+), 1 deletion(-)
+ src/audio/dos/SDL_dosaudio_sb.c | 35 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 34 insertions(+), 1 deletion(-)
 
 diff --git a/src/audio/dos/SDL_dosaudio_sb.c b/src/audio/dos/SDL_dosaudio_sb.c
-index e53b31239..c78e69719 100644
+index e53b31239..6035e2623 100644
 --- a/src/audio/dos/SDL_dosaudio_sb.c
 +++ b/src/audio/dos/SDL_dosaudio_sb.c
 @@ -379,6 +379,12 @@ static volatile bool g_dos_audio_hard_park = false;
@@ -116,7 +116,7 @@ index e53b31239..c78e69719 100644
      bool has_room = false;
  
      if (iter_ok) {
-@@ -4254,7 +4266,31 @@ static bool DOSSOUNDBLASTER_PlayDevice(SDL_AudioDevice *device, const Uint8 *buf
+@@ -4254,7 +4266,28 @@ static bool DOSSOUNDBLASTER_PlayDevice(SDL_AudioDevice *device, const Uint8 *buf
                 ISR increments consecutive-silent-IRQ counter -> DSP
                 auto-engage idle-pause fires when threshold met -> IRQ-5
                 stops -> fps recovered. Same mechanism as SDL/0050. */
@@ -126,13 +126,10 @@ index e53b31239..c78e69719 100644
 +               thread spinning through Iterate while there is nothing to
 +               play. PlayDevice is also reached from the application's own
 +               loop through SDL_DOSAudioPump() (SDL/0067), and there the
-+               10 ms sleep lands on the game loop instead: a port that pumps
-+               once per game tick lost ~10-11 ms of every silent tick (dosags
-+               S32S1 on a 486: pump mean 11.0 ms/tick, stable 27.3 vs 37.5
-+               sound-off). The pump caller paces its own calls (dosags: one
-+               per tick, plus about one per ms inside its own frame wait,
-+               which only polls while the wait has room for a poll), so it
-+               needs no throttle from here. The skip itself
++               10 ms sleep lands on the game loop instead: e.g. a port
++               pumping once per game tick lost ~10 ms per silent tick. The
++               pump caller paces its own calls, so it needs no throttle
++               from here. The skip itself
 +               is unchanged on both paths: the silent buffer is still not
 +               written, so the SB still drains to its idle pause.
 +               Decided structurally -- is this call inside SDL_DOSAudioPump()? --
