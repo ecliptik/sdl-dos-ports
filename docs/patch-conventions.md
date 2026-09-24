@@ -178,6 +178,24 @@ working on its own engine, not about promoting engine code itself.
   on `build/vendor-state/<vendor>.state`, which is rewritten only when the
   tree's HEAD or uncommitted diff changes. A port with its own build rules
   for a vendored library needs the same dependency.
+- **A build stamp must not contain the checkout's absolute path.** If a
+  stamp like `BUILD_SHA12` hashes the OUTPUT of `sha256sum FILE`, that
+  output line includes FILE's path exactly as given (`<hash>
+  /home/.../worktree/.sdl-dos-ports/shared/...`). The same holds for
+  echoed compiler or cmake flags that contain `-I$(HUB_DIR)/...` or any
+  other absolute path. So identical code built in two worktrees, or two
+  clones, gets two different stamps, and the binaries differ only in
+  those 12-13 stamp bytes. In dosags (2026-09-24) that looked like a code
+  difference that wasn't there. Hash CONTENTS, keyed by RELATIVE path, in
+  a fixed order: `(cd "$ROOT" && LC_ALL=C sort <list> | xargs cat)`, or
+  `sha256sum` run from the root with relative names. Replace absolute
+  roots in echoed flags with a placeholder
+  (`$(subst $(REPO_ROOT),@ROOT@,...)`). The hub's own hashes follow this
+  rule:
+  - `shared/scripts/series-sha.sh` folds in basenames only, plus
+    contents, in `LC_ALL=C` order;
+  - `sdl3-dos.mk`'s vendor-state stamp hashes git's output, whose paths
+    are repo-relative.
 - **Uncommitted vendor-tree work is one `apply-patches.sh` run away from
   gone.** `apply-patches.sh` hard-resets a vendor tree to its pinned SHA
   before applying the patch series -- routine, and destructive to
