@@ -86,6 +86,47 @@ a big data set. **Rules for new ISR code in any port:**
   FPU, `uclock()` or SDL calls. This is `0144`'s contract, and doskutsu's
   `0072` works within it too.
 
+
+### An ISR that re-enables interrupts must mask its own IRQ first
+
+The DJGPP libc wrappers behind `DOS_HookInterrupt` and
+`DOS_HookInterruptReplace` do not let a handler re-enter itself.
+- `_go32_dpmi_chain_protected_mode_interrupt_vector` (the chain variant,
+  used by the SB IRQ) copies a code template, `_wrapper_intcommon` in
+  libc's `gopint.o`, into a locked buffer.
+- `_go32_dpmi_allocate_iret_wrapper` (the replace variant, used by the
+  keyboard and OPL-PIT handlers) copies the same template.
+
+Read from the disassembly of the toolchain's `libc.a`, the template:
+1. increments a counter;
+2. checks a per-wrapper BUSY flag;
+3. if the flag is clear, sets it, switches to the wrapper's own stack,
+   calls the handler, then clears the flag;
+4. if the flag is already set -- this wrapper is still running -- does
+   NOT call the handler at all.
+
+It then ends either way:
+- the chain variant far-jumps to the PREVIOUS vector (`_wrapper_intchain`);
+- the replace variant just `iret`s (`_wrapper_intiret`).
+
+So if a handler executes `sti` part-way through, and its own IRQ fires
+again before it returns, that nested entry never reaches the handler:
+- with the chain variant it goes to the previous handler (often the
+  BIOS or DOS default);
+- with the replace variant it is dropped, with no EOI from us.
+
+Either way the interrupt is lost to the port.
+
+**Rule:** an ISR that re-enables interrupts mid-handler must first mask
+its OWN IRQ line at the PIC, and unmask it again with interrupts off
+before returning. Other IRQs can then nest safely, and its own line
+cannot re-enter a wrapper that would send it elsewhere. No hub ISR
+re-enables interrupts today: the SB, OPL-PIT and keyboard handlers all
+run with IF=0 throughout. The rule is for any port or shared handler that
+adds an `sti`. Source: dosags' review of its SDL 0226 v1 -> v2, which
+does this. Its v2 lab witness is still running, so this records the rule,
+not a measured result.
+
 ## Seams that matter
 
 Each seam is a place ports have historically hit friction — see the
