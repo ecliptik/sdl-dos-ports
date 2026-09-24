@@ -27,6 +27,7 @@
 #       command: tools/dosbox-run.sh --sb-live --fast --exe build/SBRING.EXE --stdout "$RATCHET_OUT/stdout.txt"
 #       timeout: 300                # seconds (default 600)
 #       display: 251                # capture runs only: Xvfb display number
+#       lock: exclusive             # exclusive (default) | shared -- see LOCK MODE
 #   checks:
 #     - name: sb-overwrites         # [A-Za-z0-9_.-], unique among checks
 #       run: sbring                 # EITHER a run's name ...
@@ -53,7 +54,22 @@
 # contains " #". Unknown keys, duplicate
 # keys and duplicate names are errors (a typo must not silently disable a
 # check). A check has exactly one of run: or command:; a check with run:
-# takes kind/timeout/display from its run and may not set them itself.
+# takes kind/timeout/display/lock from its run and may not set them itself.
+# A check's control runs with the check's lock mode.
+#
+# LOCK MODE (runs and own-command checks): exclusive by default. "lock:
+# shared" is for units at FIXED DOSBox-X cycles only, which are unaffected
+# by other instances on the host (tooling.md, fixed-cycles rule): such a unit
+# takes the host lock SHARED, may overlap other shared runs, and skips the
+# ps quiet-wait (waiting for no dosbox-x anywhere would serialise it anyway).
+# Checked when the file is read (exit 3 on a contradiction):
+#   --fast in the command -> error (dosbox-x-fast.conf is cycles=max);
+#   --conf/-conf PATH     -> PATH's last "cycles =" must be "fixed N" or a
+#                            number, else error ("verified" when it is);
+#                            a conf not found yet -> "unverified";
+#   no conf in the command (a harness that picks its own) -> "asserted by
+#   the author": the file's author vouches for fixed cycles.
+# The verdict is shown in --list and in the report's RUN table.
 # $RATCHET_OUT / ${RATCHET_OUT} in result: is the only expansion ratchet.sh
 # does; it means the out dir of whatever produced the result (the run, the
 # check's own command, or the control).
@@ -66,7 +82,8 @@
 # checks in file order. A check with run: triggers that run the first time
 # any selected check needs it; later checks reuse its result. Every run, check
 # command and control is a UNIT, executed ONE AT A TIME with:
-#   - the host-wide DOSBox-X lock: flock EXCLUSIVE on /tmp/dos-port-dosbox.lock
+#   - the host-wide DOSBox-X lock (EXCLUSIVE, or SHARED for a "lock: shared"
+#     unit): flock on /tmp/dos-port-dosbox.lock
 #     (--dosbox-lock; DOSBOX_LOCK_FILE) held for the whole unit, and
 #     DOSBOX_LOCK_HELD=1 in the unit's environment so the dosbox-run.sh calls
 #     inside it do not take the lock again (that would deadlock). dosbox-run.sh
@@ -75,7 +92,8 @@
 #     through the intent lock (dosbox-lock-lib.sh), so a stream of SHARED
 #     runs cannot starve the unit; holders and waiting writers are listed in
 #     <lock>.who.
-#   - then, as a FALLBACK for launchers that do not take the lock yet: wait
+#   - then, for EXCLUSIVE units, as a FALLBACK for launchers that do not
+#     take the lock yet: wait
 #     until no dosbox-x has run anywhere on the host for --quiet-for seconds in
 #     a row (default 15); a capture watcher that finds its stage as "the"
 #     dosbox-x in ps can be handed the wrong screen by any concurrent
@@ -246,8 +264,8 @@ function err(m) { print "ERR\tline " NR ": " m; exit }
 BEGIN {
     sec = ""; ri = -1; ci = -1
     split("version build build_timeout", a, " "); for (j in a) okt[a[j]] = 1
-    split("name kind command timeout display note", a, " "); for (j in a) okr[a[j]] = 1
-    split("name run command kind timeout display result match key regex pick compare limit quarantine control control_expect note", a, " ")
+    split("name kind command timeout display lock note", a, " "); for (j in a) okr[a[j]] = 1
+    split("name run command kind timeout display lock result match key regex pick compare limit quarantine control control_expect note", a, " ")
     for (j in a) okc[a[j]] = 1
 }
 {
@@ -302,6 +320,32 @@ valid_kind_timeout_display() {   # $1 label, $2 kind, $3 timeout, $4 display
     [[ "$3" =~ ^[0-9]+$ && "$3" -gt 0 ]] || die "$1: timeout must be whole seconds > 0"
     [[ -z "$4" || "$4" =~ ^[0-9]+$ ]] || die "$1: display must be a number"
 }
+# check_shared LABEL MODE COMMAND -> sets LOCKCHECK to how a SHARED unit's fixed cycles
+# were established; dies on a contradiction. The fixed-cycles rule
+# (tooling.md): only a run at FIXED cycles is unaffected by other DOSBox-X
+# instances on the host, so only such a run may share the lock.
+#   --fast in the command        -> error (dosbox-x-fast.conf is cycles=max)
+#   --conf/-conf PATH, readable  -> its last "cycles =" line must be
+#                                   "fixed N" or a plain number; else error
+#   --conf PATH not readable yet -> "unverified (conf not found: PATH)"
+#   no conf on the command line  -> "asserted by the author (no conf to check)"
+check_shared() {
+    local label="$1" mode="$2" cmd="$3" conf cyc
+    [[ "$mode" =~ ^(shared|exclusive)$ ]] || die "$label: lock must be shared or exclusive"
+    [[ "$mode" == "shared" ]] || { LOCKCHECK="exclusive"; return 0; }
+    [[ " $cmd " =~ [[:space:]]--fast[[:space:]] ]] && die "$label: lock: shared, but the command uses --fast (cycles=max); shared is for FIXED-cycles runs only"
+    conf=""
+    if [[ " $cmd " =~ [[:space:]]-?-conf[[:space:]=]+([^[:space:]]+) ]]; then conf="${BASH_REMATCH[1]}"; conf="${conf//\"/}"; conf="${conf//\'/}"; fi
+    if [[ -z "$conf" ]]; then LOCKCHECK="shared, asserted by the author (no conf on the command line to check)"; return 0; fi
+    [[ "$conf" = /* ]] || conf="$ROOT/$conf"
+    if [[ ! -r "$conf" ]]; then LOCKCHECK="shared, unverified (conf not found: $conf)"; return 0; fi
+    cyc="$(LC_ALL=C grep -iE '^[[:space:]]*cycles[[:space:]]*=' "$conf" | tail -n 1 | sed -E 's/^[^=]*=[[:space:]]*//; s/[[:space:]]*(#.*)?$//')"
+    if [[ "$cyc" =~ ^([Ff][Ii][Xx][Ee][Dd][[:space:]]+)?[0-9]+$ ]]; then
+        LOCKCHECK="shared, verified (cycles=$cyc in $conf)"; return 0
+    fi
+    die "$label: lock: shared, but $conf sets cycles=${cyc:-<unset>}, not fixed"
+}
+
 for (( r = 0; r < NRUN; r++ )); do
     n="${R[$r.name]:-}"
     [[ -n "$n" ]] || die "run #$((r + 1)): missing name"
@@ -309,8 +353,9 @@ for (( r = 0; r < NRUN; r++ )); do
     [[ -z "${RUNIDX[$n]:-}" ]] || die "run $n: duplicate name"
     RUNIDX[$n]="$r"
     [[ -n "${R[$r.command]:-}" ]] || die "run $n: missing command"
-    R[$r.kind]="${R[$r.kind]:-plain}"; R[$r.timeout]="${R[$r.timeout]:-600}"
+    R[$r.kind]="${R[$r.kind]:-plain}"; R[$r.timeout]="${R[$r.timeout]:-600}"; R[$r.lock]="${R[$r.lock]:-exclusive}"
     valid_kind_timeout_display "run $n" "${R[$r.kind]}" "${R[$r.timeout]}" "${R[$r.display]:-}"
+    check_shared "run $n" "${R[$r.lock]}" "${R[$r.command]}"; R[$r.lockcheck]="$LOCKCHECK"
 done
 declare -A NAMES=()
 for (( i = 0; i < NCHECK; i++ )); do
@@ -324,14 +369,16 @@ for (( i = 0; i < NCHECK; i++ )); do
     fi
     if [[ -n "${C[$i.run]:-}" ]]; then
         [[ -n "${RUNIDX[${C[$i.run]}]:-}" ]] || die "check $n: no run named ${C[$i.run]}"
-        for kk in kind timeout display; do
+        for kk in kind timeout display lock; do
             [[ -z "${C[$i.$kk]:-}" ]] || die "check $n: $kk comes from run ${C[$i.run]}; do not set it on the check"
         done
         r="${RUNIDX[${C[$i.run]}]}"
         C[$i.kind]="${R[$r.kind]}"; C[$i.timeout]="${R[$r.timeout]}"; C[$i.display]="${R[$r.display]:-}"
+        C[$i.lock]="${R[$r.lock]}"
     else
-        C[$i.kind]="${C[$i.kind]:-plain}"; C[$i.timeout]="${C[$i.timeout]:-600}"
+        C[$i.kind]="${C[$i.kind]:-plain}"; C[$i.timeout]="${C[$i.timeout]:-600}"; C[$i.lock]="${C[$i.lock]:-exclusive}"
         valid_kind_timeout_display "check $n" "${C[$i.kind]}" "${C[$i.timeout]}" "${C[$i.display]:-}"
+        check_shared "check $n" "${C[$i.lock]}" "${C[$i.command]}"; C[$i.lockcheck]="$LOCKCHECK"
     fi
     C[$i.result]="${C[$i.result]:--}"
     if [[ -n "${C[$i.key]:-}" && -n "${C[$i.regex]:-}" ]] || [[ -z "${C[$i.key]:-}" && -z "${C[$i.regex]:-}" ]]; then
@@ -348,6 +395,7 @@ for (( i = 0; i < NCHECK; i++ )); do
         die "check $n: control_expect without control"
     fi
     if [[ -n "${C[$i.control]:-}" ]]; then
+        check_shared "check $n control" "${C[$i.lock]}" "${C[$i.control]}"; C[$i.ctllockcheck]="$LOCKCHECK"
         C[$i.control_expect]="${C[$i.control_expect]:-fail}"
         [[ "${C[$i.control_expect]}" == "fail" ]] || die "check $n: control_expect must be fail"
     fi
@@ -369,7 +417,7 @@ selected() {
 if (( LIST )); then
     [[ -n "${T[build]:-}" ]] && echo "build: ${T[build]}  (timeout ${T[build_timeout]}s)"
     for (( r = 0; r < NRUN; r++ )); do
-        printf 'run   %-30s %-8s timeout=%ss\n' "${R[$r.name]}" "${R[$r.kind]}" "${R[$r.timeout]}"
+        printf 'run   %-30s %-8s timeout=%ss  lock=%s\n' "${R[$r.name]}" "${R[$r.kind]}" "${R[$r.timeout]}" "${R[$r.lockcheck]}"
     done
     for (( i = 0; i < NCHECK; i++ )); do
         src="${C[$i.run]:+run=${C[$i.run]}}"; [[ -z "$src" ]] && src="own-command"
@@ -445,16 +493,16 @@ host_quiet() {     # 0 = no dosbox-x on the host for QUIET_FOR s in a row
 #   the command, after the waits), U_WAIT, U_SECS. OUTDIR/output.txt gets the
 #   command's stdout+stderr.
 run_unit() {
-    local label="$1" kind="$2" tmo="$3" disp="$4" cmd="$5" dir="$6" nolock="${7:-}"
+    local label="$1" kind="$2" tmo="$3" disp="$4" cmd="$5" dir="$6" lockmode="${7:-exclusive}"
     local w0 cpid timed_out=0 dnum
     U_STATUS=""; U_RC=""; U_T0=0; U_WAIT=0; U_SECS=0
     mkdir -p "$dir"; : > "$dir/output.txt"
     (( INTERRUPTED )) && { U_STATUS="INTERRUPTED"; return; }
     w0=$(date +%s); WAIT_DEADLINE=$(( w0 + BUSY_WAIT ))
-    if [[ -z "$nolock" ]]; then
-        # EXCLUSIVE through the intent lock (writer priority): see
-        # dosbox-lock-lib.sh. Holds fd 8 on success.
-        if ! DBXLOCK_QUIET=1 dbxlock_acquire exclusive "$BUSY_WAIT" "tool=ratchet.sh unit=$label"; then
+    if [[ "$lockmode" != "none" ]]; then
+        # through the intent lock (writer priority): see dosbox-lock-lib.sh.
+        # Holds fd 8 on success.
+        if ! DBXLOCK_QUIET=1 dbxlock_acquire "$lockmode" "$BUSY_WAIT" "tool=ratchet.sh unit=$label"; then
             U_WAIT=$(( $(date +%s) - w0 ))
             if (( INTERRUPTED )); then U_STATUS="INTERRUPTED"; return; fi
             U_STATUS="BLOCKED"
@@ -462,7 +510,10 @@ run_unit() {
               dbxlock_describe; } >> "$dir/output.txt"
             return
         fi
-        if ! host_quiet; then
+        # the ps quiet-wait (fallback for lock-less launchers) only for
+        # EXCLUSIVE units: a SHARED unit is by definition fine beside other
+        # DOSBox-X instances, and waiting for none would serialise it anyway
+        if [[ "$lockmode" == "exclusive" ]] && ! host_quiet; then
             dbxlock_release
             U_WAIT=$(( $(date +%s) - w0 ))
             if (( INTERRUPTED )); then U_STATUS="INTERRUPTED"; return; fi
@@ -505,7 +556,7 @@ run_unit() {
     [[ -n "$(ps -eo pid=,sid= | awk -v s="$CUR_SID" '$2 == s { print $1 }')" ]] && kill_session "$CUR_SID"
     CUR_SID=""
     stop_xvfb
-    [[ -z "$nolock" ]] && dbxlock_release   # release the DOSBox-X lock
+    [[ "$lockmode" != "none" ]] && dbxlock_release   # release the DOSBox-X lock
     U_SECS=$(( $(date +%s) - U_T0 ))
     if (( timed_out )); then
         U_STATUS="TIMEOUT"; echo "ratchet.sh: $label TIMEOUT after ${tmo}s; session killed" >> "$dir/output.txt"
@@ -583,7 +634,7 @@ judge() {
 # ---------------------------------------------------------------- build ---
 BUILD_STATUS="none"; BUILD_SECS=0
 if [[ -n "${T[build]:-}" ]] && (( DO_BUILD )); then
-    run_unit "build" plain "${T[build_timeout]}" "" "${T[build]}" "$OUT/build" nolock
+    run_unit "build" plain "${T[build_timeout]}" "" "${T[build]}" "$OUT/build" none
     if [[ "$U_STATUS" == "OK" && "$U_RC" == "0" ]]; then BUILD_STATUS="OK"
     elif [[ "$U_STATUS" == "OK" ]]; then BUILD_STATUS="FAILED(rc=$U_RC)"
     else BUILD_STATUS="$U_STATUS"; fi
@@ -602,7 +653,7 @@ for (( i = 0; i < NCHECK; i++ )); do
     if [[ -n "${C[$i.run]:-}" ]]; then
         r="${RUNIDX[${C[$i.run]}]}"; rn="${C[$i.run]}"
         if [[ -z "${RS[$r]:-}" ]]; then
-            run_unit "run.$rn" "${R[$r.kind]}" "${R[$r.timeout]}" "${R[$r.display]:-}" "${R[$r.command]}" "$OUT/run.$rn"
+            run_unit "run.$rn" "${R[$r.kind]}" "${R[$r.timeout]}" "${R[$r.display]:-}" "${R[$r.command]}" "$OUT/run.$rn" "${R[$r.lock]}"
             RS[$r]="$U_STATUS"; RRC[$r]="$U_RC"; RT0[$r]="$U_T0"; RWAIT[$r]="$U_WAIT"; RSECS[$r]="$U_SECS"
             WAITS[$i]="$U_WAIT"; SECS[$i]="$U_SECS"
         else
@@ -610,7 +661,7 @@ for (( i = 0; i < NCHECK; i++ )); do
         fi
         dir="$OUT/run.$rn"; status="${RS[$r]}"; t0="${RT0[$r]}"; SRC[$i]="run.$rn"
     else
-        run_unit "check.$n" "${C[$i.kind]}" "${C[$i.timeout]}" "${C[$i.display]:-}" "${C[$i.command]}" "$OUT/check.$n"
+        run_unit "check.$n" "${C[$i.kind]}" "${C[$i.timeout]}" "${C[$i.display]:-}" "${C[$i.command]}" "$OUT/check.$n" "${C[$i.lock]}"
         dir="$OUT/check.$n"; status="$U_STATUS"; t0="$U_T0"; SRC[$i]="check.$n"
         WAITS[$i]="$U_WAIT"; SECS[$i]="$U_SECS"
     fi
@@ -626,7 +677,7 @@ if (( CONTROLS )); then
         n="${C[$i.name]}"
         selected "$n" || continue
         [[ -n "${C[$i.control]:-}" ]] || continue
-        run_unit "control.$n" "${C[$i.kind]}" "${C[$i.timeout]}" "${C[$i.display]:-}" "${C[$i.control]}" "$OUT/control.$n"
+        run_unit "control.$n" "${C[$i.kind]}" "${C[$i.timeout]}" "${C[$i.display]:-}" "${C[$i.control]}" "$OUT/control.$n" "${C[$i.lock]}"
         if [[ "$U_STATUS" != "OK" ]]; then CT[$i]="$U_STATUS"; CVAL[$i]=""; continue; fi
         judge "$i" "$OUT/control.$n" "$U_T0" "$OUT/control.$n/output.txt"
         CVAL[$i]="$J_VAL"
@@ -668,10 +719,10 @@ declare -A PROP=()
     [[ "$BUILD_STATUS" != "none" ]] && echo "build:  $BUILD_STATUS (${BUILD_SECS}s): ${T[build]}"
     echo
     if (( ${#RS[@]} > 0 )); then
-        printf '%-30s %-8s %-12s %4s %6s %6s\n' RUN KIND STATUS RC WAIT SECS
+        printf '%-30s %-8s %-12s %4s %6s %6s  %s\n' RUN KIND STATUS RC WAIT SECS LOCK
         for (( r = 0; r < NRUN; r++ )); do
             [[ -n "${RS[$r]:-}" ]] || continue
-            printf '%-30s %-8s %-12s %4s %6s %6s\n' "${R[$r.name]}" "${R[$r.kind]}" "${RS[$r]}" "${RRC[$r]:--}" "${RWAIT[$r]}" "${RSECS[$r]}"
+            printf '%-30s %-8s %-12s %4s %6s %6s  %s\n' "${R[$r.name]}" "${R[$r.kind]}" "${RS[$r]}" "${RRC[$r]:--}" "${RWAIT[$r]}" "${RSECS[$r]}" "${R[$r.lockcheck]}"
         done
         echo
     fi
@@ -684,6 +735,7 @@ declare -A PROP=()
         passes=$(printf '%s' "$h" | tr -cd 'PI' | wc -c)
         flag=""
         [[ -n "${C[$i.run]:-}" ]] && flag="run=${C[$i.run]}"
+        [[ -z "${C[$i.run]:-}" && "${C[$i.lock]}" == "shared" ]] && flag="lock ${C[$i.lockcheck]}"
         if [[ "$q" != "true" ]] && (( nonpass >= 2 && passes >= 1 )); then
             flag+="${flag:+ }SHOULD QUARANTINE (flaky: $nonpass non-pass in last ${#h})"; flagged+=("$n")
         fi

@@ -26,6 +26,10 @@ runs:
     kind: sb-live                  # needs an OPL3: a conf with oplmode=opl3
     command: tools/dosbox-run.sh --sb-live --conf tests/dosbox-x-fast-opl3.conf --exe build/MIDIDEF.EXE --args A --stdout "$RATCHET_OUT/stdout.txt"
     timeout: 240
+  - name: journeys
+    lock: shared                   # FIXED cycles only: may overlap other shared runs
+    command: tools/dosbox-run.sh --conf tests/dosbox-x-fixed40k.conf --exe build/GAME.EXE --args "--journey all" --stdout "$RATCHET_OUT/stdout.txt"
+    timeout: 1200                  # the conf sets cycles=fixed 40000 (ratchet.sh checks it)
   - name: gate
     kind: capture                  # screen captures: DOSBOX_DISPLAY_NUM, own Xvfb
     display: 251
@@ -73,6 +77,14 @@ checks:
     compare: le
     limit: 0
     control: DOSAGS_BREAK_0193=1 tests/harness/gate-alias.sh --out "$RATCHET_OUT/gate"
+
+  # Room-transition time from the fixed-cycles journey run.
+  - name: journey-room-ms
+    run: journeys
+    result: $RATCHET_OUT/stdout.txt
+    key: room_transition_ms
+    compare: le
+    limit: 900
 
   # A known-flaky check: still run and reported, never gating, until someone
   # fixes or deletes it.

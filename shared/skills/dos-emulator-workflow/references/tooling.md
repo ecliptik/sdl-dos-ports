@@ -236,9 +236,18 @@ tool needs only bash and the usual system tools (no yq here). Its parts:
   `quarantine: true` keeps it reported but not gating. A check that fails
   every time is a regression, not a flake, and is not flagged.
 - **One unit at a time, under the lock.** Every run, own-command check
-  and control holds the host-wide DOSBox-X lock (next section)
-  EXCLUSIVE. Its `dosbox-run.sh` calls see `DOSBOX_LOCK_HELD=1` and don't
-  take it again.
+  and control holds the host-wide DOSBox-X lock (next section),
+  EXCLUSIVE by default. Its `dosbox-run.sh` calls see `DOSBOX_LOCK_HELD=1`
+  and don't take it again.
+  - `lock: shared` on a run or own-command check is for FIXED-cycles
+    units only (see "Lock mode for fixed-cycles runs" below). Such a unit
+    takes the lock SHARED, can overlap other shared runs on the host, and
+    skips the `ps` quiet-wait. An exclusive taker still gets priority over
+    it through the intent lock.
+  - The file is checked when read: `--fast` in the command is an error
+    (cycles=max). A `--conf` whose last `cycles =` isn't `fixed N` or a
+    number is an error. With no conf on the command line, the author is
+    vouching for fixed cycles, and `--list` and the report say so.
   - As a fallback for launchers that don't take the lock yet, it then
     waits until no `dosbox-x` has run on the host for `--quiet-for`
     seconds in a row (default 15). `--no-host-wait` drops that once
