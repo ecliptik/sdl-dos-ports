@@ -44,7 +44,8 @@
 #       (with the current .who) if it has to wait, unless DBXLOCK_QUIET=1.
 #   dbxlock_release                    remove our .who lines, close fd 8.
 #   dbxlock_describe                   the .who lines, each marked alive/STALE.
-# fds used: 8 main (held), 7 intent (transient), 6 .who edits (transient).
+# fds used: 8 main (held), 7 intent (transient), 6 .who edits (transient),
+# 5 display (held; see DISPLAY ALLOCATION below).
 # DOSBOX_LOCK_HELD=1 is the CALLER's business: when a parent already holds
 # the lock around us, do not call dbxlock_acquire at all.
 
@@ -124,5 +125,83 @@ dbxlock_acquire() {
 dbxlock_release() {
     _dbxlock_who_edit drop
     exec 8>&-
+    return 0
+}
+
+# ---------------------------------------------------------------------------
+# DISPLAY ALLOCATION. The host lock says WHEN DOSBox-X may run; it says
+# nothing about WHERE its window goes. Two cells that hold the lock SHARED at
+# the same time on one Xvfb display land in each other's root-window captures
+# (dosags voided two pairs on 2026-09-24: lab-journeys on :231, the main
+# worker's AQ gate against its own Shards sweep on :211). So every display a
+# cell draws on is held by a per-display flock for the cell's life:
+#   /tmp/dos-port-display.<N>.lock
+#
+#   dbxlock_display_acquire [N [WAIT_S]]
+#       With N: take display N's flock, waiting up to WAIT_S seconds
+#       (default DOSBOX_LOCK_WAIT, else 3600) -- a pinned display, so two
+#       pinned cells on one display run one after the other, never together.
+#       Without N: take the first free display in DOSBOX_DISPLAY_RANGE
+#       (default 300-399), skipping any display whose /tmp/.X<N>-lock names
+#       a live X server we do not hold (one started outside this protocol),
+#       and retrying until WAIT_S if all are busy.
+#       On success sets DBXLOCK_DISPLAY=<N>, prints <N>, holds the flock on
+#       fd 5 (inherited by DOSBox-X / Xvfb children, so it lives exactly as
+#       long as they do); returns 1 on timeout.
+#       CALL IT DIRECTLY, never inside $(...): a command substitution runs in
+#       a subshell, whose fd -- and flock -- dies with it. Use the variable.
+#   dbxlock_display_release          drop it (process exit does the same).
+# Stale-safe: a flock belongs to the open file, so a holder that dies --
+# however it dies -- releases its display; nothing to clean up.
+# ---------------------------------------------------------------------------
+DBXLOCK_DISPLAY=""
+
+_dbxlock_x_alive() {    # $1 = display number: a live X server we did not start?
+    local lk="/tmp/.X$1-lock" pid
+    [[ -f "$lk" ]] || return 1
+    pid="$(tr -d ' \n' < "$lk" 2>/dev/null)"
+    [[ "$pid" =~ ^[0-9]+$ && -d "/proc/$pid" ]]
+}
+
+dbxlock_display_acquire() {
+    local want="${1:-}" wait_s="${2:-${DOSBOX_LOCK_WAIT:-3600}}" range lo hi n deadline
+    if [[ -n "$want" ]]; then
+        [[ "$want" =~ ^[0-9]+$ ]] || return 2
+        exec 5>>"/tmp/dos-port-display.$want.lock" || return 1
+        if ! flock -n -x 5; then
+            [[ "${DBXLOCK_QUIET:-0}" == "1" ]] || \
+                echo "dosbox display: :$want is in use by another cell; waiting (up to ${wait_s}s)" >&2
+            if ! flock -w "$wait_s" -x 5; then exec 5>&-; return 1; fi
+        fi
+        DBXLOCK_DISPLAY="$want"; echo "$want"; return 0
+    fi
+    range="${DOSBOX_DISPLAY_RANGE:-300-399}"
+    lo="${range%-*}"; hi="${range#*-}"
+    [[ "$lo" =~ ^[0-9]+$ && "$hi" =~ ^[0-9]+$ && "$lo" -le "$hi" ]] || return 2
+    deadline=$(( $(date +%s) + wait_s ))
+    while :; do
+        for (( n = lo; n <= hi; n++ )); do
+            exec 5>>"/tmp/dos-port-display.$n.lock" || continue
+            if flock -n -x 5; then
+                if _dbxlock_x_alive "$n"; then flock -u 5; exec 5>&-; continue; fi
+                DBXLOCK_DISPLAY="$n"; echo "$n"; return 0
+            fi
+            exec 5>&-
+        done
+        (( $(date +%s) >= deadline )) && return 1
+        sleep 1
+    done
+}
+
+dbxlock_display_release() {
+    if [[ -n "$DBXLOCK_DISPLAY" ]]; then flock -u 5 2>/dev/null; exec 5>&-; DBXLOCK_DISPLAY=""; fi
+    return 0
+}
+
+# dbxlock_display_num DISPLAY-STRING -> the number (":231", ":231.0",
+# "host:231" -> 231); empty when it has none.
+dbxlock_display_num() {
+    local d="${1##*:}"; d="${d%%.*}"
+    [[ "$d" =~ ^[0-9]+$ ]] && echo "$d"
     return 0
 }

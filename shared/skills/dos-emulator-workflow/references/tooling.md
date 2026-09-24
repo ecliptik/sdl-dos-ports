@@ -331,6 +331,32 @@ SHARED.
 - **`dosbox-launch.sh` takes no lock.** An interactive review window can
   stay open for hours and would stall every gate. It runs on its own
   display (`:0`), and a human watching is not a measurement.
+- **Displays are allocated and locked too.** The host lock says when a
+  run may start, not where its window goes. Two SHARED cells on one Xvfb
+  display land in each other's root-window captures: dosags voided two
+  such pairs, on :231 and :211. So every display a cell draws on is held
+  by a per-display flock, `/tmp/dos-port-display.<N>.lock`, for the
+  cell's life (`dbxlock_display_acquire` / `_release` in
+  `dosbox-lock-lib.sh`; stale-safe, since a dead holder's flock drops by
+  itself).
+  - `dosbox-run.sh`, unpinned `--sb-live`: gets a free display from
+    `DOSBOX_DISPLAY_RANGE` (default 300-399) and runs `xvfb-run -n N` on
+    it, instead of `xvfb-run -a`'s own racy pick. This applies in any
+    lock mode.
+  - `dosbox-run.sh`, pinned (`DOSBOX_DISPLAY=:N`, N != 0): takes display
+    N's flock, so a second cell pinned to the same display WAITS for the
+    first (up to `DOSBOX_LOCK_WAIT`). A worker running several cells at
+    once should stop pinning and let them be allocated.
+  - `dosbox-launch.sh`: `DOSBOX_DISPLAY=auto` allocates a display and
+    starts a headless Xvfb for the session (stopped when DOSBox-X exits).
+    A pinned `:N` takes that display's flock, waiting
+    `DOSBOX_DISPLAY_WAIT` (10 s) before refusing.
+  - `:0` (the human's desktop) is never locked.
+  - Order: the host lock first, then the display. Every tool keeps that
+    order, so none can hold one while waiting for the other in reverse.
+  - Call `dbxlock_display_acquire` directly, not inside `$(...)`: the
+    flock belongs to the calling shell, and a command substitution's
+    subshell would drop it at once. Read `DBXLOCK_DISPLAY`.
 - **Display isolation is a separate requirement, not a lock:** every
   capture tool must track its own DOSBox-X (pid or stage) and grab only
   its own display. Never pick "the" `dosbox-x` out of `ps`: that was the

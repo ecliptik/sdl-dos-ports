@@ -95,8 +95,10 @@ Usage: dosbox-run.sh --exe PATH [--args "..."] [--stdout PATH] [--include PATH].
                      DOSBox-X side.
   --sb-live          Run with DOSBox-X's Sound Blaster actually playing: drop
                      `-silent` (which disables the emulated SB outright), run
-                     under a private `xvfb-run -a` display (or DOSBOX_DISPLAY if
-                     set), send host audio to SDL_AUDIODRIVER=dummy unless set,
+                     under a private Xvfb display allocated from
+                     DOSBOX_DISPLAY_RANGE (default 300-399) and held for the
+                     run (or DOSBOX_DISPLAY if set, whose display is then
+                     held the same way), send host audio to SDL_AUDIODRIVER=dummy unless set,
                      and do NOT set SDL_DOS_AUDIO_SB_SKIP_DETECTION, so SB
                      detection runs as it does on real hardware. Use it for any
                      run whose audio figures (IRQ counts, ring fill, clip timing)
@@ -258,17 +260,52 @@ case "$LOCK_MODE" in shared|exclusive|none) ;; *) echo "dosbox-run.sh: --lock mu
 if [[ "${DOSBOX_LOCK_HELD:-0}" == "1" ]]; then
   LOCK_MODE=none   # the caller holds it exclusively around us
 fi
+# dosbox-lock-lib.sh sits next to this script in the hub; a port runs this
+# script through a tools/ symlink, so resolve the real path first.
+# shellcheck source=./dosbox-lock-lib.sh
+source "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/dosbox-lock-lib.sh"
 if [[ "$LOCK_MODE" != "none" ]]; then
-  # dosbox-lock-lib.sh sits next to this script in the hub; a port runs this
-  # script through a tools/ symlink, so resolve the real path first.
-  # shellcheck source=./dosbox-lock-lib.sh
-  source "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/dosbox-lock-lib.sh"
   if ! dbxlock_acquire "$LOCK_MODE" "${DOSBOX_LOCK_WAIT:-3600}" \
         "tool=dosbox-run.sh exe=$(basename "$EXE")"; then
     echo "dosbox-run.sh: DOSBox-X lock still busy after ${DOSBOX_LOCK_WAIT:-3600}s; not running" >&2
     exit 75
   fi
   LOCK_HELD_HERE=1
+fi
+
+# Display -------------------------------------------------------------------
+# Taken AFTER the host lock -- always that order, so no two takers can each
+# hold one and wait for the other. --sb-live and --interactive draw on an X
+# display; two cells on one display land in each other's root-window
+# captures, so the display is held by a per-display flock for this run (see
+# dosbox-lock-lib.sh, DISPLAY ALLOCATION):
+#   - pinned (DOSBOX_DISPLAY set, other than :0): take that display's flock;
+#     a second cell pinned to the same display waits for this one;
+#   - unpinned --sb-live: allocate a free display from DOSBOX_DISPLAY_RANGE
+#     (default 300-399) and run xvfb-run on it (was: xvfb-run -a's own
+#     pick, which two concurrent runs could race). Done for any lock mode:
+#     under DOSBOX_LOCK_HELD the mode is the parent's and unknown here, and
+#     allocating costs an exclusive run nothing;
+#   - unpinned --interactive goes to :0, the human's desktop: no display
+#     lock (a person watching, not a capture).
+# The flock sits on fd 5, which DOSBox-X and xvfb-run inherit.
+ALLOC_DISPLAY=""
+if [[ "$SB_LIVE" == "1" || "$INTERACTIVE" == "1" ]]; then
+  if [[ -n "${DOSBOX_DISPLAY:-}" ]]; then
+    PIN_NUM="$(dbxlock_display_num "$DOSBOX_DISPLAY")"
+    if [[ -n "$PIN_NUM" && "$PIN_NUM" != "0" ]]; then
+      if ! dbxlock_display_acquire "$PIN_NUM" >/dev/null; then
+        echo "dosbox-run.sh: display :$PIN_NUM still in use by another cell after ${DOSBOX_LOCK_WAIT:-3600}s; not running" >&2
+        exit 75
+      fi
+    fi
+  elif [[ "$SB_LIVE" == "1" ]]; then
+    if ! dbxlock_display_acquire >/dev/null; then
+      echo "dosbox-run.sh: no free display in ${DOSBOX_DISPLAY_RANGE:-300-399} after ${DOSBOX_LOCK_WAIT:-3600}s; not running" >&2
+      exit 75
+    fi
+    ALLOC_DISPLAY="$DBXLOCK_DISPLAY"
+  fi
 fi
 
 # Invoke DOSBox-X -----------------------------------------------------------
@@ -296,7 +333,7 @@ elif [[ "$SB_LIVE" == "1" ]]; then
       echo "dosbox-run.sh: --sb-live needs xvfb-run (or DOSBOX_DISPLAY set)" >&2
       exit 2
     fi
-    xvfb-run -a dosbox-x "${DBX_ARGS[@]}" >/dev/null 2>&1 || {
+    xvfb-run -n "$ALLOC_DISPLAY" dosbox-x "${DBX_ARGS[@]}" >/dev/null 2>&1 || {
       rc=$?
       echo "dosbox-run.sh: dosbox-x exited non-zero ($rc)" >&2
       exit $rc

@@ -13,6 +13,7 @@
 #   tools/dosbox-launch.sh --exe build/game.exe    # auto-run on launch
 #   tools/dosbox-launch.sh --stage                 # mount build/stage/ as C:
 #   tools/dosbox-launch.sh --stage --exe GAME.EXE  # stage + auto-run
+#   DOSBOX_DISPLAY=auto tools/dosbox-launch.sh     # own headless display (300-399)
 #
 # The --stage form runs `make stage` first (so GAME.EXE + CWSDPMI.EXE +
 # data/ all sit together) and mounts that staging dir as C:. This matches the
@@ -97,6 +98,38 @@ fi
 # dosbox-teardown.sh documents. See dbx_pids_on_display there.
 # shellcheck source=./dosbox-teardown.sh
 source "$SCRIPT_DIR/dosbox-teardown.sh"
+# the display allocator (dosbox-lock-lib.sh, next to the real script)
+# shellcheck source=./dosbox-lock-lib.sh
+source "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/dosbox-lock-lib.sh"
+
+# Display (see dosbox-lock-lib.sh, DISPLAY ALLOCATION). This launcher takes
+# no host lock, only a display:
+#   - DOSBOX_DISPLAY=auto: allocate a free display from DOSBOX_DISPLAY_RANGE
+#     (default 300-399) and start a headless Xvfb on it for this session --
+#     for scripted/agent sessions that drive DOSBox-X with xdotool;
+#   - DOSBOX_DISPLAY=:N (N != 0): take display N's flock, so this window can
+#     never share a display with another cell's captures; wait up to
+#     DOSBOX_DISPLAY_WAIT seconds (default 10), then refuse;
+#   - unset or :0: the human's desktop, no display lock (as before).
+# The flock is inherited by DOSBox-X (and, in auto mode, by the small
+# supervisor that stops our Xvfb when DOSBox-X exits), so it lasts exactly
+# as long as the session, after this script has returned.
+AUTO_DISPLAY=0
+if [[ "${DOSBOX_DISPLAY:-}" == "auto" ]]; then
+  if ! dbxlock_display_acquire "" "${DOSBOX_DISPLAY_WAIT:-10}" >/dev/null; then
+    echo "dosbox-launch.sh: no free display in ${DOSBOX_DISPLAY_RANGE:-300-399}" >&2
+    exit 1
+  fi
+  DOSBOX_DISPLAY=":$DBXLOCK_DISPLAY"; AUTO_DISPLAY=1
+elif [[ -n "${DOSBOX_DISPLAY:-}" ]]; then
+  _pin="$(dbxlock_display_num "$DOSBOX_DISPLAY")"
+  if [[ -n "$_pin" && "$_pin" != "0" ]]; then
+    if ! dbxlock_display_acquire "$_pin" "${DOSBOX_DISPLAY_WAIT:-10}" >/dev/null; then
+      echo "dosbox-launch.sh: display :$_pin is held by another cell (still after ${DOSBOX_DISPLAY_WAIT:-10}s); not launching. Use DOSBOX_DISPLAY=auto or another display." >&2
+      exit 1
+    fi
+  fi
+fi
 LAUNCH_DISPLAY="${DOSBOX_DISPLAY:-:0}"
 
 if [[ "$KILL_FIRST" == "1" ]] && [[ -n "$(dbx_pids_on_display "$LAUNCH_DISPLAY")" ]]; then
@@ -196,13 +229,30 @@ if [[ -n "$EXE" ]]; then
 fi
 
 CONF_NAME="$(basename "$CONF")"
-echo "Launching DOSBox-X (DISPLAY=$DISPLAY, config=$CONF_NAME)..."
-dosbox-x "${DBX_ARGS[@]}" &
-DBX_PID=$!
+if [[ "$AUTO_DISPLAY" == "1" ]]; then
+  # our own Xvfb (without the display fd, so it cannot outlive the session
+  # by holding it), then DOSBox-X under a supervisor that holds the display
+  # flock and stops the Xvfb once DOSBox-X exits
+  Xvfb "$DISPLAY" -screen 0 1280x1024x24 -nolisten tcp 5>&- >/dev/null 2>&1 &
+  XVFB_PID=$!
+  for _ in 1 2 3 4 5 6 7 8 9 10; do xdpyinfo -display "$DISPLAY" >/dev/null 2>&1 && break; sleep 0.5; done
+  echo "Launching DOSBox-X (DISPLAY=$DISPLAY, allocated, headless Xvfb pid $XVFB_PID, config=$CONF_NAME)..."
+  ( dosbox-x "${DBX_ARGS[@]}"; kill "$XVFB_PID" 2>/dev/null ) &
+  SUP_PID=$!
+  DBX_PID=""
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    DBX_PID="$(pgrep -P "$SUP_PID" 2>/dev/null | head -n 1 || true)"; [[ -n "$DBX_PID" ]] && break; sleep 0.2
+  done
+  DBX_PID="${DBX_PID:-$SUP_PID}"
+else
+  echo "Launching DOSBox-X (DISPLAY=$DISPLAY, config=$CONF_NAME)..."
+  dosbox-x "${DBX_ARGS[@]}" &
+  DBX_PID=$!
+fi
 echo "DOSBox-X running (PID $DBX_PID)."
 echo
-echo "  screenshot:  DISPLAY=:0 scrot -u /tmp/dosbox.png"
-echo "  focus:       DISPLAY=:0 xdotool search --name DOSBox windowactivate --sync"
-echo "  type:        DISPLAY=:0 xdotool type --delay 40 'GAME'"
-echo "  key:         DISPLAY=:0 xdotool key Return"
+echo "  screenshot:  DISPLAY=$DISPLAY scrot -u /tmp/dosbox.png"
+echo "  focus:       DISPLAY=$DISPLAY xdotool search --name DOSBox windowactivate --sync"
+echo "  type:        DISPLAY=$DISPLAY xdotool type --delay 40 'GAME'"
+echo "  key:         DISPLAY=$DISPLAY xdotool key Return"
 echo "  stop:        Ctrl+F9 in the window, or kill $DBX_PID (never pkill -x dosbox-x)"
