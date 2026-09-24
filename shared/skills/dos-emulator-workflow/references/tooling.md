@@ -282,15 +282,32 @@ SHARED.
     freeze-capture gates use), SHARED otherwise.
   - Override with `--lock shared|exclusive|none` or `DOSBOX_LOCK_MODE`.
   - It waits `DOSBOX_LOCK_WAIT` seconds (default 3600), then exits 75.
-  - The holder is written to `/tmp/dos-port-dosbox.lock.who` and removed
-    on release. A waiter prints it marked `(alive)` or
-    `(STALE: pid N is not running)`: a holder that was killed never
-    releases, so the recorded pid is checked. `.who` is informational,
+  - **Writers have priority.** Plain `flock` lets a new SHARED taker in
+    while an EXCLUSIVE waiter is queued, so a stream of overlapping
+    shared runs could starve a writer (dosags saw an hour). Every taker
+    therefore goes through an intent lock, `/tmp/dos-port-dosbox.lock.intent`:
+    - EXCLUSIVE: intent exclusive, then main exclusive, then release
+      intent.
+    - SHARED: intent shared, then main shared, then release intent.
+    A queued writer holds intent, so new readers wait behind it; it
+    waits only for the readers already inside. It releases intent as
+    soon as it holds the main lock, so a second writer can queue on the
+    main lock and be the next holder, with no reader slipping between
+    them. The implementation is `shared/tools/dosbox-lock-lib.sh`, a
+    sourced library used by `dosbox-run.sh` and `ratchet.sh`; a harness
+    that takes the lock itself should use it or follow the same protocol
+    on the same two files.
+  - `/tmp/dos-port-dosbox.lock.who` has one line per holder
+    (`pid=... mode=...`) and per queued writer
+    (`waiting: pid=... mode=exclusive`). Each process removes its own
+    lines. A waiter prints the file with every line marked `(alive)` or
+    `(STALE: pid N is not running)`: a process that was killed never
+    cleans up, so the recorded pid is checked. `.who` is informational,
     and the flock itself is the truth. To ask "is the lock free?", test it
     (`flock -n -x /tmp/dos-port-dosbox.lock true`); never read `.who`.
 - **A multi-run tool** (a gate, an ABBA series, `ratchet.sh`) takes the
-  lock EXCLUSIVE once around the whole series, with `flock -x` on the
-  same file, and exports `DOSBOX_LOCK_HELD=1`. The `dosbox-run.sh` calls
+  lock EXCLUSIVE once around the whole series (through the intent lock,
+  as above) and exports `DOSBOX_LOCK_HELD=1`. The `dosbox-run.sh` calls
   inside it then skip the lock. A child that opens its own fd and asks
   again would deadlock against its parent.
 - **`ratchet.sh`** holds it EXCLUSIVE per unit (each run, own-command

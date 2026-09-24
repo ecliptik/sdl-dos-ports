@@ -113,9 +113,12 @@ Usage: dosbox-run.sh --exe PATH [--args "..."] [--stdout PATH] [--include PATH].
                      DOSBOX_LOCK_HELD=1 (a parent -- a gate, an ABBA series,
                      ratchet.sh -- already holds the lock exclusively around
                      this call: don't take it again, which would deadlock).
-                     The holder is written to <lockfile>.who (informational;
-                     removed on release; a waiter prints it marked alive or
-                     STALE by checking the recorded pid).
+                     Writers have priority: a queued EXCLUSIVE taker blocks
+                     new SHARED takers (intent lock <lockfile>.intent), so a
+                     stream of shared runs cannot starve it. Holders and
+                     waiting writers are listed in <lockfile>.who
+                     (informational; a waiter prints it, each line marked
+                     alive or STALE). Implementation: dosbox-lock-lib.sh.
   -h, --help         Show this help.
 USAGE
 }
@@ -173,28 +176,9 @@ done
 
 # Stage ---------------------------------------------------------------------
 STAGE="$(mktemp -d -t dos-port-dosbox.XXXXXX)"
-# .who is informational -- the flock is the truth. Readers annotate whether
-# the recorded holder pid still exists (/proc works across this box's
-# sandboxes even where /proc/<pid>/environ does not); a holder removes the
-# file on release if it still names itself.
-who_describe() {   # $1 = .who file
-  local line pid
-  line="$(head -n 1 "$1" 2>/dev/null)" || true
-  [[ -n "$line" ]] || { echo "none recorded"; return 0; }
-  pid="${line#pid=}"; pid="${pid%% *}"
-  if [[ "$pid" =~ ^[0-9]+$ && -d "/proc/$pid" ]]; then echo "$line (alive)"
-  else echo "$line (STALE: pid $pid is not running)"; fi
-}
-who_clear() {      # $1 = .who file: remove it if it still names this process
-  local line
-  line="$(head -n 1 "$1" 2>/dev/null)" || return 0
-  [[ "$line" == "pid=$$ "* ]] && rm -f "$1"
-  return 0
-}
-
 cleanup() {
-  # release: clear our .who entry while fd 8 still holds the lock
-  if [[ "${WHO_WRITTEN:-0}" == "1" ]]; then who_clear "$LOCK_FILE.who"; fi
+  # release: drop our .who line while fd 8 still holds the lock
+  if [[ "${LOCK_HELD_HERE:-0}" == "1" ]]; then dbxlock_release; fi
   if [[ "$KEEP_STAGE" == "1" ]]; then
     echo "dosbox-run.sh: stage kept at $STAGE" >&2
   else
@@ -275,19 +259,16 @@ if [[ "${DOSBOX_LOCK_HELD:-0}" == "1" ]]; then
   LOCK_MODE=none   # the caller holds it exclusively around us
 fi
 if [[ "$LOCK_MODE" != "none" ]]; then
-  LOCK_FILE="${DOSBOX_LOCK_FILE:-/tmp/dos-port-dosbox.lock}"
-  LOCK_WAIT="${DOSBOX_LOCK_WAIT:-3600}"
-  exec 8>>"$LOCK_FILE" || { echo "dosbox-run.sh: cannot open $LOCK_FILE" >&2; exit 75; }
-  if [[ "$LOCK_MODE" == "exclusive" ]]; then FLOCK_OPT=-x; else FLOCK_OPT=-s; fi
-  if ! flock -n "$FLOCK_OPT" 8; then
-    echo "dosbox-run.sh: waiting (up to ${LOCK_WAIT}s) for the $LOCK_MODE DOSBox-X lock; last recorded holder: $(who_describe "$LOCK_FILE.who")" >&2
-    if ! flock -w "$LOCK_WAIT" "$FLOCK_OPT" 8; then
-      echo "dosbox-run.sh: DOSBox-X lock still busy after ${LOCK_WAIT}s; not running" >&2
-      exit 75
-    fi
+  # dosbox-lock-lib.sh sits next to this script in the hub; a port runs this
+  # script through a tools/ symlink, so resolve the real path first.
+  # shellcheck source=./dosbox-lock-lib.sh
+  source "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/dosbox-lock-lib.sh"
+  if ! dbxlock_acquire "$LOCK_MODE" "${DOSBOX_LOCK_WAIT:-3600}" \
+        "tool=dosbox-run.sh exe=$(basename "$EXE")"; then
+    echo "dosbox-run.sh: DOSBox-X lock still busy after ${DOSBOX_LOCK_WAIT:-3600}s; not running" >&2
+    exit 75
   fi
-  printf 'pid=%s tool=dosbox-run.sh mode=%s exe=%s since=%s\n' "$$" "$LOCK_MODE" "$(basename "$EXE")" \
-    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$LOCK_FILE.who" 2>/dev/null && WHO_WRITTEN=1 || true
+  LOCK_HELD_HERE=1
 fi
 
 # Invoke DOSBox-X -----------------------------------------------------------
