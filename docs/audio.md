@@ -51,6 +51,47 @@ recommended 486 configuration.
 Never let compressed-audio feature completeness degrade 486 performance —
 it should always be an opt-in tier, not the default path.
 
+## Audio vitals: check that the Sound Blaster is still alive
+
+A lost Sound Blaster IRQ is fatal for the rest of the run, and every
+per-IRQ counter misses it. If one SB interrupt is lost -- for example a
+nested entry that DJGPP's interrupt wrapper hands to the previous handler
+or drops (see `docs/architecture.md`, "An ISR that re-enables interrupts
+must mask its own IRQ first") -- the DSP never gets its acknowledgement
+and never interrupts again. Audio dies silently, and the game still runs
+to a normal exit. `silent_irqs`, `underruns` and friends all stay at 0,
+because they count only IRQs that happen. (dosags lab evidence:
+LAB-JOURNEYS DLY-v1b, lab/journeys 3635d913.)
+
+So every sound-on cell also checks that the SB was alive for the whole
+run. Two parts, proven on dosags' lab ratchet (3f722717):
+
+1. **The song clock keeps pace with the wall clock.** A MIDI song clock
+   that only SB IRQs advance, compared with real seconds from the RTC,
+   must read >= 0.90. Healthy runs read 0.956-0.983; the dead run read
+   0.213. A clock advanced by anything else (uclock, the main loop)
+   cannot see the death, so it has to be the IRQ-driven one.
+2. **The IRQs that played audio are about as many as usual.** pcm_irqs
+   (the IRQs that played ring data) must be >= 0.9 x that fixture's own
+   baseline. Don't derive the expectation from run time / IRQ period:
+   pcm_irqs counts only ring-playing IRQs, not every IRQ that should
+   have fired, so it depends on how much sound the fixture plays.
+
+Keep a stored dead-run manifest as a fixture for the check's control: fed
+through the same parser, it must fail both parts (see `shared/tools/
+ratchet.sh`'s `control:`).
+
+**What a port needs to emit.** The hub's `shared/include/runmanifest.h`
+(schema v1) has no field for either value:
+- `audio_vital_status` is a single port-defined string;
+- there is no song-clock or IRQ-count field.
+dosags packs both into that string: the IRQ-driven song clock against the
+RTC as `clk=<song ms>/<RTC s>s`, and `pcm_irqs=<n>`. A port adopting the
+check emits the same two values, inside `audio_vital_status` or as extra
+`key=value` lines in the manifest block (which the schema allows). The
+checker then computes clk_ms / 1000 / rtc_s. This is a recorded GAP in
+the shared schema, not yet a field of it.
+
 ## Real-hardware audio hazards (from doskutsu's own campaign)
 
 Sourced from a long real-hardware campaign across SB16/Vibra16,
