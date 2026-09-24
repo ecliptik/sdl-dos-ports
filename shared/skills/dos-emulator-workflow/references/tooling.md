@@ -314,6 +314,16 @@ SHARED.
     cleans up, so the recorded pid is checked. `.who` is informational,
     and the flock itself is the truth. To ask "is the lock free?", test it
     (`flock -n -x /tmp/dos-port-dosbox.lock true`); never read `.who`.
+- **A SHARED series must lock per cell, never once around the series.**
+  Writer priority only works when a lock is acquired. A tool that takes
+  the lock SHARED once and then runs a whole sweep under it keeps the
+  lock for the sweep's full length. A writer that queues behind it waits
+  out every remaining cell, and so does every new shared taker, which is
+  now blocked on the writer's intent. One hour-long shared sweep stalls
+  the whole host. So a fixed-cycles sweep takes and releases the lock
+  per cell: `dosbox-run.sh` does that by default when called once per
+  cell without `DOSBOX_LOCK_HELD`. Then a queued writer gets in at the
+  next cell boundary. Displays are per cell for the same reason.
 - **A multi-run tool** (a gate, an ABBA series, `ratchet.sh`) takes the
   lock EXCLUSIVE once around the whole series (through the intent lock,
   as above) and exports `DOSBOX_LOCK_HELD=1`. The `dosbox-run.sh` calls

@@ -48,6 +48,9 @@
 # 5 display (held; see DISPLAY ALLOCATION below).
 # DOSBOX_LOCK_HELD=1 is the CALLER's business: when a parent already holds
 # the lock around us, do not call dbxlock_acquire at all.
+# Writer priority acts only at acquire time: a SHARED hold spanning a whole
+# series keeps every writer (and, behind the writer's intent, every new
+# reader) waiting for the entire series. Shared series lock per cell.
 
 DBXLOCK_FILE="${DOSBOX_LOCK_FILE:-/tmp/dos-port-dosbox.lock}"
 
