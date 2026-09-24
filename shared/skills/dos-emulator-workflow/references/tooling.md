@@ -311,3 +311,19 @@ SHARED.
   root cause of an `--sb-live` run corrupting a gate's frames. Kill only
   your own pid or your own display (`dbx_kill_display` in
   `dosbox-teardown.sh`), never `pkill -x dosbox-x`.
+
+### Lock mode for fixed-cycles runs (coordinator rule, 2026-09-23)
+
+A run at FIXED cycles (for example `cycles=fixed 40000`) is deterministic
+whatever else the host is doing. dosags showed byte-identical logs
+(lab-mmd MMDCF), and the same figures with or without overlapping runs
+(lab-metric). Such a run may take the lock SHARED, even when it measures
+time, so fixed-cycles cells from different workers can run side by side.
+Keep it to about one per spare core; the lock doesn't count holders.
+EXCLUSIVE stays the rule for:
+- anything at `cycles=max` whose result depends on time or rate;
+- freeze-capture / screen-series gates, unless the gate itself runs at
+  fixed cycles;
+- `--sb-live` cells at `cycles=max`.
+Where a result depends on emulated time, say in the record which cycles
+mode the cell ran.
