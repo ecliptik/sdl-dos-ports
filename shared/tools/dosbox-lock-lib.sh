@@ -28,6 +28,42 @@
 # new readers, and when intent freed a reader could win it and make the
 # second writer wait out that reader's whole run.)
 #
+# KNOWN RACE (design note; not fixed). flock queues are not FIFO. While
+# writer W1 holds intent and waits on main, readers R arriving later block
+# on intent -s and a second writer W2 blocks on intent -x. When W1 gets
+# main and releases intent, the kernel wakes all of them and they race.
+# Shared requests are compatible with each other, so in practice the
+# readers win -- even readers that arrived AFTER W2. Those readers then
+# hold intent -s while they wait on main behind W1, so W2 gets intent only
+# once they are all inside, and then waits for their cells to end. W2's
+# wait is W1's cell plus the overtaking readers' cells. It is bounded,
+# because readers arriving after W2 takes intent are blocked, but it is not
+# arrival order, and with many readers arriving during a long W1 cell it can
+# be long.
+#
+# PROPOSED FIX (writer tickets; design only, no code yet):
+#   - Replace the intent lock with an ordered queue. A taker draws a ticket
+#     T (a counter file incremented under a tiny flock, like .who.lock) and
+#     creates  <lock>.queue/<T>.<mode>.<pid>,  holding an EXCLUSIVE flock on
+#     that entry file for as long as it is queued.
+#   - Admission: a writer with ticket T waits until no entry < T exists; a
+#     reader with ticket T waits until no WRITER entry < T exists. Readers
+#     queued between two writers go in together, as one batch, and a
+#     writer is never overtaken by a later arrival: phase-fair, FIFO
+#     between phases.
+#   - Waiting without polling: to wait for entry E, take `flock -s` on E's
+#     file. It returns when E's owner has taken the main lock (and
+#     removed E) or has died -- the flock drops with its process, so a
+#     killed waiter cannot wedge the queue. Then re-scan and re-check.
+#   - After admission: take the main lock in the requested mode (it still
+#     excludes the current holders), then remove your own entry. Stale
+#     entries (file gone, or pid not in /proc) are pruned by whoever scans.
+#   - Test to write first: W1 holding, R1 queued, W2 queued, R2 queued.
+#     The expected order is W1, R1, W2, R2. Today R2 can overtake W2.
+#   - Cost: a queue directory, a ticket counter, and a scan per wake-up.
+#     Worth doing if the race shows up in practice. The intent lock
+#     already removes the unbounded starvation.
+#
 # .who ($DBXLOCK_FILE.who): informational, one line per holder or waiting
 # writer, each removed by its own process on release/acquire:
 #   pid=<pid> tool=... mode=shared|exclusive ... since=<utc>
