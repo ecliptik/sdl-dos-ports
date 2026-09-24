@@ -125,6 +125,8 @@ Usage: dosbox-run.sh --exe PATH [--args "..."] [--stdout PATH] [--include PATH].
                      DOSBOX_LOCK_HELD=1 (a parent -- a gate, an ABBA series,
                      ratchet.sh -- already holds the lock exclusively around
                      this call: don't take it again, which would deadlock).
+                     DOSBOX_DISPLAY_HELD=1 is the same for the display: the
+                     caller holds the pinned DOSBOX_DISPLAY's flock (fd 5).
                      Writers have priority: a queued EXCLUSIVE taker blocks
                      new SHARED takers (intent lock <lockfile>.intent), so a
                      stream of shared runs cannot starve it. Holders and
@@ -307,11 +309,20 @@ fi
 #   - unpinned --interactive goes to :0, the human's desktop: no display
 #     lock (a person watching, not a capture).
 # The flock sits on fd 5, which DOSBox-X (only) inherits.
+# DOSBOX_DISPLAY_HELD=1 (mirrors DOSBOX_LOCK_HELD): the caller already holds
+# the pinned display's flock -- typically so it can start its own Xvfb only
+# once it owns the display. Taking it again here would open a NEW file
+# description on the same lock file and block on our own parent forever,
+# so it is skipped. It requires a pinned DOSBOX_DISPLAY.
 ALLOC_DISPLAY=""
+if [[ "${DOSBOX_DISPLAY_HELD:-0}" == "1" && -z "${DOSBOX_DISPLAY:-}" ]]; then
+  echo "dosbox-run.sh: DOSBOX_DISPLAY_HELD=1 needs DOSBOX_DISPLAY (the display the caller holds)" >&2
+  exit 2
+fi
 if [[ "$SB_LIVE" == "1" || "$INTERACTIVE" == "1" ]]; then
   if [[ -n "${DOSBOX_DISPLAY:-}" ]]; then
     PIN_NUM="$(dbxlock_display_num "$DOSBOX_DISPLAY")"
-    if [[ -n "$PIN_NUM" && "$PIN_NUM" != "0" ]]; then
+    if [[ -n "$PIN_NUM" && "$PIN_NUM" != "0" && "${DOSBOX_DISPLAY_HELD:-0}" != "1" ]]; then
       if ! dbxlock_display_acquire "$PIN_NUM" >/dev/null; then
         echo "dosbox-run.sh: display :$PIN_NUM still in use by another cell after ${DOSBOX_LOCK_WAIT:-3600}s; not running" >&2
         exit 75
@@ -378,7 +389,11 @@ elif [[ "$SB_LIVE" == "1" ]]; then
       while kill -0 "$DBX_PID" 2>/dev/null; do sleep 1; done
       kill "$XVFB_PID" 2>/dev/null ) >/dev/null 2>&1 &
     rc=0; wait "$DBX_PID" || rc=$?
+    # stop our Xvfb and WAIT for it to be gone before this script exits and
+    # releases the display flock: otherwise the next owner of the display
+    # starts its Xvfb while ours is still shutting down, and loses it
     kill "$XVFB_PID" 2>/dev/null || true
+    wait "$XVFB_PID" 2>/dev/null || true
     if [[ "$rc" != "0" ]]; then
       echo "dosbox-run.sh: dosbox-x exited non-zero ($rc)" >&2
       exit "$rc"

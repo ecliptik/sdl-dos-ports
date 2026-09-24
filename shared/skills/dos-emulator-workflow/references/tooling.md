@@ -362,6 +362,25 @@ SHARED.
     A pinned `:N` takes that display's flock, waiting
     `DOSBOX_DISPLAY_WAIT` (10 s) before refusing.
   - `:0` (the human's desktop) is never locked.
+  - **A harness that owns the display itself** (to start its Xvfb only
+    once it holds the display) sets `DOSBOX_DISPLAY_HELD=1`, which
+    mirrors `DOSBOX_LOCK_HELD`. Then `dosbox-run.sh` and
+    `dosbox-launch.sh` skip the flock for that pinned display. Taking it
+    again would open a new file description on the same lock file and
+    block on the harness forever. The pattern:
+    1. `dbxlock_display_acquire N`: fd 5 is now the display's flock,
+       held by the harness shell.
+    2. Start Xvfb on `:N` with fds 4-9 closed, then wait until that
+       Xvfb (its own pid) answers.
+    3. Run `DOSBOX_DISPLAY=:N DOSBOX_DISPLAY_HELD=1 dosbox-run.sh ...`.
+    4. Cleanup kills the Xvfb and **waits until it has exited**.
+    5. The harness process exits, which releases fd 5.
+    The wait in step 4 matters. A cleanup that only signals Xvfb releases
+    the display while that Xvfb is still shutting down. The next owner
+    then starts its own Xvfb into the dying one's socket and loses the
+    display: its capture comes back empty, which is what the hub's test
+    hit before the wait was added. `dosbox-run.sh` and the launcher's
+    supervisor wait for their own Xvfb the same way.
   - Order: the host lock first, then the display. Every tool keeps that
     order, so none can hold one while waiting for the other in reverse.
   - Call `dbxlock_display_acquire` directly, not inside `$(...)`: the

@@ -179,7 +179,7 @@ dbxlock_holders() {
             break
         done
     done
-    (( found && ! seen )) && echo "  no visible process has it open: held from another sandbox or user (their /proc/<pid>/fd is unreadable here)"
+    (( found && ! seen )) && echo "  no visible process has it open: held from another sandbox or user, or by a process that is exiting right now (their /proc/<pid>/fd cannot be read)"
     return 0
 }
 

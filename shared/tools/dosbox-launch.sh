@@ -126,7 +126,9 @@ if [[ "${DOSBOX_DISPLAY:-}" == "auto" ]]; then
   DOSBOX_DISPLAY=":$DBXLOCK_DISPLAY"; AUTO_DISPLAY=1
 elif [[ -n "${DOSBOX_DISPLAY:-}" ]]; then
   _pin="$(dbxlock_display_num "$DOSBOX_DISPLAY")"
-  if [[ -n "$_pin" && "$_pin" != "0" ]]; then
+  # DOSBOX_DISPLAY_HELD=1: the caller holds this display's flock already
+  # (see dosbox-run.sh); taking it again would block on the caller.
+  if [[ -n "$_pin" && "$_pin" != "0" && "${DOSBOX_DISPLAY_HELD:-0}" != "1" ]]; then
     if ! dbxlock_display_acquire "$_pin" "${DOSBOX_DISPLAY_WAIT:-10}" >/dev/null; then
       echo "dosbox-launch.sh: display :$_pin is held by another cell (still after ${DOSBOX_DISPLAY_WAIT:-10}s); not launching. Use DOSBOX_DISPLAY=auto or another display." >&2
       exit 1
@@ -240,7 +242,12 @@ if [[ "$AUTO_DISPLAY" == "1" ]]; then
   XVFB_PID=$!
   for _ in 1 2 3 4 5 6 7 8 9 10; do xdpyinfo -display "$DISPLAY" >/dev/null 2>&1 && break; sleep 0.5; done
   echo "Launching DOSBox-X (DISPLAY=$DISPLAY, allocated, headless Xvfb pid $XVFB_PID, config=$CONF_NAME)..."
-  ( dosbox-x "${DBX_ARGS[@]}"; kill "$XVFB_PID" 2>/dev/null ) 6>&- 7>&- 8>&- 9>&- &
+  # the supervisor releases the display flock only after our Xvfb is GONE
+  # (not just signalled), so the next owner of the display cannot start its
+  # Xvfb while ours is still shutting down
+  ( dosbox-x "${DBX_ARGS[@]}"; kill "$XVFB_PID" 2>/dev/null
+    for _ in $(seq 1 100); do kill -0 "$XVFB_PID" 2>/dev/null || break; sleep 0.1; done
+  ) 6>&- 7>&- 8>&- 9>&- &
   SUP_PID=$!
   DBX_PID=""
   for _ in 1 2 3 4 5 6 7 8 9 10; do
