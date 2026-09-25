@@ -143,7 +143,7 @@ Source: dosags-worker's disassembly of DJGPP libc's `uclock.o`
   which only 486-class CPUs use: without RDTSC they fall back to the
   PIT. Pentium-class runs time that ISR with RDTSC and don't touch ch0
   there.
-  **Status (dosags lab/journeys 929b1279, the H35-TSC test): FINDING.**
+  **Status (dosags lab/journeys be452219, the H35-TSC test): FINDING.**
   `isr_max` outliers under the PIT fallback are a PIT-read artefact, not
   real ISR time.
   - Under RDTSC (n=2 cells), the maximum ISR time equals the derived peak

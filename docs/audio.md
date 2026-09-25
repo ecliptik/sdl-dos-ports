@@ -61,10 +61,10 @@ must mask its own IRQ first") -- the DSP never gets its acknowledgement
 and never interrupts again. Audio dies silently, and the game still runs
 to a normal exit. `silent_irqs`, `underruns` and friends all stay at 0,
 because they count only IRQs that happen. (dosags lab evidence:
-LAB-JOURNEYS DLY-v1b, lab/journeys 3635d913.)
+LAB-JOURNEYS DLY-v1b, lab/journeys e4156cf9.)
 
 So every sound-on cell also checks that the SB was alive for the whole
-run. Two parts, proven on dosags' lab ratchet (3f722717):
+run. Two parts, proven on dosags' lab ratchet (77241735):
 
 1. **The song clock keeps pace with the wall clock.** A MIDI song clock
    that only SB IRQs advance, compared with real seconds from the RTC,

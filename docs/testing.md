@@ -81,6 +81,12 @@ actually taken (stale build caches, emulator-vs-hardware I/O divergence,
 build-host tooling traps) and the discipline for debugging a bug that's
 specific to real hardware.
 
+Never commit an audio capture of a game's music (QA `.ogg`/`.wav`/`.opus`/
+`.flac`/`.mp3` from a harness run, in any repo): it is the game's
+copyrighted music. Keep it local and commit only its sha256 and the
+numbers read from it (dosags had to purge them from its whole history,
+2026-09-25).
+
 ## Never contribute upstream
 
 If a probe or smoke test surfaces a bug in DOSBox-X, 86Box, or any other

@@ -509,8 +509,8 @@ Until that is confirmed or refuted:
 **Real-mode calls are invisible to fixed-cycles DOSBox-X.** A DPMI
 program's call into real mode (INT 33h mouse, INT 16h keyboard BIOS,
 INT 21h DOS) costs a protected-to-real-mode round trip plus the real-mode
-handler itself. dosags measured it (LAB-MMD 26/27, lab/mmd e5c41b41 and
-73f32fd7):
+handler itself. dosags measured it (LAB-MMD 26/27, lab/mmd 9a853b01 and
+89c0a10b):
 - **Per tick:** AGS's steady tick runs 3 SDL event pumps. Each pump makes
   3 INT 33h calls in dosags' build: fn 3, plus fn 5 twice (from dosags'
   own SDL 0220). That is 9 real-mode calls per tick with no input at all.
@@ -551,7 +551,7 @@ every pump.
 - **The lesson.** An 8 ms saving in the metric the change aimed at
   bought 0.135 ticks per second, which is exactly the gap
   pre-registration against the KPI is there to catch.
-- **Source.** dosags lab/metric fd267c43, LAB-S32 19.12.
+- **Source.** dosags lab/metric ace672be, LAB-S32 19.12.
 
 ## Setting a performance KPI
 
