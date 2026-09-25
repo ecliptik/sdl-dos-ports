@@ -217,6 +217,28 @@ done
 source "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/dosbox-stage.sh"
 STAGE_CALLER="$(dbxstage_caller "$PPID")"
 
+# Low disk: kept stages of a harness that never deletes them filled the
+# host disk once (2026-09-25). Below DOSBOX_STAGE_GC_FREE_MB (default
+# 10240) free in the stage directory, collect THIS caller's own stages by
+# dosbox-stage.sh's rules (never another caller's -- that is a person's
+# explicit "dosbox-stage.sh gc"); below DOSBOX_STAGE_MIN_FREE_MB (default
+# 1024), refuse to start rather than fail mid-run on ENOSPC.
+# DOSBOX_STAGE_AUTO_GC=0 skips the collection (never the refusal).
+STAGE_DIR_ROOT="${TMPDIR:-/tmp}"
+_stage_free_mb() { df -Pk "$STAGE_DIR_ROOT" 2>/dev/null | awk 'NR == 2 { print int($4 / 1024) }'; }
+FREE_MB="$(_stage_free_mb)"
+if [[ -n "$FREE_MB" && "$FREE_MB" -lt "${DOSBOX_STAGE_GC_FREE_MB:-10240}" && "${DOSBOX_STAGE_AUTO_GC:-1}" != "0" ]]; then
+  echo "dosbox-run.sh: ${FREE_MB} MB free in $STAGE_DIR_ROOT; collecting caller $STAGE_CALLER's own old stages" >&2
+  bash "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/dosbox-stage.sh" gc --apply --quiet \
+    --dir "$STAGE_DIR_ROOT" --caller "$STAGE_CALLER" 5>&- 6>&- 7>&- 8>&- 9>&- >&2 || true
+  FREE_MB="$(_stage_free_mb)"
+fi
+if [[ -n "$FREE_MB" && "$FREE_MB" -lt "${DOSBOX_STAGE_MIN_FREE_MB:-1024}" ]]; then
+  echo "dosbox-run.sh: only ${FREE_MB} MB free in $STAGE_DIR_ROOT (< ${DOSBOX_STAGE_MIN_FREE_MB:-1024} MB); not running." >&2
+  echo "  Old stages are the usual cause. See what can go:  $(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/dosbox-stage.sh gc --dir $STAGE_DIR_ROOT" >&2
+  echo "  (a dry run; add --apply to delete -- it collects every caller's stages, so it is a person's call)" >&2
+  exit 73
+fi
 STAGE="$(mktemp -d -t dos-port-dosbox.XXXXXX)"
 dbxstage_meta_add "$STAGE" "caller=$STAGE_CALLER" "pid=$$" "pstart=$(_dbxstage_pstart $$)" \
   "created=$(date +%s)" "keep=$KEEP_STAGE" "exe=$(basename "$EXE")"
