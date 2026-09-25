@@ -30,6 +30,14 @@
 # whose result is a count can share it. See --lock below and the lock
 # section of shared/skills/dos-emulator-workflow/references/tooling.md.
 #
+# STAGES: every run stages into $TMPDIR/dos-port-dosbox.XXXXXX (default
+# TMPDIR=/tmp), removed on exit unless --keep-stage. Its path is printed to
+# stderr at the start and the end of the run, written to --stage-file (or
+# to <--stdout>.stage), and described by a sidecar <stage>.meta (caller,
+# pid, times, keep, exit) that dosbox-stage.sh uses to collect kept stages
+# safely; a caller that has copied its results out marks the stage with
+# `dosbox-stage.sh copied <stage>`. See dosbox-stage.sh's header.
+#
 # DOS has no LFN support. Filenames passed via --include are staged to C:\
 # with uppercased basenames; the exe is also uppercased. If you need the
 # exe to reference other files, they must be 8.3 and on C:\.
@@ -46,6 +54,7 @@ STDOUT_PATH=""
 INTERACTIVE=0
 INCLUDES=()
 KEEP_STAGE=0
+STAGE_FILE=""
 FAST=0
 CONF_OVERRIDE=""
 ENVS=() # --env KEY=VALUE, repeatable -- see usage below
@@ -62,6 +71,7 @@ usage() {
 Usage: dosbox-run.sh --exe PATH [--args "..."] [--stdout PATH] [--include PATH]...
                      [--fast | --conf PATH] [--interactive] [--keep-stage] [--merge-stderr]
                      [--sb-live] [--lock shared|exclusive|none] [--no-host-input]
+                     [--stage-file PATH]
 
   --exe PATH         DOS executable to run (required). Basename is placed at C:\.
   --args "..."       Arguments passed to the exe (quoted as a single string).
@@ -79,7 +89,16 @@ Usage: dosbox-run.sh --exe PATH [--args "..."] [--stdout PATH] [--include PATH].
                      passed here. Same staging/RUN.BAT/exit behavior otherwise --
                      this only changes which file lands on `-conf`.
   --interactive      Open the DOSBox-X window instead of running headless.
-  --keep-stage       Leave the staging temp dir on exit (useful for debugging).
+  --keep-stage       Leave the staging temp dir on exit (useful for debugging,
+                     or for a harness that reads results out of it). Mark it
+                     `dosbox-stage.sh copied <stage>` once read, so
+                     `dosbox-stage.sh gc` may collect it after the grace.
+  --stage-file PATH  Write the stage's path to PATH before DOSBox-X starts.
+                     Default with --stdout OUT: OUT.stage. The path is also
+                     printed to stderr ("dosbox-run.sh: stage <path> ...").
+                     Env DOSBOX_STAGE_CALLER names the caller recorded in
+                     <stage>.meta (default: the calling script, see
+                     dosbox-stage.sh).
   --merge-stderr     Capture both stdout and stderr (>STDOUT.TXT 2>&1). Needed for
                      programs that log to stderr (e.g. SDL_Log on DJGPP). DJGPP's
                      runtime processes 2>&1 itself so the syntax works under DOS.
@@ -147,6 +166,7 @@ while [[ $# -gt 0 ]]; do
     --conf)        CONF_OVERRIDE="$2"; shift 2 ;;
     --interactive) INTERACTIVE=1; shift ;;
     --keep-stage)  KEEP_STAGE=1; shift ;;
+    --stage-file)  STAGE_FILE="$2"; shift 2 ;;
     --merge-stderr) MERGE_STDERR=1; shift ;;
     --env)         ENVS+=("$2"); shift 2 ;;
     --sb-live)     SB_LIVE=1; shift ;;
@@ -190,17 +210,34 @@ for e in "${ENVS[@]:-}"; do
 done
 
 # Stage ---------------------------------------------------------------------
+# dosbox-stage.sh (next to this script in the hub; a port runs this script
+# through a tools/ symlink, so resolve the real path) supplies the caller
+# name and the .meta writer.
+# shellcheck source=./dosbox-stage.sh
+source "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/dosbox-stage.sh"
+STAGE_CALLER="$(dbxstage_caller "$PPID")"
+
 STAGE="$(mktemp -d -t dos-port-dosbox.XXXXXX)"
+dbxstage_meta_add "$STAGE" "caller=$STAGE_CALLER" "pid=$$" "pstart=$(_dbxstage_pstart $$)" \
+  "created=$(date +%s)" "keep=$KEEP_STAGE" "exe=$(basename "$EXE")"
 cleanup() {
+  local rc=$?
   # release: drop our .who line while fd 8 still holds the lock
   if [[ "${LOCK_HELD_HERE:-0}" == "1" ]]; then dbxlock_release; fi
   if [[ "$KEEP_STAGE" == "1" ]]; then
+    dbxstage_meta_add "$STAGE" "exit=$rc" "ended=$(date +%s)"
     echo "dosbox-run.sh: stage kept at $STAGE" >&2
   else
-    rm -rf "$STAGE"
+    rm -rf "$STAGE" "$STAGE.meta"
+    echo "dosbox-run.sh: stage $STAGE removed on exit" >&2
   fi
 }
 trap cleanup EXIT
+echo "dosbox-run.sh: stage $STAGE ($([[ "$KEEP_STAGE" == "1" ]] && echo kept || echo removed) on exit; caller $STAGE_CALLER)" >&2
+if [[ -z "$STAGE_FILE" && -n "$STDOUT_PATH" ]]; then STAGE_FILE="$STDOUT_PATH.stage"; fi
+if [[ -n "$STAGE_FILE" ]]; then
+  echo "$STAGE" > "$STAGE_FILE" || { echo "dosbox-run.sh: cannot write --stage-file $STAGE_FILE" >&2; exit 2; }
+fi
 
 cp "$EXE" "$STAGE/"
 EXE_BASENAME="$(basename "$EXE")"
