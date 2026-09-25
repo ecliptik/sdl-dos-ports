@@ -37,7 +37,7 @@ sleep, and -- with SDL/0086's yield killswitched and silence at open --
 loop WaitDevice/PlayDevice without sleeping or yielding, so main would
 never run again. With the counter, that startup path still sleeps.
 
-What it buys, measured by dosags ("D2", its lab/metric fd267c43,
+What it buys, measured by dosags ("D2", its lab/metric ace672be,
 LAB-S32 19.12), on a 486 at 16 bpp:
   - the intermediate metric moved a lot: the pump fell from 8.1 ms to
     0.4 ms;
@@ -65,7 +65,7 @@ NOT validated: anything on real hardware, and so the 486 timing -- both
 the cost this removes and what it buys come from dosags' own
 measurements. The emulator runs show only the mechanism.
 
-Source: dosags patches/SDL/0213 (v2, main 1301a56e), re-derived against
+Source: dosags patches/SDL/0213 (v2, main e29ef5a6), re-derived against
 the hub series. The pump counter and PlayDevice hunks applied cleanly. The
 declaration and banner hunks were anchored on dosags-only code (its
 NO_BG_THREAD hint and 0144 diagnostic) and were rewritten. The hub banner

@@ -131,7 +131,7 @@ Validation: DOSBox-X only; hardware confirmation pending.
     RTC.)
 
 Source: dosags patches/SDL/0193 (From 097def7cde2c, committed in dosags
-dc8279f), re-derived against the hub series. One hunk's context is a
+15d2149), re-derived against the hub series. One hunk's context is a
 dosags-only patch (its 0141 uclock() write-cost diagnostic inside
 SDL_DOSOpl3WriteRegister); the hub function has the same address/data
 sequence without it, so the capture test sits at the top of the hub
