@@ -120,10 +120,12 @@ Source: dosags-worker's disassembly of DJGPP libc's `uclock.o`
 - **The first call reprograms ch0 to MODE 2.** On its first call,
   `uclock()` writes `0x34` to port 0x43, then `0xFF` twice to port 0x40:
   channel 0, lo/hi access, MODE 2 (rate generator), count 0xFFFF. It then
-  waits for the BIOS tick at 0x46C to change, to align with it. From then
-  on, ch0 counts DOWN by 1 per 1.193182 MHz clock (838 ns per count). The
-  BIOS's MODE 3 counts by 2. IRQ 0 still fires at 18.2 Hz. Code that
-  reads ch0 and assumes MODE 3 misreads elapsed time by a factor of two.
+  tries to wait for the BIOS tick at 0x46C to change, to align with it --
+  but only while `__dpmi_yield()` succeeds (see "The first call and IF=0"
+  below). From then on, ch0 counts DOWN by 1 per 1.193182 MHz clock (838
+  ns per count). The BIOS's MODE 3 counts by 2. IRQ 0 still fires at
+  18.2 Hz. Code that reads ch0 and assumes MODE 3 misreads elapsed time
+  by a factor of two.
   The hub's SB audio IRQ timer (SDL/0039, PIT mode) converts with 838 ns
   per count, which is right for MODE 2; its comment still says "mode 3".
 - **Every read is unprotected.** Each `uclock()` call reads the BIOS
@@ -174,13 +176,48 @@ Source: dosags-worker's disassembly of DJGPP libc's `uclock.o`
 - `uclock()` itself is libc and cannot be patched. Where an ISR also
   latches ch0, the robust choice is to keep ch0 reads out of that ISR
   (RDTSC where present, or count IRQs).
-- If you must wrap `uclock()` in `pushf; cli; ... popf` instead: its
-  FIRST call must never run with IF=0. That call waits for the BIOS tick
-  at 0x46C to change, and with interrupts off IRQ 0 never fires and the
-  machine hangs. Make one warm-up `uclock()` call with interrupts ON
-  before any cli-wrapped call. Keep the wrap to that single call, because
-  each read already spans several port operations and holds IRQ 0 back
-  while it runs.
+- If you must wrap `uclock()` in `pushf; cli; ... popf` instead, make
+  one warm-up `uclock()` call with interrupts ON before any cli-wrapped
+  call. Keep the wrap to that single call, because each read already
+  spans several port operations and holds IRQ 0 back while it runs.
+- **The first call and IF=0: the hang needs a narrow host.** The first
+  call's tick wait (libc.a `uclock.o`, re-checked in the hub 2026-09-25)
+  is `do { errno = 0; __dpmi_yield(); } while (errno == 0 && tick
+  unchanged)`. `__dpmi_yield()` (`2f_1680.o`) simulates real-mode INT 2Fh
+  AX=1680h and sets `errno` to ENOSYS when AL comes back 80h, i.e. when
+  nothing answered. So the first call only waits on the tick while the
+  yield is answered, and it only hangs with IF=0 on a host that answers
+  1680h AND does not let IRQ 0 advance 0040:006C during the yield.
+  Measured in DOSBox-X 2025.02.01 with CWSDPMI (hub probe YLD2,
+  2026-09-25; three confs: the hub's parity conf, the same with
+  `dos idle api=false`, and a --sb-live SB16/OPL3 fixed-40k conf):
+  - `dos idle api` at its default (all hub and dosags confs): 1680h is
+    answered (AL=00), and with IF=0 in protected mode the tick still
+    advanced during the FIRST yield call, so IRQ 0 is serviced somewhere
+    inside the answered call and the loop ends on the tick. The
+    real-mode flags the host hands back carry IF=0 (the image DJGPP
+    passed in), so they don't show where IRQ 0 got in.
+  - `dos idle api=false`: 1680h is not answered (AL=80), `errno` is set,
+    and the loop ends on its first pass. With IF=0, 4000 unanswered
+    yields did not advance the tick: an unanswered reflection does not
+    service IRQ 0.
+  - In all three confs a first `uclock()` called with IF=0 returned. In
+    DOSBox-X the IF=0 first call is safe either way, for two different
+    reasons. That is also why dosags' TPIT-H (cli-wrapped first call,
+    DOSBox-X, default conf) exited 0.
+  - Plain MS-DOS + CWSDPMI on the 486: expected to be the unanswered
+    case (nothing there should answer 1680h), so the loop would end on
+    `errno`. **Unverified on real hardware.**
+  - The hang is real only on a host that answers 1680h without letting
+    IRQ 0 in. Whether a Win9x DOS box or a multitasker behaves that way
+    is untested; no hang has been observed anywhere.
+  So a TPIT-style hang control (first `uclock()` under `cli`, expected
+  to hang) has no power in DOSBox-X, and by the above likely none on
+  plain DOS + CWSDPMI: it passes whether or not the code under test is
+  safe. Keep the warm-up call with interrupts ON anyway; it costs
+  nothing and covers the hosts where the hang is real. (The separate
+  RDTSC path, taken only when `_os_trueversion` is 0x532, i.e. an NT DOS
+  box, spins on the tick with no yield at all, and would hang with IF=0.)
 - Never reprogram ch0 with a mode or count that `uclock()` doesn't
   expect (see "Your clock can lie" above).
 
