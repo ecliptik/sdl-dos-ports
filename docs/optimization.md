@@ -506,6 +506,34 @@ Until that is confirmed or refuted:
 - don't credit or blame a change for a sub-millisecond hardware delta
   that an unrelated layout shift could also explain.
 
+**Real-mode calls are invisible to fixed-cycles DOSBox-X.** A DPMI
+program's call into real mode (INT 33h mouse, INT 16h keyboard BIOS,
+INT 21h DOS) costs a protected-to-real-mode round trip plus the real-mode
+handler itself. dosags measured it (LAB-MMD 26/27, lab/mmd e5c41b41 and
+73f32fd7):
+- **Per tick:** AGS's steady tick runs 3 SDL event pumps. Each pump makes
+  3 INT 33h calls in dosags' build: fn 3, plus fn 5 twice (from dosags'
+  own SDL 0220). That is 9 real-mode calls per tick with no input at all.
+  The hub's reference `DOSVESA_PumpEvents` makes 1 per pump (fn 3, plus
+  fn 0Bh in relative mouse mode).
+- **On the 486:** the input phases run 5-6x slower than at fixed cycles,
+  against 2-3x for the rest of the logic.
+- **In DOSBox-X:** every real-mode call costs about the same ~15 us,
+  mostly the DPMI round trip, because the emulator answers INT 33h
+  internally. So fixed-cycles timing makes these calls look cheap and
+  uniform.
+- **The 486 cost is an INFERENCE:** about 0.2 ms per call, derived from
+  the phase timings. A microbenchmark on the target is pending.
+
+The rule: on any hot path, count the real-mode calls per frame or tick
+(INT 33h, INT 16h, INT 21h), and don't trust fixed-cycles timing for
+them. Measure them on hardware, or remove them.
+
+A candidate design direction, not a result: event-driven mouse input.
+INT 33h fn 0Ch installs a user event handler, reached through a DPMI
+real-mode callback, so the driver reports changes instead of being polled
+every pump.
+
 **Worked example: confirm the KPI, not the intermediate metric (dosags
 "D2").**
 - **The finding.** SDL's audio silence throttle -- the `SDL_Delay(10)`
