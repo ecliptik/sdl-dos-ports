@@ -470,3 +470,64 @@ see:
   `xdotool`.
 Neither tool can see an `xdotool` run from a separate process, so the
 assertion is the caller's.
+
+## Stage directories: `dosbox-stage.sh`
+
+Every `dosbox-run.sh` run stages into `$TMPDIR/dos-port-dosbox.XXXXXX`
+(default `/tmp`). The stage is removed on exit unless the run passed
+`--keep-stage`. A kept stage holds the exe, the game package and
+everything the run wrote, and nothing ever deleted one. On 2026-09-25 a
+harness that keeps every stage filled the host disk: ~2,150 stages,
+~55 GB, and a build failed on ENOSPC. Deleting a stage the moment it's
+read is wrong too, because a crashed copy-out or a copy race can only be
+recovered while the stage still exists. So stages are collected by rules.
+
+- **Where a run's stage is.** `dosbox-run.sh` prints
+  `dosbox-run.sh: stage <path> (kept|removed on exit; caller <c>)` to
+  stderr at the start, and `stage kept at <path>` at the end. It also
+  writes the path to `--stage-file PATH`, or by default with `--stdout
+  OUT` to `OUT.stage`, before DOSBox-X starts. Read it from there. Don't
+  search `/tmp` for the newest stage, which races with every other run.
+- **`<stage>.meta`**, a sidecar outside the DOS-visible mount, records the
+  caller, pid and pstart, the created, ended and copied times, keep and
+  exit. The caller is `<repo>/<script>` of the script that ran
+  `dosbox-run.sh`, walking up past `timeout`/`env`/`setsid`-style
+  wrappers. Set `DOSBOX_STAGE_CALLER` to name it yourself, for example
+  per lab worker. `dosbox-stage.sh caller` prints what would be recorded.
+- **Mark copy-out.** A harness that keeps a stage to read results out of
+  it runs `dosbox-stage.sh copied <stage>` once it has copied them. That
+  lets `gc` take the stage after a 2 h grace. A caller that never marks
+  still loses its stages at the 48 h max age.
+- **`dosbox-stage.sh gc`** only lists what it would delete unless given
+  `--apply`. It never touches a stage that is in use: a process with its
+  cwd or an open fd inside it, a live `MOUNT C <stage>` command line, or a
+  meta pid that is alive with the recorded pstart. Otherwise it goes per
+  caller, newest first:
+  - it keeps the newest `--keep 20`;
+  - it deletes copied stages older than `--grace 2h`;
+  - it deletes leftovers of a killed run (keep=0) older than
+    `--orphan-age 1h`;
+  - it deletes anything older than `--max-age 48h`.
+  `--budget SIZE` then deletes the oldest remaining stages until the total
+  fits, but never one in use or younger than the grace. `--caller NAME`
+  restricts it to one caller. Stages with no meta (made before this
+  existed) are grouped as `?<exe>`, their apparent caller from `RUN.BAT`.
+  One gc at a time (flock).
+- **Low disk.** When the stage directory has less than
+  `DOSBOX_STAGE_GC_FREE_MB` free (default 10240), `dosbox-run.sh` first
+  runs `gc --apply --caller <its own caller>`. It only ever collects its
+  own caller's stages. Collecting across callers takes an explicit
+  `dosbox-stage.sh gc`, run by a person, or by an owner for their own
+  caller. Below `DOSBOX_STAGE_MIN_FREE_MB` (default 1024) the run refuses
+  to start (exit 73) and names the gc command. `DOSBOX_STAGE_AUTO_GC=0`
+  skips the collection, never the refusal.
+- **Port follow-up.** A harness that always passes `--keep-stage` should
+  read the stage path from `--stage-file` and mark each stage `copied`
+  once its results are out. dosags' `tests/harness/run-dosbox.sh` is the
+  first such port. This is its own change to make in its own repo.
+- **Editing a tooling script while runs wait on the lock.** bash reads a
+  script as it runs. An in-place edit (truncate and rewrite) of
+  `dosbox-run.sh` while a run of it is queued on the lock makes that run
+  resume at the old byte offset in the new text. Write the new file and
+  rename it over the old one, which is what `git checkout` and
+  `git subtree pull` do, or let the queued runs finish first.
