@@ -84,7 +84,7 @@ ports:
     upstream_revision: 94e271df9c14484d89f4861100f643d39555dae7
     upstream_license: Artistic License 2.0
     upstream_license_verified: true
-    port_repo_url: https://forgejo.ecliptik.com/ecliptik/dosags
+    port_repo_url: https://forgejo.example.ts.net/ecliptik/dosags
     language: C++
     original_sdl_version: "2"
     target_sdl_version: "3"
@@ -102,7 +102,7 @@ ports:
       plans/SDL_DOS_PORTING_PROGRAM.md section 18. First deliverables are
       research-only (RESEARCH.md, SDL-SURFACE.md, DEPENDENCIES.md,
       PLATFORM-SURFACE.md, LICENSE-REVIEW.md, PLAN.md). Port name chosen:
-      dosags (repo to be created at forgejo.ecliptik.com/ecliptik/dosags).
+      dosags (repo to be created at forgejo.example.ts.net/ecliptik/dosags).
 
       2026-09-10: upstream_revision pinned to tag v3.6.3.13 (94e271df9),
       the current tip of the actively-maintained `ags3` stable branch
@@ -637,7 +637,7 @@ ports:
     upstream_revision: 2f713f261dc907f6feda106ebbee0464eeab791d
     upstream_license: public domain
     upstream_license_verified: true
-    port_repo_url: https://forgejo.ecliptik.com/ecliptik/dossage
+    port_repo_url: https://forgejo.example.ts.net/ecliptik/dossage
     language: C
     original_sdl_version: "1.2"
     target_sdl_version: "3"

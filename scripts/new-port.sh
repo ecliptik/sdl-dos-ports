@@ -51,7 +51,7 @@ fi
 # a fork or a not-yet-pushed local clone still works; fall back to the
 # known forgejo location otherwise.
 HUB_REMOTE="$(git -C "$HUB_DIR" remote get-url origin 2>/dev/null || true)"
-HUB_REMOTE="${HUB_REMOTE:-ssh://git@forgejo.ecliptik.com/ecliptik/sdl-dos-ports.git}"
+HUB_REMOTE="${HUB_REMOTE:-ssh://git@forgejo.example.ts.net/ecliptik/sdl-dos-ports.git}"
 
 echo "==> Creating $TARGET_DIR"
 mkdir -p "$TARGET_DIR"
@@ -103,14 +103,14 @@ cp "$HUB_DIR"/shared/patches/sdl3-mixer/*.patch patches/SDL_mixer/
 # VCCTRL_REMOTE follows the same override convention as other hub-location
 # vars in this codebase (EMULATORS_ROOT, SDL_DOS_PORT_ROOT) -- set it if
 # vcctrl lives somewhere other than the default forgejo location.
-VCCTRL_REMOTE="${VCCTRL_REMOTE:-https://forgejo.ecliptik.com/ecliptik/vcctrl.git}"
+VCCTRL_REMOTE="${VCCTRL_REMOTE:-https://forgejo.example.ts.net/ecliptik/vcctrl.git}"
 
 # HUB_PLUGIN_URL is what the new repo's tracked .claude/settings.json
 # points Claude Code at to fetch this hub as a plugin marketplace. It is
 # deliberately NOT $HUB_REMOTE: that is whatever this checkout's origin
 # is (an ssh:// URL here), which would demand an SSH key on every machine
 # that ever opens the port repo. The public HTTPS URL clones anonymously.
-HUB_PLUGIN_URL="${HUB_PLUGIN_URL:-https://forgejo.ecliptik.com/ecliptik/sdl-dos-ports.git}"
+HUB_PLUGIN_URL="${HUB_PLUGIN_URL:-https://forgejo.example.ts.net/ecliptik/sdl-dos-ports.git}"
 
 # Claude Code skills arrive two ways. This hub's own skills (port, review,
 # benchmark, dos-*) are the `sdldos` plugin: the project settings written

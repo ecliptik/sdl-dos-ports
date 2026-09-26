@@ -107,7 +107,7 @@ vcctrl's own contributor conventions, not anything a port needs). To
 install the plugin by hand somewhere else:
 
 ```sh
-/plugin marketplace add https://forgejo.ecliptik.com/ecliptik/sdl-dos-ports.git
+/plugin marketplace add https://forgejo.example.ts.net/ecliptik/sdl-dos-ports.git
 /plugin install sdldos@sdl-dos-ports
 ```
 

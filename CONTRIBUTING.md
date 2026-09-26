@@ -44,7 +44,7 @@ If you're submitting a benchmark or QA result, use
 [`templates/BENCHMARK.md`](templates/BENCHMARK.md)'s format so results stay
 comparable across ports and across the hardware matrix in
 [`HARDWARE.md`](HARDWARE.md). Real hardware (via
-[vcctrl](https://forgejo.ecliptik.com/ecliptik/vcctrl), see
+[vcctrl](https://forgejo.example.ts.net/ecliptik/vcctrl), see
 [`docs/hardware-testing.md`](docs/hardware-testing.md)) is authoritative;
 DOSBox-X/86Box results are automation gates, not a substitute — don't claim
 a number you only measured in an emulator.

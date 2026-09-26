@@ -32,7 +32,7 @@ with a tracked `.claude/settings.json`:
   "extraKnownMarketplaces": {
     "sdl-dos-ports": {
       "source": { "source": "git",
-                  "url": "https://forgejo.ecliptik.com/ecliptik/sdl-dos-ports.git" }
+                  "url": "https://forgejo.example.ts.net/ecliptik/sdl-dos-ports.git" }
     }
   },
   "enabledPlugins": { "sdldos@sdl-dos-ports": true }
@@ -96,7 +96,7 @@ entries per skill. vcctrl's skills stay as they were.
 **For an agent that can't load Claude Code plugins** (Codex, Cursor, or a
 first trust with no network), the flat path still works and reads the
 same files: `npx skills add
-https://forgejo.ecliptik.com/ecliptik/sdl-dos-ports.git --full-depth
+https://forgejo.example.ts.net/ecliptik/sdl-dos-ports.git --full-depth
 --all -a <agent>` from the port's root; or, with no `npx` at all,
 `.sdl-dos-ports/shared/scripts/sync-skills.sh` symlinks this hub's
 `shared/skills/` entries into `.claude/skills/` (hub skills only -- no

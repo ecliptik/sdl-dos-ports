@@ -3,7 +3,7 @@
     "sdl-dos-ports": {
       "source": {
         "source": "git",
-        "url": "https://forgejo.ecliptik.com/ecliptik/sdl-dos-ports.git"
+        "url": "https://forgejo.example.ts.net/ecliptik/sdl-dos-ports.git"
       }
     }
   },
