@@ -8,7 +8,7 @@ layer" below) as part of dosags's own first real-hardware run.
 
 ## What vcctrl is
 
-[vcctrl](https://forgejo.example.ts.net/ecliptik/vcctrl) is a remote-control/
+[vcctrl](https://github.com/ecliptik/vcctrl) is a remote-control/
 automation harness for a physical vintage PC, driven by a CLI, an MCP
 server (for agent control), or a browser KVM. Forgejo is the canonical,
 live repository; a [GitHub mirror](https://github.com/ecliptik/vcctrl)
@@ -285,8 +285,8 @@ defaults note below), but several references from this repo need
 updating and one new document is worth reading before onboarding a
 third port:
 
-- **Canonical URL**: Forgejo (`https://forgejo.example.ts.net/ecliptik/vcctrl`)
-  is the live, canonical repository, with clean history after a scrub
+- **Canonical URL**: the private Forgejo is the live, canonical repository
+  (public mirror: `https://github.com/ecliptik/vcctrl`), with clean history after a scrub
   (credentials/hostnames that had leaked into old commits, including four
   an earlier 2026-08-24 rewrite missed and none of the commit messages,
   which that earlier pass never touched). A

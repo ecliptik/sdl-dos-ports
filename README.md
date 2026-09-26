@@ -18,14 +18,14 @@ should follow when working in this repo.
 | Priority | Project | Upstream | License | Port repo | Status | Difficulty |
 |---:|---|---|---|---|---|---:|
 | 0 | doskutsu (Cave Story) | [nxengine/nxengine-evo](https://github.com/nxengine/nxengine-evo) | GPL-3.0 (verified) | [ecliptik/doskutsu](https://github.com/ecliptik/doskutsu) | RELEASE_READY — 14.6-32.2 fps | reference |
-| 1 | Adventure Game Studio | [adventuregamestudio/ags](https://github.com/adventuregamestudio/ags) | Artistic-2.0 (verified) | [ecliptik/dosags](https://forgejo.example.ts.net/ecliptik/dosags) | PLAYABLE — 40Hz/40fps plan in progress on the 486DX2-66 | 5 |
+| 1 | Adventure Game Studio | [adventuregamestudio/ags](https://github.com/adventuregamestudio/ags) | Artistic-2.0 (verified) | ecliptik/dosags (private) | PLAYABLE — 40Hz/40fps plan in progress on the 486DX2-66 | 5 |
 | 2 | VVVVVV | [TerryCavanagh/VVVVVV](https://github.com/TerryCavanagh/VVVVVV) | unverified — see caution below | unclaimed | BACKLOG | 3 |
 | 3 | Meritous | TBD | unverified | unclaimed | BACKLOG | 2 |
 | 4 | OpenJazz | [OSSGames/GAME-SDL-openjazz](https://github.com/OSSGames/GAME-SDL-openjazz) | unverified | unclaimed | BACKLOG | 2-3 |
 | 5 | POWDER | TBD | unverified — may not be open source, see `ports.yaml` | unclaimed | BACKLOG | 2 |
 | 6 | Kobo Deluxe | TBD | unverified | unclaimed | BACKLOG | 3-4 |
 | 7 | Blob Wars: Metal Blob Solid | TBD | unverified | unclaimed | BACKLOG | 3-4 |
-| 8 | Passage | [jasonrohrer/Passage](https://github.com/jasonrohrer/Passage) | public domain (verified) | [ecliptik/dossage](https://forgejo.example.ts.net/ecliptik/dossage) | OPTIMIZING — 14.97-15.02 fps | 1 |
+| 8 | Passage | [jasonrohrer/Passage](https://github.com/jasonrohrer/Passage) | public domain (verified) | [ecliptik/dossage](https://github.com/ecliptik/dossage) | OPTIMIZING — 14.97-15.02 fps | 1 |
 | 9 | SuperTux 0.1.x | TBD | unverified | unclaimed | BACKLOG | 4 |
 
 Generated from [`ports.yaml`](ports.yaml), the source of truth. "Unverified"
@@ -81,6 +81,9 @@ it by hand elsewhere:
 /plugin install sdldos@sdl-dos-ports
 ```
 
+(`forgejo.example.ts.net` stands in for the private tailnet Forgejo;
+use the hub's real `origin` URL.)
+
 A skill or layout change here only reaches installed copies once the
 `version` in `.claude-plugin/plugin.json` is bumped and `/plugin update
 sdldos` is run; `claude --plugin-dir <path-to-this-hub>` loads the working
@@ -109,7 +112,7 @@ sdl-dos-ports/
 
 Primary targets, shared across all ports (see [`HARDWARE.md`](HARDWARE.md)
 for the full matrix and real-hardware testing process via
-[vcctrl](https://forgejo.example.ts.net/ecliptik/vcctrl)):
+[vcctrl](https://github.com/ecliptik/vcctrl)):
 
 | ID | CPU | Role |
 |---|---|---|

@@ -111,6 +111,9 @@ install the plugin by hand somewhere else:
 /plugin install sdldos@sdl-dos-ports
 ```
 
+(`forgejo.example.ts.net` stands in for the private tailnet Forgejo;
+use the hub's real `origin` URL.)
+
 See `shared/skills/README.md` for adopting it into an older port or from
 an agent that can't load plugins.
 

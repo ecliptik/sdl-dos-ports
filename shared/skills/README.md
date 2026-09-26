@@ -25,7 +25,16 @@ from day to day.
 (`.claude-plugin/plugin.json`, name `sdldos`; the root `skills/`
 directory is its skill set -- the hub-only `port` skill plus symlinks
 into the entries above, one source of truth). A port repo enables it
-with a tracked `.claude/settings.json`:
+with a tracked `.claude/settings.json` that only turns it on:
+
+```json
+{ "enabledPlugins": { "sdldos@sdl-dos-ports": true } }
+```
+
+The marketplace URL points at the private tailnet Forgejo, and port repos
+are mirrored publicly, so it lives in the untracked
+`.claude/settings.local.json` instead (placeholder host shown; use the
+hub's real `origin` URL):
 
 ```json
 {
@@ -39,11 +48,11 @@ with a tracked `.claude/settings.json`:
 }
 ```
 
-`scripts/new-port.sh` writes that file, and the `.gitignore` rule that
+`scripts/new-port.sh` writes both files, and the `.gitignore` rule that
 lets it be tracked while the rest of `.claude/` stays local (`.claude/*`
 plus `!.claude/settings.json` -- git can't re-include a file under an
 ignored parent directory, so a bare `.claude/` line would swallow it).
-Anyone who opens and trusts the repo is offered the plugin and gets
+Anyone who opens and trusts the repo (with the local file in place) is offered the plugin and gets
 `/sdldos:port`, `/sdldos:review`, `/sdldos:benchmark`,
 `/sdldos:dos-hardware-validation`, ... -- no per-repo copy of any
 `SKILL.md`. The installed plugin is a snapshot keyed by the `version`

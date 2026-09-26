@@ -6,7 +6,7 @@ a 100x16-pixel window that widens and narrows as a couple ages, marries,
 and dies over a fixed ~5-minute life -- ported end to end as a reference
 skeleton for this hub's smaller SDL 1.2 titles.
 
-Repo: https://forgejo.example.ts.net/ecliptik/dossage
+Repo: https://github.com/ecliptik/dossage
 
 ## Screenshots
 
@@ -63,7 +63,7 @@ per-pairing rule.
 
 Full methodology, per-cell logs, and the fix-validation arc that
 closed the 486DX2-50 (this port's own minimum-target CPU) leg:
-[`docs/BENCHMARK-PLAN.md`](https://forgejo.example.ts.net/ecliptik/dossage/src/branch/main/docs/BENCHMARK-PLAN.md)
+[`docs/BENCHMARK-PLAN.md`](https://github.com/ecliptik/dossage/src/branch/main/docs/BENCHMARK-PLAN.md)
 and `docs/benchmarks/` in the port repo.
 
 ## Hardware notes

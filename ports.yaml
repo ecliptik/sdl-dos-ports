@@ -84,7 +84,7 @@ ports:
     upstream_revision: 94e271df9c14484d89f4861100f643d39555dae7
     upstream_license: Artistic License 2.0
     upstream_license_verified: true
-    port_repo_url: https://forgejo.example.ts.net/ecliptik/dosags
+    port_repo_url: https://forgejo.example.ts.net/ecliptik/dosags  # private; real host redacted
     language: C++
     original_sdl_version: "2"
     target_sdl_version: "3"
@@ -637,7 +637,7 @@ ports:
     upstream_revision: 2f713f261dc907f6feda106ebbee0464eeab791d
     upstream_license: public domain
     upstream_license_verified: true
-    port_repo_url: https://forgejo.example.ts.net/ecliptik/dossage
+    port_repo_url: https://github.com/ecliptik/dossage
     language: C
     original_sdl_version: "1.2"
     target_sdl_version: "3"
