@@ -308,9 +308,8 @@ Two consequences, both invisible unless you look for them:
   DOSBox-X is not immune, only milder (records dated ~76 days off).
 
 **What every DJGPP port should do:** call `setenv("TZ","UTC0",0);
-tzset();` first thing in `main` (a TZ that is set is parsed, never loaded
-from a file; `UTC0` is what the fallback was meant to produce, DOS local
-time taken as-is), and **treat a `started_utc` that is not today as a
+tzset();` first thing in `main` (`UTC0` is what the fallback was meant to
+produce, DOS local time taken as-is), and **treat a `started_utc` that is not today as a
 cell invalidity** in any benchmark harness -- it is a free, already-logged
 tell. A year check is not enough: the garbage offset can be minutes or
 days. Status for the other ports: doskutsu's 128 recorded run dates and
@@ -318,6 +317,15 @@ dossage's are all in the right year, neither sets `TZ`, and neither has
 been checked at finer grain -- unverified, not cleared. Setting `TZ` in
 the target's own boot configuration would protect every program at once;
 that is a boot-config change and needs the operator's say-so.
+
+Correction (2026-09-27): an earlier version of this section said a TZ that
+is set "is parsed, never loaded from a file". That was wrong. dosags' INT
+21h call trace (`docs/lab/io.md` in that repo) shows `tzset()` with
+`TZ=UTC0` still tries files first -- `./UTC0`, `./posixrules`, `./GMT`,
+about 16 failed calls -- and only then parses the string. The
+recommendation stands (the resulting zone state is the intended one, and
+the failed probes happen at startup and exit, not in play), but it is a
+failed-lookup-then-parse, not a parse-only path.
 
 ## SDL_Delay() overshoot on 486-class CPUs (resolved: delay(1) granularity, not clock rate)
 
