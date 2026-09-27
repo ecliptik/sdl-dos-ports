@@ -31,6 +31,7 @@
  * on the main thread (no ISR / FPU constraint). ASCII-only.
  */
 
+#include <stddef.h> /* size_t */
 #include <stdint.h>
 
 /* Backend sink -- the player invokes these per dispatched event. Channel is
@@ -54,6 +55,14 @@ typedef struct midi_sched midi_sched;
 /* Parse an SMF file (format 0/1). Returns NULL on open / parse failure
  * (caller falls back to a tone). */
 midi_sched  *midi_sched_open(const char *path);
+/* Parse an SMF (format 0/1) already in memory: the same parse and result as
+ * midi_sched_open() on a file holding those bytes, with no file I/O. The
+ * scheduler copies what it needs; the caller may free buf on return. For a
+ * caller that already holds the bytes (an engine's asset reader) this saves
+ * writing them to a scratch file only to read them back -- on a DOS target
+ * that is a file create, write, close, open and read on the boot medium.
+ * Returns NULL for an empty or > 16 MB buffer or on a parse failure. */
+midi_sched  *midi_sched_open_mem(const void *buf, size_t size);
 void     midi_sched_close(midi_sched *m);
 
 /* Bind the backend sink (copied by value). */

@@ -392,6 +392,28 @@ static int parse_smf(midi_sched *m, const uint8_t *buf, size_t size)
 
 /* ---- public API ----------------------------------------------------------*/
 
+midi_sched *midi_sched_open_mem(const void *buf, size_t size)
+{
+  midi_sched *m;
+
+  if (!buf || size == 0 || size > (size_t)(16L * 1024L * 1024L))
+    return NULL;
+
+  m = (midi_sched *)calloc(1, sizeof(*m));
+  if (!m)
+    return NULL;
+  m->tempo_us_per_quarter = 500000;  /* SMF default = 120 BPM */
+  m->division_ppq         = 480;
+  m->us_per_tick          = 500000.0 / 480.0;
+
+  if (!parse_smf(m, (const uint8_t *)buf, size) || m->nevents == 0)
+  {
+    midi_sched_close(m);
+    return NULL;
+  }
+  return m;
+}
+
 midi_sched *midi_sched_open(const char *path)
 {
   midi_sched  *m;
@@ -414,18 +436,7 @@ midi_sched *midi_sched_open(const char *path)
   fclose(fp);
   if (got != (size_t)sz) { free(buf); return NULL; }
 
-  m = (midi_sched *)calloc(1, sizeof(*m));
-  if (!m) { free(buf); return NULL; }
-  m->tempo_us_per_quarter = 500000;  /* SMF default = 120 BPM */
-  m->division_ppq         = 480;
-  m->us_per_tick          = 500000.0 / 480.0;
-
-  if (!parse_smf(m, buf, (size_t)sz) || m->nevents == 0)
-  {
-    free(buf);
-    midi_sched_close(m);
-    return NULL;
-  }
+  m = midi_sched_open_mem(buf, (size_t)sz);
   free(buf);
   return m;
 }
