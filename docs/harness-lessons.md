@@ -141,6 +141,17 @@ which listed a resident disk cache hooking INT 13h that matched every
 observation; `BUFFERS=20` (10 KB) had already argued against a DOS-layer
 flush. The cache reconfigures while resident, so no reboot was needed.
 
+**The warm-up that moved the stall out of the window** (2026-09-26). An
+exact cache warm-up removed a first-play sound stall from a click tick
+in the lab, and its 37 ms landed in the room load. The fixture started
+directly in the room, so that load ran in the pre-loop, outside the
+whole-run window the gate reads: the counted entry tick did not move
+(577.9 vs 577.8 ms) and the gate figure would have risen with no cost
+shown. The lab reported it itself because the pre-registration had been
+told to say where the moved cost lands. A gain that works by moving
+cost is reported beside the cost, and a gate is read on a fixture where
+the cost stays inside the counted window.
+
 ## Instrument validity
 
 **`presents_palette_only`** (2026-09-18). A counter on "frames equal AND
@@ -328,6 +339,15 @@ reference, diffed clean, and the normalised copy was staged for push-
 back with 42 CRLF pairs gone. Caught only because a boot file is the one
 place line endings are not cosmetic. Re-staged at 1,349 bytes.
 
+**The waiter that waited on itself** (2026-09-26). A background waiter
+meant to start a profile run once another cell finished tested
+`! pgrep -f "<cell script> <tag>"`. The pattern also matched the
+waiter's own command line, so it slept forever after the cell ended and
+the run never happened; nobody noticed for hours because a waiter is
+silent by design. Wait on the exact PID (`kill -0 $pid`) or on a result
+file the job writes last, never on a pattern (the same class of bug as
+a pattern kill).
+
 ## Boot config, drives and hardware
 
 **`VOL D:` against an empty optical drive** (2026-09-21). A "read-only
@@ -372,6 +392,17 @@ it: recorded on every cell of a multi-day investigation, read on none.
 The same `HARDWARE.md` row had named it; the borrowing session had
 earlier instrumented the row's guard from a branch this port never
 executes and reported the mechanism falsified.
+
+**The config the engine never read** (2026-09-26). Two lab sessions
+staged an engine config as `C1X-ACSETUP.CFG` and similar, keeping the
+source basename; the engine reads only a file named exactly
+`ACSETUP.CFG`, so every cell ran on defaults. One lab chased a
+"sound bug" before the staging was found. The runners now
+refuse any config whose destination name is not the one the engine
+reads (and the reverse, the right source staged under another name)
+unless an explicit override flag is given. Stage configs by destination
+name, and make the runner refuse the wrong one rather than trusting the
+caller.
 
 **Committed before the cell reported** (2026-09-20). While a
 discriminating cell was on the hardware, a re-read of four earlier arms

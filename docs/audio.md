@@ -40,6 +40,37 @@ playback to an external synthesizer removes essentially all CPU cost from
 the host. If a game supports MIDI at all, hardware MIDI should be the
 recommended 486 configuration.
 
+### First plays: a load, not just a decode (dosags, 2026-09-26)
+
+A game that plays short WAV effects from its package pays for each clip
+once: the first play opens the package member, reads it (through DJGPP's
+16 KB transfer buffer, so a 215 KB clip is about 14 real-mode `INT 21h`
+reads) and decodes it into the port's PCM cache; later plays are cache
+hits and cost next to nothing. On dosags' 16-bpp gate fixture (486DX2-66,
+CF card) one walk click cost 201 ms with sound off and 505 ms with sound
+on, and a sound-on timing probe put the first play of the walk's
+13 KB footstep clip on that exact tick; DOSBox-X at fixed cycles
+measures the same first play at 22 ms (open 4, read 7, decode 5), so the
+486 multiplier is large and the read/decode split on real hardware is
+still being measured (HYPOTHESIS until a 486 split is recorded).
+
+Two levers, and they are not equivalent:
+
+- **Make the first play cheaper** (fewer, larger reads; a cheaper first
+  decode). This shrinks the cost and is the one to try first.
+- **Warm the cache ahead of time** (decode a room's frame-linked sounds
+  at room entry). This is exact and a real player-facing gain, but it
+  only moves the cost into the room load. If the fixture's room load
+  runs before the measured window (a `--startr`-style direct start), the
+  gate figure improves because the cost left the window, not because it
+  went away: report the moved cost beside the gain (see
+  `docs/harness-lessons.md`, "The warm-up that moved the stall out of
+  the window").
+
+The profiler cannot answer this with sound on if it hangs with an audio
+device open (dosags' did), so name first-play costs with a bracket probe
+around play/load/decode instead.
+
 ## Phasing a new port's audio work
 
 1. **PCM only** — WAV/SFX via Sound Blaster, no compressed audio.

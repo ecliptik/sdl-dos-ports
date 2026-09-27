@@ -35,6 +35,7 @@ Case studies: `docs/harness-lessons.md` (the dated incident behind every line be
 - One new mechanism per measured build; ablation cells around it are fine, instrumentation and banners riding along do not count.
 - Any step that selects an artifact needs an unambiguous key (the SHA in the patch's own `From` line) plus a cheap invariant (patch count, expected `build_sha12`); fold working-tree dirt into a build fingerprint only when the tree is dirty.
 
+- A gain that works by moving cost (a warm-up, a preload) is reported beside where the cost went; read the gate on a fixture where the moved cost stays inside the counted window, not one whose setup runs before it.
 ## Instrument validity
 - Pair every conditional counter with a reached-but-not-taken counter, and decompose zero at every level (branch not taken, site not reached, function not called, path not taken); a zero says nothing about the levels above it.
 - Instrument the callee, not the callers: one unconditional counter on the function's FIRST line answers "reached" for every call site, present and future.
@@ -73,6 +74,7 @@ Case studies: `docs/harness-lessons.md` (the dated incident behind every line be
 - Two DJGPP runtime traps: `strtok` keeps one global state, so a nested `strtok` loop silently ends the outer one after its first element; `fwrite` to a full DOS volume returns short instead of failing, so assert bytes written against bytes attempted.
 - A transform applied for comparison must never reach the artifact: keep the verbatim fetch and the normalised copy as two files, write from the verbatim one, assert byte and CRLF counts at staging.
 
+- Wait on an exact PID (`kill -0`) or a result file the job writes last, never on a `pgrep -f` pattern: the pattern matches the waiter's own command line and it waits forever, silently.
 ## Boot config, drives and hardware
 - Never `VOL`/`DIR` a removable drive without an `INT 24h` guard (an empty optical drive blocks on `Abort, Retry, Fail?` and costs a mains cycle); prefer the banner the machine already printed (MSCDEX's `Drive D: = Driver OPTICAL unit 0`) to a probe that asks.
 - Diagnose in the documented order (lock/activity, chord window, both capture channels, verify_input); a no-LED-change reading is a symptom, not a diagnosis.
@@ -87,6 +89,7 @@ Case studies: `docs/harness-lessons.md` (the dated incident behind every line be
 - Fault handling: record a retry as a retry, report a hung cell as a hole never a substitute, classify a timeout from a rolling window not one frame, report captured and held/repeated frame counts separately.
 - A drivable project emits a bounded observable run, one schema-versioned manifest at exit (RUNMANIFEST, `shared/include/runmanifest.h`), start and end banners, decomposed metrics, and file-based config with documented precedence.
 
+- Stage a program's config by the exact name the program reads (`src:NAME`), and make the runner refuse a mismatched name unless overridden; a config staged under its source basename is never read and every cell runs on defaults.
 ## Retractions and claims
 - Write the scope into the claim in the same breath as the evidence ("no `RAMDRIVE.SYS` in `C:\DOS`"); before blocking or escalating, re-read the command and ask what population it sampled.
 - Put a measurement between a striking result and the message reporting it, most of all when it fits a pattern the team has been rewarded for; the coordinator sets the pace, so slowing the relay is the coordinator's job.

@@ -26,6 +26,16 @@ before proposing one — in short: nothing game-specific, DOS-specific
 behavior stays explicit, patches (not direct source edits) against pinned
 upstream, build and validate under DOSBox-X before calling it done.
 
+## No private hostnames
+
+`shared/` (and much of this repo) is vendored as a subtree into port
+repos that are mirrored publicly, and `git subtree pull --squash` copies
+this repo's commit subjects into the port's squash commit. So no private
+or tailnet hostname goes into any tracked file here, nor into a commit
+subject or body: link public repos by their public URL, use the
+`forgejo.example.ts.net` placeholder for private ones, and keep real
+endpoints in the untracked `.claude/settings.local.json`.
+
 ## Commit and patch conventions
 
 Small, narrow, buildable slices. See [`docs/patch-conventions.md`](docs/patch-conventions.md)
