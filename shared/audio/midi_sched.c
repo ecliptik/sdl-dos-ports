@@ -9,7 +9,9 @@
  * line-for-line equivalent (T56). The engine code is C++ (std::vector,
  * std::stable_sort); this builds as C99, so the event list is a realloc-grown
  * array and the stable order across tracks is preserved by a per-event
- * insertion sequence number used as the sort tie-breaker.
+ * insertion sequence number used as the tie-breaker. parse_smf() reaches
+ * that order by merging the per-track runs (see merge_track_runs()); qsort
+ * remains only as the out-of-memory fallback.
  *
  * See midi_sched.h for the contract. ASCII-only.
  */
@@ -274,12 +276,71 @@ static int parse_track(midi_sched *m, const uint8_t *buf, size_t track_start, si
 
 /* ---- header parse (MidiScheduler::_parse_smf) ----------------------------*/
 
+/* Put the events in (abs_tick, seq) order by merging the per-track runs.
+ * Each track's events are appended in file order: abs_tick never decreases
+ * within a track and seq rises, so every run [starts[i], starts[i+1]) is
+ * already ordered. Adjacent runs are merged pairwise (left run first on an
+ * equal abs_tick, which is the lower seq), so the result is exactly the
+ * array a (abs_tick, seq) sort produces -- seq is unique, so that order is
+ * total. qsort through a callback cost ~25 us per event under DJGPP
+ * (3,700 events: 91 ms at DOSBox-X's fixed 40000, in one frame); the merge
+ * is log2(tracks) linear passes. Returns 0 only if the scratch array
+ * cannot be allocated (the caller then sorts). */
+static int merge_track_runs(midi_sched *m, uint32_t *starts, int nruns)
+{
+  smf_ev  *src = m->events;
+  smf_ev  *dst;
+  uint32_t n = m->nevents;
+  if (nruns <= 1 || n <= 1)
+    return 1;
+  dst = (smf_ev *)malloc((size_t)n * sizeof(smf_ev));
+  if (!dst)
+    return 0;
+  starts[nruns] = n;
+  while (nruns > 1)
+  {
+    int r, w = 0;
+    smf_ev *t;
+    for (r = 0; r < nruns; r += 2)
+    {
+      uint32_t a = starts[r], ae = starts[r + 1];
+      uint32_t b = ae, be = (r + 1 < nruns) ? starts[r + 2] : ae;
+      uint32_t o = a;
+      starts[w++] = a;
+      while (a < ae && b < be)
+      {
+        if (src[b].abs_tick < src[a].abs_tick)
+          dst[o++] = src[b++];
+        else
+          dst[o++] = src[a++];
+      }
+      while (a < ae)
+        dst[o++] = src[a++];
+      while (b < be)
+        dst[o++] = src[b++];
+    }
+    starts[w] = n;
+    nruns = w;
+    t = src; src = dst; dst = t;
+  }
+  if (src != m->events)
+  {
+    free(m->events);
+    m->events = src;
+    m->cap = n;
+  }
+  else
+    free(dst);
+  return 1;
+}
+
 static int parse_smf(midi_sched *m, const uint8_t *buf, size_t size)
 {
   size_t   cursor = 0;
   uint32_t header_size;
   uint16_t format, ntracks, division;
   int      t;
+  uint32_t starts[64 + 1]; /* each track's first event index, then nevents */
 
   if (size < 14)
     return 0;
@@ -315,13 +376,14 @@ static int parse_smf(midi_sched *m, const uint8_t *buf, size_t size)
     if (cursor + track_size > size)
       return 0;
     track_end = cursor + track_size;
+    starts[t] = m->nevents;
     if (!parse_track(m, buf, cursor, track_end))
       return 0;
     cursor = track_end;
   }
 
-  /* stable sort by abs_tick (seq tie-break == stable across tracks) */
-  if (m->nevents > 1)
+  /* stable order by abs_tick (seq tie-break == stable across tracks) */
+  if (m->nevents > 1 && !merge_track_runs(m, starts, ntracks))
     qsort(m->events, m->nevents, sizeof(smf_ev), ev_cmp);
 
   recompute_us_per_tick(m);
