@@ -152,6 +152,18 @@ told to say where the moved cost lands. A gain that works by moving
 cost is reported beside the cost, and a gate is read on a fixture where
 the cost stays inside the counted window.
 
+**Wall-clock clicks on a timeline the arm had moved** (2026-09-28). A
+killswitch pair for a faster screen fade cut the entry fade from 2274
+to 981 ms and raised the whole-run figure by 0.40. But the fixture's
+walk clicks were timed by wall clock, and the shorter fade put the ON
+cell's game 1.3 s ahead, so the same clicks landed on different game
+states: the cells played different sounds, and only the OFF cell loaded
+the largest clip. The fade itself came before the first click and
+stayed comparable; the whole-run figure did not. Any arm that changes
+timing can change what wall-clock input does, so a whole-run or
+silent-IRQ comparison between such arms needs input keyed to game
+ticks, or a metric taken before the first input.
+
 ## Instrument validity
 
 **`presents_palette_only`** (2026-09-18). A counter on "frames equal AND
