@@ -52,6 +52,36 @@ path in the same binary ranged from 0.81x to 286x by code path. An
 emulated sound chip also "succeeded" a reset real hardware fails, so
 "9/9 smoke cells passed" meant 9/9 safe fallback branches.
 
+**The hole the gate counter could not hear** (2026-09-30). A patch that
+wrote a new sound's first mix chunk early passed its registered tests
+and a full ratchet, then left a ~46 ms zero-filled hole ~186 ms into
+every cold-started sound: the next top-up mixed one chunk past the data
+that had arrived. The SB played the zeros as ordinary ring data, so the
+gate's silent-IRQ counter stayed at 0; the mixer's own `underruns`
+counter equalled the prime count in every run and nobody gated it. A
+capture check on that binary passed too, because its gap test started
+at 0.12 s. It was caught by a lab session reading a counter that moved
+between binaries. Gate every counter a patch can move, not only the one
+the patch was written to improve; the ratchet now requires underruns 0.
+
+**A test that could not fail** (2026-09-30). The pre-registered test
+for the fix above ran the known-buggy build as a control arm, with a
+rule set before data: if the buggy arm scored the same as the others,
+the result was "PASS without power", not a pass. Twice the control
+matched (the stall never reached the bug path), and the third, forced
+arm reproduced the bug before the fix was believed. Run the known-bad
+build under the same test, and decide in advance what it means when it
+passes.
+
+**A semitone nobody measured** (2026-09-30). The shared OPL3 sink
+played every note ~89 cents sharp for weeks (an AdLib F-number table
+that starts at C#, indexed from C), through gates that scored timing
+and counters, never pitch. A capture scorer comparing the recording's
+spectrum with the song's render read +90 cents on OPL3 and -2 on a
+WaveBlaster capture of the same scene. Uniform transposition keeps music
+recognisable, so no listener flags it; measure against a render, with a
+second synth as the control.
+
 ## Before designing a cell
 
 **The bisect that checked out the wrong patch** (2026-09-18). A commit-
