@@ -122,12 +122,20 @@ static const uint8_t *bucket_patch(int bucket)
  * clock 14.318 MHz / 288 = 49716 Hz effective sample rate;
  * freq_hz = fnum * 49716 / 2^(20 - block), inverted for a fixed 12-entry
  * one-octave table at block=4 (MIDI note 60 = C4 = table[0]).
+ *
+ * The entries are round(f * 65536 / 49716) for C4..B4 (f = 261.63 Hz *
+ * 2^(n/12)), so table[0] plays C4 at 261.7 Hz and every entry is within
+ * 2 cents of equal temperament. The table used before 2026-09-30
+ * ({363, 385, ..., 686}) is the common AdLib table that starts at C#:
+ * indexed from C, it played every note ~89 cents sharp (363 -> 275.4 Hz
+ * for C4), which a capture measured at +90 cents against the song's
+ * render while a WaveBlaster capture of the same scene read -2 cents.
  * ============================================================================
  */
 
 static const uint16_t base_fnum_table[12] = {
-  363, 385, 408, 432, 458, 485,
-  514, 544, 577, 611, 647, 686
+  345, 365, 387, 410, 435, 460,
+  488, 517, 547, 580, 615, 651
 };
 
 static void note_to_fnum_block(int note, uint16_t *out_fnum, uint8_t *out_block)
