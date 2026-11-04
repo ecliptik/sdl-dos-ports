@@ -777,17 +777,22 @@ ports:
     upstream_revision: a77dfb96cb91780ca334d0d4cfd86957558007e0
     upstream_license: GPL-2.0-or-later
     upstream_license_verified: true
-    port_repo_url: null
+    port_repo_url: https://github.com/ecliptik/psdoom-plus
     language: C
     original_sdl_version: "none (X11; psdoom-plus adds its own SDL3 layer)"
     target_sdl_version: "3"
     graphics_api: software / VGA mode 13h or VESA
-    dos_status: BACKLOG
+    dos_status: PLAYABLE
+    # 2026-11-04: DOSBox-X only so far. PSDOOM.EXE plays (VGA mode 13h
+    # through an 8-bit window surface); the mcb backend's end-to-end test
+    # (dos/tests/dosbox-pstest.sh: TSRs freed in classic and modern, an
+    # interrupt-hooking TSR refused in modern) passes 10/10. Real hardware
+    # and the net backend (Watt-32 + psdoomd) not yet.
     priority: 10
     difficulty: 3
     dos_minimum_target: 486DX2-66
     dos_recommended_target: Pentium 75
-    maintainer: null
+    maintainer: ecliptik
     notes: >
       psDooM (processes as Doom monsters) on DOS: the "og" engine of
       psdoom-plus, i.e. id Software's linuxdoom-1.10 with psdoom-plus's
