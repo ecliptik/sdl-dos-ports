@@ -791,6 +791,15 @@ ports:
     # WATTCP terms are not GPL-compatible) and kills real processes in a
     # Linux test guest through psdoomd (psdev test dos: 6/6, DOSBox-X
     # NE2000 + slirp). Real hardware not yet; CONFIG.SYS drivers untested.
+    #
+    # 2026-11-04 (later): real hardware passed on the Gateway 2000 (486DX2-66,
+    # Mach64 under UniVBE, PicoGUS as SB 2.0, MS-DOS 6.22): smoke test at
+    # 640x480 (-640: the capture stick cannot lock mode 13h) and the TSR
+    # test 10/10. It also found that modern mode only protected the head of
+    # each interrupt chain (UNIVBE/DOSKEY/MSCDEX), fixed and confirmed by a
+    # read-only CHAINCHK run. psdoom-plus 0.1.0 released with a DOS zip
+    # (make -C dos dist: PSDOOM.EXE, CWSDPMI + its terms, no IWAD):
+    # https://github.com/ecliptik/psdoom-plus/releases/tag/v0.1.0
     priority: 10
     difficulty: 3
     dos_minimum_target: 486DX2-66
