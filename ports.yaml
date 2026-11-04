@@ -771,3 +771,38 @@ ports:
       -- modern SuperTux carries a much heavier stack. 640x480 rendering
       raises framebuffer bandwidth concerns. Locate canonical upstream repo
       (and confirm which 0.1.x revision) before starting.
+
+  - name: psdoom-plus
+    upstream_url: https://github.com/id-Software/DOOM
+    upstream_revision: a77dfb96cb91780ca334d0d4cfd86957558007e0
+    upstream_license: GPL-2.0-or-later
+    upstream_license_verified: true
+    port_repo_url: null
+    language: C
+    original_sdl_version: "none (X11; psdoom-plus adds its own SDL3 layer)"
+    target_sdl_version: "3"
+    graphics_api: software / VGA mode 13h or VESA
+    dos_status: BACKLOG
+    priority: 10
+    difficulty: 3
+    dos_minimum_target: 486DX2-66
+    dos_recommended_target: Pentium 75
+    maintainer: null
+    notes: >
+      psDooM (processes as Doom monsters) on DOS: the "og" engine of
+      psdoom-plus, i.e. id Software's linuxdoom-1.10 with psdoom-plus's
+      own SDL3 video/audio layer (engines/og/platform/) and libpsd. The
+      DOS port lives INSIDE the psdoom-plus repo under dos/ (port root;
+      the hub subtree sits at the repo root's .sdl-dos-ports/), not in a
+      repo of its own, because the engine patches and libpsd are shared
+      with the Linux/BSD/Haiku builds. License verified by reading
+      LICENSE.TXT at the pinned SHA: GNU GPL version 2 text, with the
+      "any later version" option (1999 re-release; README.TXT: "Licensed
+      under the GNU General Public License 2.0"). The per-file headers
+      still name the older DOOM Source Code License; the GPL re-release
+      supersedes it. No SDL_mixer or SDL_image needed (linuxdoom has no
+      music; sound effects go through a raw SDL3 audio stream). Game
+      data: Freedoom (BSD-3-Clause) or the user's own IWAD. DOS has no
+      processes, so monsters come from the DOS memory chain (TSRs and
+      drivers, libpsd "mcb" backend) and from a remote psdoomd over TCP
+      (Watt-32, libpsd "net" backend).
