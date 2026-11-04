@@ -786,8 +786,11 @@ ports:
     # 2026-11-04: DOSBox-X only so far. PSDOOM.EXE plays (VGA mode 13h
     # through an 8-bit window surface); the mcb backend's end-to-end test
     # (dos/tests/dosbox-pstest.sh: TSRs freed in classic and modern, an
-    # interrupt-hooking TSR refused in modern) passes 10/10. Real hardware
-    # and the net backend (Watt-32 + psdoomd) not yet.
+    # interrupt-hooking TSR refused in modern) passes 10/10. The net
+    # backend uses the port's own UDP over a packet driver (Watt-32's
+    # WATTCP terms are not GPL-compatible) and kills real processes in a
+    # Linux test guest through psdoomd (psdev test dos: 6/6, DOSBox-X
+    # NE2000 + slirp). Real hardware not yet; CONFIG.SYS drivers untested.
     priority: 10
     difficulty: 3
     dos_minimum_target: 486DX2-66
