@@ -92,7 +92,7 @@ ports:
     dos_status: PLAYABLE
     priority: 1
     difficulty: 5
-    dos_minimum_target: null
+    dos_minimum_target: 486DX2-66
     dos_recommended_target: null
     maintainer: null
     notes: >
@@ -489,6 +489,31 @@ ports:
       hang needs self-recovering scripts (hardware-testing.md,
       dos-rig-operations). Workflow captured as the benchmark skill's
       self-driving loop reference.
+      2026-11-05: dos_status unchanged (PLAYABLE); this entry supersedes
+      the research-era lines at the top of this note (the SDL2->SDL3
+      strategy decision was made -- a direct engine-source port to SDL3;
+      ags 0001-0036 reach COMPILES -- and the research-only deliverables
+      were done long ago). Dependency shape as built, not as read from
+      the pinned CMakeLists: SDL3 (vendored + patched), no
+      SDL2_sound/mojoAL, no Ogg/Vorbis/Theora (gated out; OGG/MP3 are
+      host-transcoded to WAV by tools/port-game; no video player); the
+      AGSBlend license remark is moot because every built-in plugin is
+      compiled out. The 486 gates PLAN-GATES S8 / S16 / S32P were MET
+      2026-09-30 (dosags fdbaf461): sound on, fixed timestep, at 8-, 16-
+      and 32-bit on HW-486-66, two bar cells per depth (whole-run
+      39.26-39.35, steady 40.07-40.29, fps_p50 40.00) plus a
+      harness-scored capture listen each and a WaveBlaster music-only
+      arm PASS at all three (own fixtures); caveats n=2, margins
+      0.06-0.15, four binaries. D2 (cold-start sound latency <= 1.0 ms)
+      FAILED as registered at 4.30 ms. Since then (dosags PLAN-NEXT, the
+      plan of record): a release build flavour (ags 0351) and `make
+      dist`, both DOSBox-X-ratchet-clean; the release flavour carries S8
+      on the 486 (round R1 2026-11-05: ABBA EQUIVALENT, S8 MET x2, CAPR8
+      PASS); next R2 (S16 / S32P on the release exe), then v0.1.
+      Hub-wide fallout already folded in: the OPL3 F-number table fix
+      (shared/, about 89 cents sharp before) and the gate/control/pitch
+      rules in docs/. Details: dosags STATUS.md "Where it stands" and
+      COMPATIBILITY.md.
 
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
