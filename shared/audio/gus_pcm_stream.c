@@ -79,6 +79,8 @@ struct gus_pcm_stream
   uint8_t *pending;             /* host-side fill buffer, chunk_bytes long */
   size_t   pending_len;         /* bytes written into pending so far */
   int      underruns;
+  bool     ended;               /* flush() called and nothing written since: end of data */
+  bool     idle;                /* the last half started has finished; nothing followed it */
 };
 
 static void gus_pcm_stream_start_half(gus_pcm_stream *s, int half)
@@ -96,6 +98,7 @@ static void gus_pcm_stream_start_half(gus_pcm_stream *s, int half)
   SDL_DOSGusStartVoice(s->voice, start, end, start, 0u);
   s->staged[half] = false;
   s->cur = half;
+  s->idle = false;
 }
 
 /* Uploads whatever is in the pending buffer into `half`'s FIXED address,
@@ -222,7 +225,38 @@ size_t gus_pcm_stream_write(gus_pcm_stream *s, const void *data, size_t bytes)
   n = (bytes < room) ? bytes : room;
   memcpy(s->pending + s->pending_len, data, n);
   s->pending_len += n;
+  s->ended = false; /* more data: whatever flush() marked is no longer the end */
   return n;
+}
+
+void gus_pcm_stream_flush(gus_pcm_stream *s)
+{
+  if (!s)
+    return;
+  /* refill() only ever uploads a FULL chunk, so a partial tail would sit in
+   * `pending` forever: never heard, and never letting the stream drain. Pad
+   * it to a full chunk with 8-bit unsigned silence so the next pump stages
+   * it like any other chunk. Idempotent: a second call finds pending either
+   * full (already padded, not yet uploaded) or empty. */
+  if (s->pending_len > 0 && s->pending_len < s->chunk_bytes)
+  {
+    memset(s->pending + s->pending_len, 0x80, s->chunk_bytes - s->pending_len);
+    s->pending_len = s->chunk_bytes;
+  }
+  s->ended = true;
+}
+
+bool gus_pcm_stream_drained(const gus_pcm_stream *s)
+{
+  if (!s)
+    return true;
+  if (s->pending_len > 0 || s->staged[0] || s->staged[1])
+    return false;
+  /* Nothing left host-side or staged in DRAM: drained once the voice has
+   * nothing sounding -- either never started, or pump() saw the last
+   * started half finish. pump()'s own read of the voice is the signal, so a
+   * caller polling this never adds a second GF1 register read. */
+  return s->cur < 0 || s->idle;
 }
 
 size_t gus_pcm_stream_queued(const gus_pcm_stream *s)
@@ -259,6 +293,8 @@ void gus_pcm_stream_stop(gus_pcm_stream *s)
   s->staged[1]    = false;
   s->pending_len  = 0;
   s->active       = false;
+  s->ended        = false;
+  s->idle         = false;
 }
 
 void gus_pcm_stream_set_volume(gus_pcm_stream *s, float volume)
@@ -299,6 +335,15 @@ void gus_pcm_stream_pump(gus_pcm_stream *s)
       if (finished >= 0)
         gus_pcm_stream_refill(s, finished);
     }
+    else if (s->cur >= 0 && s->ended && s->pending_len == 0)
+    {
+      /* The caller flushed (end of data) and every byte has played: this
+       * is the stream draining, not a missed swap. Not an underrun -- the
+       * old code counted one on EVERY pump from here until the caller
+       * closed the stream, which a caller waiting for the tail to drain
+       * never did. */
+      s->idle = true;
+    }
     else if (s->cur >= 0)
     {
       /* The half that was playing finished and nothing else is staged to
@@ -308,6 +353,7 @@ void gus_pcm_stream_pump(gus_pcm_stream *s)
        * is deliberately left as-is so the NEXT pump() that finds `next`
        * staged resumes from exactly this same branch. */
       s->underruns++;
+      s->idle = true;
     }
     /* else: s->cur < 0 and nothing staged yet -- stream never started;
      * not an underrun, just not fed yet. */

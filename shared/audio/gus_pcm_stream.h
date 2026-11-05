@@ -79,6 +79,10 @@
 
 typedef struct gus_pcm_stream gus_pcm_stream;
 
+/* Defined since gus_pcm_stream_flush()/gus_pcm_stream_drained() exist, so a
+ * caller (or a test) built against an older subtree pin can tell. */
+#define GUS_PCM_STREAM_HAS_FLUSH 1
+
 /* Opens one stream: allocates a voice from the reserved SFX partition
  * (SDL_DOSGusAllocVoiceSfx) and two FIXED DRAM half-buffers of
  * `chunk_bytes` each (clamped up to GUS_DMA_UPLOAD_MIN, 4096, if smaller --
@@ -104,8 +108,32 @@ gus_pcm_stream *gus_pcm_stream_open(unsigned rate, unsigned channels, size_t chu
  * `s` NULL is a no-op returning 0. */
 size_t gus_pcm_stream_write(gus_pcm_stream *s, const void *data, size_t bytes);
 
-/* Bytes currently buffered host-side, not yet uploaded to either half. */
+/* Bytes currently buffered host-side, not yet uploaded to either half.
+ * NOT an end-of-playback signal: a half can still be staged in DRAM or
+ * sounding when this reads 0 -- use gus_pcm_stream_drained() for that. */
 size_t gus_pcm_stream_queued(const gus_pcm_stream *s);
+
+/* Marks the end of the data: the caller has written everything it will.
+ * The stream only ever uploads FULL chunks (chunk_bytes), so without this a
+ * final partial chunk -- every clip whose length is not a multiple of
+ * chunk_bytes, and ALL of a clip shorter than one chunk -- stays in the
+ * pending buffer and is never heard. flush() pads that tail with 8-bit
+ * unsigned silence (0x80) up to a full chunk so the next pump() stages and
+ * plays it like any other, and from then on the stream running dry is
+ * counted as draining, not as an underrun. Idempotent -- safe to call on
+ * every poll once the source is exhausted. A write() after flush() starts
+ * new data (it follows the padded silence) and clears the end mark.
+ * Cleared by gus_pcm_stream_stop(). NULL is a no-op. */
+void gus_pcm_stream_flush(gus_pcm_stream *s);
+
+/* True once everything written has finished playing: nothing pending
+ * host-side, neither half staged, and the voice either never started or
+ * pump() has seen the last started half finish. This is the "playback is
+ * over" signal an engine needs to retire a sound (queued() == 0 is not --
+ * see above). Reads no hardware itself: it reflects the most recent pump(),
+ * so it only advances while the stream is active and being pumped. A
+ * paused stream holding data is not drained. NULL reads as drained. */
+bool gus_pcm_stream_drained(const gus_pcm_stream *s);
 
 /* Starts/pauses playback. Pausing silences whatever half is currently
  * sounding but does NOT clear pending/staged data, so a later
@@ -118,7 +146,7 @@ void gus_pcm_stream_set_active(gus_pcm_stream *s, bool active);
 
 /* Stops playback and drops all pending/staged data immediately (silence,
  * not pause) -- matches dos_audio_mixer_voice_stop()'s own "clears the
- * ring + marks inactive" contract. */
+ * ring + marks inactive" contract. Also clears a flush() end mark. */
 void gus_pcm_stream_stop(gus_pcm_stream *s);
 
 /* Sets playback volume, 0.0-1.0 linear, clamped. Applied to the GF1 voice
@@ -146,7 +174,12 @@ void gus_pcm_stream_pump(gus_pcm_stream *s);
  * -- i.e. the swap missed its window (this module's own precise definition
  * of "underrun": a genuinely late refill, not merely an idle/never-started
  * stream, which is never counted). Each miss leaves the voice silent until
- * a later pump() call finds the off half staged and resumes. */
+ * a later pump() call finds the off half staged and resumes. It counts pump
+ * CYCLES, not misses: one late refill adds one per pump until it is served,
+ * so the figure scales with the caller's pump rate. A stream that ran dry
+ * after gus_pcm_stream_flush() with everything played is draining and is
+ * not counted; a caller that never flushes still sees every pump after its
+ * last chunk counted, as before flush() existed. */
 int gus_pcm_stream_underrun_count(const gus_pcm_stream *s);
 
 /* Stops the voice (returning it to the SFX partition pool) and frees `s`.
