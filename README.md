@@ -18,7 +18,7 @@ should follow when working in this repo.
 | Priority | Project | Upstream | License | Port repo | Status | Difficulty |
 |---:|---|---|---|---|---|---:|
 | 0 | doskutsu (Cave Story) | [nxengine/nxengine-evo](https://github.com/nxengine/nxengine-evo) | GPL-3.0 (verified) | [ecliptik/doskutsu](https://github.com/ecliptik/doskutsu) | RELEASE_READY — 14.6-32.2 fps | reference |
-| 1 | Adventure Game Studio | [adventuregamestudio/ags](https://github.com/adventuregamestudio/ags) | Artistic-2.0 (verified) | ecliptik/dosags (private) | PLAYABLE — 40Hz/40fps plan in progress on the 486DX2-66 | 5 |
+| 1 | Adventure Game Studio | [adventuregamestudio/ags](https://github.com/adventuregamestudio/ags) | Artistic-2.0 (verified) | [ecliptik/dosags](https://github.com/ecliptik/dosags) | PLAYABLE — 40Hz/40fps plan in progress on the 486DX2-66 | 5 |
 | 2 | VVVVVV | [TerryCavanagh/VVVVVV](https://github.com/TerryCavanagh/VVVVVV) | unverified — see caution below | unclaimed | BACKLOG | 3 |
 | 3 | Meritous | TBD | unverified | unclaimed | BACKLOG | 2 |
 | 4 | OpenJazz | [OSSGames/GAME-SDL-openjazz](https://github.com/OSSGames/GAME-SDL-openjazz) | unverified | unclaimed | BACKLOG | 2-3 |

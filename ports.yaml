@@ -84,7 +84,7 @@ ports:
     upstream_revision: 94e271df9c14484d89f4861100f643d39555dae7
     upstream_license: Artistic License 2.0
     upstream_license_verified: true
-    port_repo_url: https://forgejo.example.ts.net/ecliptik/dosags  # private; real host redacted
+    port_repo_url: https://github.com/ecliptik/dosags
     language: C++
     original_sdl_version: "2"
     target_sdl_version: "3"
@@ -825,6 +825,9 @@ ports:
     # read-only CHAINCHK run. psdoom-plus 0.1.0 released with a DOS zip
     # (make -C dos dist: PSDOOM.EXE, CWSDPMI + its terms, no IWAD):
     # https://github.com/ecliptik/psdoom-plus/releases/tag/v0.1.0
+    #
+    # 2026-11-05: psdoom-plus 0.1.1 released (DOS zip on GitHub):
+    # https://github.com/ecliptik/psdoom-plus/releases/tag/v0.1.1
     priority: 10
     difficulty: 3
     dos_minimum_target: 486DX2-66
