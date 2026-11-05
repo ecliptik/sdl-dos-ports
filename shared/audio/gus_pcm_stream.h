@@ -97,7 +97,22 @@ typedef struct gus_pcm_stream gus_pcm_stream;
  *
  * Returns NULL on failure (no GF1 voice available, or DRAM exhausted) --
  * same graceful-degradation contract as the rest of this mixer; the caller
- * plays back silently rather than erroring. */
+ * plays back silently rather than erroring. The voice is claimed BEFORE any
+ * DRAM is allocated and is returned on every later failure, so a failed
+ * open never keeps a voice, and an open refused for lack of a voice
+ * allocates no DRAM and leaves the floor alone. An open that fails on DRAM
+ * itself can still strand the first half-buffer if only the second upload
+ * fails, and the DRAM floor (gus_dram_floor.h) still only ratchets up --
+ * there is no per-region free; see this file's header.
+ *
+ * LIFETIME CONTRACT FOR CALLERS: open ONE stream per mixer voice and keep it
+ * for the session, reusing it across clips (gus_pcm_stream_stop(), then
+ * write() the next clip). Do NOT open a stream per clip: every open takes
+ * 2 * chunk_bytes of GF1 DRAM that is never given back, so per-clip opens
+ * exhaust the card -- measured under DOSBox-X with a 1 MB card (dosags, 5
+ * Days A Stranger, a footstep per step): 99 opens succeeded, then 49 failed,
+ * each failure a silent sound. A hub-side reuse/reset API may come later as
+ * its own change. */
 gus_pcm_stream *gus_pcm_stream_open(unsigned rate, unsigned channels, size_t chunk_bytes);
 
 /* Appends already-8-bit-unsigned-PCM bytes into the stream's pending
@@ -132,7 +147,10 @@ void gus_pcm_stream_flush(gus_pcm_stream *s);
  * over" signal an engine needs to retire a sound (queued() == 0 is not --
  * see above). Reads no hardware itself: it reflects the most recent pump(),
  * so it only advances while the stream is active and being pumped. A
- * paused stream holding data is not drained. NULL reads as drained. */
+ * paused stream holding data is not drained. NULL reads as drained.
+ * It also reads true after a genuine mid-clip underrun with nothing pending
+ * (the caller had not written the next chunk yet), so a caller must AND it
+ * with its own "source has no more data" state before retiring a sound. */
 bool gus_pcm_stream_drained(const gus_pcm_stream *s);
 
 /* Starts/pauses playback. Pausing silences whatever half is currently
@@ -183,6 +201,7 @@ void gus_pcm_stream_pump(gus_pcm_stream *s);
 int gus_pcm_stream_underrun_count(const gus_pcm_stream *s);
 
 /* Stops the voice (returning it to the SFX partition pool) and frees `s`.
+ * The voice is returned whether or not the stream ever started playing.
  * Does NOT reclaim this stream's own DRAM (no per-region free primitive
  * exists -- see this file's own header comment); that DRAM stays allocated
  * for the rest of the session. Safe to call once; NULL is a no-op. */

@@ -157,13 +157,26 @@ gus_pcm_stream *gus_pcm_stream_open(unsigned rate, unsigned channels, size_t chu
   if (!dma_hint || dma_hint[0] == '\0')
     SDL_SetHint("SDL_HINT_DOS_GUS_DMA_UPLOAD", "1");
 
+  /* Claim the GF1 voice FIRST, before any DRAM is allocated or the shared
+   * floor raised. The old order (DRAM, floor, then voice) meant an open
+   * that failed for lack of a voice -- the SFX partition is only 5 voices
+   * by default -- had already consumed 2 * chunk_bytes of DRAM and raised
+   * the floor for nothing, on every failed open. Every failure path below
+   * this point hands the voice back. */
+  voice = SDL_DOSGusAllocVoiceSfx();
+  if (voice < 0)
+    return NULL; /* reserved SFX partition exhausted; nothing allocated */
+
   /* Reserve the two fixed half-buffers up front, filled with 8-bit
    * unsigned PCM silence (0x80) -- this is the ONE time this stream's own
    * DRAM is allocated (SDL_DOSGusUploadSample); every later refill reuses
    * these same two addresses via SDL_DOSGusOverwriteSample. */
   silence = (uint8_t *)malloc(chunk_bytes);
   if (!silence)
+  {
+    SDL_DOSGusStopVoice(voice); /* release back to the pool */
     return NULL;
+  }
   memset(silence, 0x80, chunk_bytes);
   addr0 = SDL_DOSGusUploadSample(silence, (uint32_t)chunk_bytes, 0);
   addr1 = (addr0 != GUS_BAD_ADDR)
@@ -171,7 +184,13 @@ gus_pcm_stream *gus_pcm_stream_open(unsigned rate, unsigned channels, size_t chu
               : GUS_BAD_ADDR;
   free(silence);
   if (addr0 == GUS_BAD_ADDR || addr1 == GUS_BAD_ADDR)
-    return NULL; /* DRAM exhausted -- graceful degradation, no voice claimed yet */
+  {
+    /* DRAM exhausted -- graceful degradation. The voice goes back; if addr0
+     * succeeded and addr1 did not, addr0 stays allocated (no per-region
+     * free primitive exists -- see this module's own header). */
+    SDL_DOSGusStopVoice(voice);
+    return NULL;
+  }
 
   /* This stream's two half-buffers are a SESSION-LIFETIME allocation (see
    * this file's own header comment) -- raise the shared floor to protect
@@ -181,12 +200,6 @@ gus_pcm_stream *gus_pcm_stream_open(unsigned rate, unsigned channels, size_t chu
    * function can return success (i.e. before any caller could start
    * relying on addr0/addr1 staying valid). */
   gus_dram_floor_reserve(addr1 + (uint32_t)chunk_bytes);
-
-  voice = SDL_DOSGusAllocVoiceSfx();
-  if (voice < 0)
-    return NULL; /* reserved SFX partition exhausted; the two half-buffer
-                  * uploads above are not reclaimed (no per-region free
-                  * primitive exists -- see this module's own header) */
 
   s = (gus_pcm_stream *)calloc(1, sizeof(*s));
   if (!s)
@@ -379,7 +392,12 @@ void gus_pcm_stream_close(gus_pcm_stream *s)
 {
   if (!s)
     return;
-  if (s->cur >= 0)
+  /* Whenever a voice was allocated -- started or not. StopVoice is also
+   * what returns it to the SFX partition; the old `cur >= 0` test kept it
+   * busy forever for a stream closed before its first chunk ever played
+   * (every sub-chunk clip, before gus_pcm_stream_flush() existed), and five
+   * such closes exhausted the default 5-voice partition for the session. */
+  if (s->voice >= 0)
     SDL_DOSGusStopVoice(s->voice);
   free(s->pending);
   free(s);

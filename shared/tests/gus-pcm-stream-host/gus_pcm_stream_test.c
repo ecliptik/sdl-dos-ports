@@ -9,11 +9,15 @@
  * SDL_DOSGusAllocVoiceSfx. Every StartVoice snapshots the DRAM range it
  * plays, so the test can check exactly which bytes became audible, in order.
  *
- * What it asserts (each failed against the module as of hub 20f16f1):
+ * What it asserts (T1-T4 failed against the module as of hub 20f16f1; T5
+ * passed there and guards the voice-before-DRAM open order that fixed T4):
  *   T1  a clip shorter than one chunk (4096 B) plays, all of it
  *   T2  a clip of 4096*n + k bytes plays all n*4096 + k bytes, in order
  *   T3  after a clip has played out, more pump calls add no underruns and
  *       the stream reports itself drained
+ *   T4  six short clips played and closed in turn never exhaust the
+ *       5-voice SFX partition, including streams closed before they started
+ *   T5  an open that fails for lack of DRAM does not keep an SFX voice
  *
  * The flush/drained API is used when the header advertises it
  * (GUS_PCM_STREAM_HAS_FLUSH); without it the test drives the stream the way
@@ -162,9 +166,37 @@ static void test_clip(const char *name, size_t n)
 
 int main(void)
 {
+  int i, opened = 0;
+  uint8_t clip[3893];
+
   test_clip("T1 short clip", 3893);
   test_clip("T2/T3 clip 4096*4+1757", 4096u * 4u + 1757u);
   test_clip("T2/T3 clip 4096*26+1085", 4096u * 26u + 1085u);
+
+  printf("T4 six short clips in turn, each played then closed\n");
+  sim_reset(); make_clip(clip, sizeof(clip), 1);
+  for (i = 0; i < 6; i++)
+  {
+    gus_pcm_stream *s = gus_pcm_stream_open(11025, 1, 4096);
+    if (s) { opened++; play_clip(s, clip, sizeof(clip), g_now_ms + 5000.0); gus_pcm_stream_close(s); }
+  }
+  CHECK(opened == 6, "6 of 6 opens succeeded (%d)", opened);
+  CHECK(sfx_busy() == 0, "no SFX voice left busy (%d)", sfx_busy());
+
+  printf("T4b six short clips in turn, each closed before it ever started\n");
+  sim_reset(); opened = 0;
+  for (i = 0; i < 6; i++)
+  {
+    gus_pcm_stream *s = gus_pcm_stream_open(11025, 1, 4096);
+    if (s) { opened++; gus_pcm_stream_write(s, clip, 2048); gus_pcm_stream_stop(s); gus_pcm_stream_close(s); }
+  }
+  CHECK(opened == 6, "6 of 6 opens succeeded (%d)", opened);
+  CHECK(sfx_busy() == 0, "no SFX voice left busy (%d)", sfx_busy());
+
+  printf("T5 open with GF1 DRAM exhausted\n");
+  sim_reset(); g_dram_cap = 4096u; /* room for one half-buffer, not two */
+  CHECK(gus_pcm_stream_open(11025, 1, 4096) == NULL, "open fails");
+  CHECK(sfx_busy() == 0, "the failed open keeps no SFX voice (%d)", sfx_busy());
 
   printf("%s (%d failure%s)\n", g_fail ? "FAIL" : "PASS", g_fail, g_fail == 1 ? "" : "s");
   return g_fail ? 1 : 0;
