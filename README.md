@@ -10,8 +10,7 @@ itself. Each port lives in its own repository, wired to
 [`shared/`](shared/) via git subtree at `.sdl-dos-ports/` (or, for a port
 scaffolded before 2026-08-31, a submodule -- see `scripts/new-port.sh`).
 
-See [`CLAUDE.md`](CLAUDE.md) for the rules an AI agent (or contributor)
-should follow when working in this repo.
+This project is being built agentically using [Claude Code](https://claude.com/claude-code).
 
 ## Ports
 
