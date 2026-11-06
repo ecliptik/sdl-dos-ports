@@ -40,10 +40,13 @@ v0.1 `AGS.EXE` (c754df64babd). Frames displayed = 1 - frames_skipped/ticks.
 | Trilby's Notes, room 35 | 8-bit | 40.23 | 99.32% |
 | 5 Days a Stranger, room 3 | 16-bit | 40.13 | 99.44% |
 | 5 Days a Stranger, room 3 | 32-bit, 640x480 | 40.10 | 99.52% |
-| Maniac Mansion Deluxe, character select | 16-bit | 40.00 | 99.90% (x2) |
+| Maniac Mansion Deluxe, character select (idle) | 16-bit | 40.00 | 99.90% (x2) |
+| Maniac Mansion Deluxe, in play (room 1 to 2, round P9) | 16-bit | 39.9 | 67.6% (x2) |
+| 7 Days a Stranger, in play (round P9) | 16-bit | 39.99 | 99.50% |
 
-Maniac Mansion Deluxe ran at 36.5 ticks/s with about 27% of frames
-displayed before the script VM and engine levers.
+Maniac Mansion Deluxe's character select ran at 36.5 ticks/s with about
+27% of frames displayed before the script VM and engine levers. In play
+it still drops frames (67.6% displayed); that is the next target.
 
 A second reading of each gate scene on the same exe (round V1) met the
 bar at 16-bit; at 8- and 32-bit the whole-run rate (start-up included)

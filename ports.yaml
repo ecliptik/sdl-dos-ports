@@ -511,8 +511,9 @@ ports:
       on the 486 (round R1 2026-11-05: ABBA EQUIVALENT, S8 MET x2, CAPR8
       PASS); R2/R3 carried S16 / S32P on the release exe. v0.1
       released 2026-11-06 (https://github.com/ecliptik/dosags/releases/tag/v0.1): Maniac Mansion Deluxe
-      99.90% displayed x2 at 40 ticks/s on the shipped build (script
-      VM + engine levers, ags 0359-0365), MIDI-only audio without a
+      character select 99.90% displayed x2 at 40 ticks/s on the shipped
+      build (script VM + engine levers, ags 0359-0365), in play 67.6% x2
+      (P9), MIDI-only audio without a
       Sound Blaster (ags 0355), GUS documented as not yet right (hub
       gus_pcm_stream fix f2515cf landed; effects and music open for
       v0.2). Shipped-exe gate record: S16 MET x2, S32P and S8 MET 1
