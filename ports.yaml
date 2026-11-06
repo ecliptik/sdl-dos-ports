@@ -509,7 +509,16 @@ ports:
       plan of record): a release build flavour (ags 0351) and `make
       dist`, both DOSBox-X-ratchet-clean; the release flavour carries S8
       on the 486 (round R1 2026-11-05: ABBA EQUIVALENT, S8 MET x2, CAPR8
-      PASS); next R2 (S16 / S32P on the release exe), then v0.1.
+      PASS); R2/R3 carried S16 / S32P on the release exe. v0.1
+      released 2026-11-06 (https://github.com/ecliptik/dosags/releases/tag/v0.1): Maniac Mansion Deluxe
+      99.90% displayed x2 at 40 ticks/s on the shipped build (script
+      VM + engine levers, ags 0359-0365), MIDI-only audio without a
+      Sound Blaster (ags 0355), GUS documented as not yet right (hub
+      gus_pcm_stream fix f2515cf landed; effects and music open for
+      v0.2). Shipped-exe gate record: S16 MET x2, S32P and S8 MET 1
+      of 2 (V1's misses are start-up time only, cause open); the zip
+      as shipped PASSES (V1 DIST2). dos_status stays PLAYABLE: no
+      full-game play-through yet.
       Hub-wide fallout already folded in: the OPL3 F-number table fix
       (shared/, about 89 cents sharp before) and the gate/control/pitch
       rules in docs/. Details: dosags STATUS.md "Where it stands" and
