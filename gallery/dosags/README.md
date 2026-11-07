@@ -54,7 +54,9 @@ re-compositing interface panels nothing has touched: in play is 88.1% x2
 same-binary ABBA (round GC). Not yet in a release. Open on that build: the
 32-bit and 8-bit gate scenes missed the whole-run floor (39.17 and 39.12
 against 39.2) on slower start-up (steady and frames displayed in band; 16-bit
-MET); a v0.1-vs-main ABBA decides whether that is the build or the machine.
+MET). A v0.1-vs-main ABBA (round SU) cleared the build: the time is the
+restart-point save write at start-up (210-516 ms on either exe, 3 of 4 pairs
+within 2 ms), and v0.1 itself missed the 8-bit floor once in that round.
 
 A second reading of each gate scene on the same exe (round V1) met the
 bar at 16-bit; at 8- and 32-bit the whole-run rate (start-up included)
