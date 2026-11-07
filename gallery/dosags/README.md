@@ -43,10 +43,18 @@ v0.1 `AGS.EXE` (c754df64babd). Frames displayed = 1 - frames_skipped/ticks.
 | Maniac Mansion Deluxe, character select (idle) | 16-bit | 40.00 | 99.90% (x2) |
 | Maniac Mansion Deluxe, in play (room 1 to 2, round P9) | 16-bit | 39.9 | 67.6% (x2) |
 | 7 Days a Stranger, in play (round P9) | 16-bit | 39.99 | 99.50% |
+| Maniac Mansion Deluxe, in play, **main after v0.1** (R1, round CF, 2026-11-07) | 16-bit | 39.9 | 88.1% (x2) |
 
 Maniac Mansion Deluxe's character select ran at 36.5 ticks/s with about
 27% of frames displayed before the script VM and engine levers. In play
-it still drops frames (67.6% displayed); that is the next target.
+v0.1 still drops frames (67.6% displayed). On main since v0.1, lever R1
+(ags 0366, on by default; `DOSAGS_GUI_CLIP=0` turns it off) stops
+re-compositing interface panels nothing has touched: in play is 88.1% x2
+(round CF, clean release build 54d439f88378), against 66.2% without it in a
+same-binary ABBA (round GC). Not yet in a release. Open on that build: the
+32-bit and 8-bit gate scenes missed the whole-run floor (39.17 and 39.12
+against 39.2) on slower start-up (steady and frames displayed in band; 16-bit
+MET); a v0.1-vs-main ABBA decides whether that is the build or the machine.
 
 A second reading of each gate scene on the same exe (round V1) met the
 bar at 16-bit; at 8- and 32-bit the whole-run rate (start-up included)
