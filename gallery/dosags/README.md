@@ -44,6 +44,7 @@ v0.1 `AGS.EXE` (c754df64babd). Frames displayed = 1 - frames_skipped/ticks.
 | Maniac Mansion Deluxe, in play (room 1 to 2, round P9) | 16-bit | 39.9 | 67.6% (x2) |
 | 7 Days a Stranger, in play (round P9) | 16-bit | 39.99 | 99.50% |
 | Maniac Mansion Deluxe, in play, **main after v0.1** (R1, round CF, 2026-11-07) | 16-bit | 39.9 | 88.1% (x2) |
+| Maniac Mansion Deluxe, in play, **main after v0.1** (R1+R3, round RC, 2026-11-07) | 16-bit | 40.0 | 98.3% (x2) |
 
 Maniac Mansion Deluxe's character select ran at 36.5 ticks/s with about
 27% of frames displayed before the script VM and engine levers. In play
@@ -57,6 +58,15 @@ against 39.2) on slower start-up (steady and frames displayed in band; 16-bit
 MET). A v0.1-vs-main ABBA (round SU) cleared the build: the time is the
 restart-point save write at start-up (210-516 ms on either exe, 3 of 4 pairs
 within 2 ms), and v0.1 itself missed the 8-bit floor once in that round.
+
+Lever R3 (ags 0368, now the default; `DOSAGS_GUI_CLIP=2` gives R1 alone)
+redraws each changed area of an unchanged panel separately instead of one
+box spanning them all, which R1 drew at full width whenever the pointer was
+on the verb bar. Round RC, a same-binary ABBA on the clean release build
+4c9f83b62c5c: MMD in play 98.43% / 98.24% displayed with R3 against 87.99% /
+89.82% with R1 alone; with the pointer on the verb bar 99.5% / 99.3% against
+79.6% / 80.9%. 16-bit gate scene MET on the same build. Not yet in a release;
+99% x2 in play is not reached yet.
 
 A second reading of each gate scene on the same exe (round V1) met the
 bar at 16-bit; at 8- and 32-bit the whole-run rate (start-up included)
