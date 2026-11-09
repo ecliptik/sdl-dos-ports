@@ -45,6 +45,7 @@ v0.1 `AGS.EXE` (c754df64babd). Frames displayed = 1 - frames_skipped/ticks.
 | 7 Days a Stranger, in play (round P9) | 16-bit | 39.99 | 99.50% |
 | Maniac Mansion Deluxe, in play, **main after v0.1** (R1, round CF, 2026-11-07) | 16-bit | 39.9 | 88.1% (x2) |
 | Maniac Mansion Deluxe, in play, **main after v0.1** (R1+R3, round RC, 2026-11-07) | 16-bit | 40.0 | 98.3% (x2) |
+| Maniac Mansion Deluxe, in play, **main after v0.1** (R1+R3+R2, round RE, 2026-11-09) | 16-bit | 40.0 | 98.97% / 99.04% |
 
 Maniac Mansion Deluxe's character select ran at 36.5 ticks/s with about
 27% of frames displayed before the script VM and engine levers. In play
@@ -65,8 +66,16 @@ box spanning them all, which R1 drew at full width whenever the pointer was
 on the verb bar. Round RC, a same-binary ABBA on the clean release build
 4c9f83b62c5c: MMD in play 98.43% / 98.24% displayed with R3 against 87.99% /
 89.82% with R1 alone; with the pointer on the verb bar 99.5% / 99.3% against
-79.6% / 80.9%. 16-bit gate scene MET on the same build. Not yet in a release;
-99% x2 in play is not reached yet.
+79.6% / 80.9%. 16-bit gate scene MET on the same build. Not yet in a release.
+
+Lever R2 (ags 0369/0370, now the default; `DOSAGS_CHAR_REUSE=0` turns it off)
+reuses a character's prepared image when nothing about it has changed. In a
+same-binary ABBA (round RD, 2026-11-08) MMD in play went from 97.93% / 97.44%
+with R3 alone to 98.97% / 99.07% with R2. On the default build (round RE,
+2026-11-09, clean release build 9db4170acd89) the registered pair read
+98.97% / 99.04%, so 99% x2 is not met by 2 frames; three of that round's four
+default-configuration MMD runs reached 99.0% or more (mean 99.03%). S16 MET on
+the same build. Not yet in a release.
 
 A second reading of each gate scene on the same exe (round V1) met the
 bar at 16-bit; at 8- and 32-bit the whole-run rate (start-up included)
