@@ -525,6 +525,24 @@ ports:
       rules in docs/. Details: dosags STATUS.md "Where it stands" and
       COMPATIBILITY.md.
 
+      2026-11-19: v0.1.1 released
+      (https://github.com/ecliptik/dosags/releases/tag/v0.1.1; zip
+      source 55d2b2fa, AGS.EXE release f2e183845d2f). ags 0377 bounds
+      the mixer's per-voice ring and ends the 486's 0.2-1.5 s room-2
+      freezes in long sound loops (dosags ROUNDRO SUPPORTED, audio
+      ROUNDRP PASS); ags 0382/0383 speed up the legacy route finder
+      with routes unchanged (MS3 91.7% -> 94.8% displayed, ROUNDRR);
+      the redraw levers 0366-0373 are on by default (MMD in play 67.63%
+      x2 on v0.1 -> 98.81-99.03%, ROUNDRG, release 8c123c770d0b). The
+      moving fixture MS3 reads 94-95% displayed on the v0.1.1 exe
+      itself (ROUNDRS, ROUNDRT). Its 99% target is parked, not met
+      (operator 2026-11-19): a 45 ms long-tick pacer rule reached 97.0%
+      at +2.4% game time, over the operator's 2.0% limit, and was not
+      adopted (ROUNDRT); the interpreter line closed before it. The S8 /
+      S16 / S32P gates were not re-measured on the v0.1.1 exe (last 486
+      readings are v0.1's). Open as before: GUS not right, D2 failed at
+      4.30 ms. dos_status stays PLAYABLE.
+
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
     upstream_revision: null

@@ -4,7 +4,7 @@ The Adventure Game Studio engine (AGS 3.6.3, engine source ported to SDL3)
 running AGS games on real 486-class DOS hardware through SDL3, DJGPP and
 CWSDPMI. Bring your own game: the player zip ships the engine only.
 
-Repo: https://github.com/ecliptik/dosags -- v0.1: https://github.com/ecliptik/dosags/releases/tag/v0.1
+Repo: https://github.com/ecliptik/dosags -- latest release v0.1.1 (2026-11-19): https://github.com/ecliptik/dosags/releases/tag/v0.1.1 (v0.1: https://github.com/ecliptik/dosags/releases/tag/v0.1)
 
 ## Screenshots
 
@@ -83,7 +83,33 @@ missed 39.2 by 0.02-0.07 because start-up ran slower that day; steady
 speed and frames displayed were unchanged. The v0.1 zip itself, run as
 shipped, passes (V1 DIST2: 99.42% displayed at 40.17 ticks/s).
 
-## Known limits (v0.1)
+## v0.1.1 (2026-11-19)
+
+Same machine, sound on; the v0.1.1 `AGS.EXE` (release f2e183845d2f) unless
+a row says otherwise. Records are dosags `tests/harness/results/` round dirs.
+
+| Scene | Build | Frames displayed |
+|---|---|---:|
+| Maniac Mansion Deluxe, in play (P9M1), redraw levers R1+R3+R2 + control marks (round RG, 2026-11-09) | release 8c123c770d0b | 98.81-99.03% |
+| Maniac Mansion Deluxe, moving fixture MS3 (114 clicks, the kid walking), before 0377/0383 (round RL) | release 942ad0260d36 | 90.68% |
+| Maniac Mansion Deluxe, MS3, route finder off / on (round RR) | ags 0382 release 483247a02652 (switch off / on) | 91.7% / 94.8% |
+| Maniac Mansion Deluxe, MS3 (rounds RS and RT, five runs) | **v0.1.1** | 93.39-95.33% |
+
+What v0.1.1 adds over v0.1:
+- ags 0377 bounds the sound mixer's per-voice buffer. Before it, a long or
+  looping sound froze the whole machine for 0.2-1.5 s each time the buffer
+  doubled (MMD room 2; round RO, audio check round RP PASS).
+- ags 0382/0383 speed up AGS's legacy walking-route search; the routes found
+  are unchanged (identity gate RM0383).
+- The redraw levers above are on by default; README.TXT lists their off
+  switches for a game that draws differently from its Windows version.
+
+MS3's 99% target is parked at about 95%: a 45 ms long-tick pacer rule reached
+97.0% at +2.4% game time, over the 2.0% limit, and was not adopted (round RT).
+The S8 / S16 / S32P gate scenes were not re-measured on the v0.1.1 exe; the
+table above them is v0.1's.
+
+## Known limits (v0.1.1, unchanged from v0.1)
 
 - The Gravis UltraSound backend is not yet right on the reference machine
   (missing effects, music gaps and pitch); use OPL3 or WaveBlaster.
