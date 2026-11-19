@@ -539,9 +539,13 @@ ports:
       (operator 2026-11-19): a 45 ms long-tick pacer rule reached 97.0%
       at +2.4% game time, over the operator's 2.0% limit, and was not
       adopted (ROUNDRT); the interpreter line closed before it. The S8 /
-      S16 / S32P gates were not re-measured on the v0.1.1 exe (last 486
-      readings are v0.1's). Open as before: GUS not right, D2 failed at
-      4.30 ms. dos_status stays PLAYABLE.
+      S16 / S32P gates are MET x2 on the v0.1.1 exe as shipped (dosags
+      ROUNDRV-2026-11-19, three power-ons: whole-run 39.32-39.43,
+      steady 40.11-40.22, 99.32-99.56% displayed, start-up 604-665 ms
+      against v0.1's 926-1,004; the zip as shipped PASSES, RVDST). One
+      8-bit reading (RV8B) logged 3 late OPL3 writes, unexplained and
+      not repeated. Open as before: GUS not right, D2 failed at 4.30
+      ms. dos_status stays PLAYABLE.
 
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV

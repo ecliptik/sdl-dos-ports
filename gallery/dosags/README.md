@@ -106,8 +106,18 @@ What v0.1.1 adds over v0.1:
 
 MS3's 99% target is parked at about 95%: a 45 ms long-tick pacer rule reached
 97.0% at +2.4% game time, over the 2.0% limit, and was not adopted (round RT).
-The S8 / S16 / S32P gate scenes were not re-measured on the v0.1.1 exe; the
-table above them is v0.1's.
+The S8 / S16 / S32P gate scenes are MET x2 on the v0.1.1 exe as shipped
+(round RV, 2026-11-19; the zip as shipped PASSES too):
+
+| Scene | Colour | Whole-run / steady ticks/s | Frames displayed |
+|---|---|---|---:|
+| Trilby's Notes, room 35 (S8) | 8-bit | 39.33 / 40.20, 39.32 / 40.20 | 99.36%, 99.32% |
+| 5 Days a Stranger, room 3 (S16) | 16-bit | 39.40 / 40.16, 39.38 / 40.14 | 99.34%, 99.38% |
+| 5 Days a Stranger, room 3 (S32P) | 32-bit, 640x480 | 39.38 / 40.15, 39.40 / 40.16 | 99.56%, 99.48% |
+
+Start-up ran 604-665 ms against v0.1's 926-1,004 ms in round V1, so no
+reading missed the whole-run floor this time. One extra 8-bit reading logged
+3 late OPL3 music writes (unexplained; the repeat logged 0).
 
 ## Known limits (v0.1.1, unchanged from v0.1)
 
