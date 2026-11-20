@@ -1,0 +1,25 @@
+# Hourly GC of dosbox-run.sh stage dirs (dosbox-stage.sh gc), as a systemd
+# user service. Install: copy this file and dosbox-stage-gc.timer to
+# ~/.config/systemd/user/, then
+#   systemctl --user daemon-reload && systemctl --user enable --now dosbox-stage-gc.timer
+#
+# Two dirs, because a systemd user service does not see a login shell's
+# TMPDIR: /tmp (dosbox-run.sh's default) and the host's TMPDIR, set here
+# explicitly. Edit or drop the second line for a host without that dir.
+#
+# --budget 15G per dir: after the grace/keep/max-age rules, the oldest
+# remaining stages go until the dir's stages fit. Never a stage in use (cwd,
+# open fd, a "MOUNT C <stage>" command line, or a live recorded pid) and
+# never one younger than --grace (2h), so a running gate keeps its stages.
+#
+# ASCII only.
+
+[Unit]
+Description=GC of dosbox-run.sh stage dirs (dosbox-stage.sh gc --budget 15G; /tmp and the data-disk TMPDIR)
+
+[Service]
+Type=oneshot
+ExecStart=%h/git/sdl-dos-ports/shared/tools/dosbox-stage.sh gc --apply --quiet --budget 15G --dir /tmp
+ExecStart=-%h/git/sdl-dos-ports/shared/tools/dosbox-stage.sh gc --apply --quiet --budget 15G --dir %h/data/tmp
+Nice=10
+IOSchedulingClass=idle
