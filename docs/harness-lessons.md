@@ -347,6 +347,15 @@ reproduced its prior figure exactly; the "broken" binary later ran
 clean; the transient was never explained. Without the interleave the
 conclusion would have been "binaries built this way don't run".
 
+**A reader fixture built at the old rung** (2026-11-21, dosags round RY).
+The registered exit anchor for the stick window was "the first `changing`
+after `blind`" in the capture trace, simulated only on 1x traces, where the
+capture goes blind at the mode switch. At 2x in a 640x480 mode the capture
+keeps lock through the exit, so three of five cells read VOID with a clean
+stick record. Simulate a reader on traces from the predicted outcome, not
+the last round's, or anchor on the program's own log (lock + preloop +
+loop + tail ms) rather than on how the capture happens to look.
+
 ## Shell and DOS traps
 
 **`FSPROBE_SEQ` truncated at the first stage** (2026-09-20). A
