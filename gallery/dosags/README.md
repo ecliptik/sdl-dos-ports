@@ -119,6 +119,12 @@ Start-up ran 604-665 ms against v0.1's 926-1,004 ms in round V1, so no
 reading missed the whole-run floor this time. One extra 8-bit reading logged
 3 late OPL3 music writes (unexplained; the repeat logged 0).
 
+A narrowed integer 2x present (the game doubled into a 640x480 mode,
+copying only the changed areas) is parked. It is screen-equal to a full
+2x copy in DOSBox-X, but on the 486 it met its bar in one of two 16-bit
+readings, 32-bit was too slow in both, and 8-bit has no valid pair
+(round RY, 2026-11-21). It is not in a release.
+
 ## Known limits (v0.1.1, unchanged from v0.1)
 
 - The Gravis UltraSound backend is not yet right on the reference machine

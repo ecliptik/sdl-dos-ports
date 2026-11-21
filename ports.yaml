@@ -544,8 +544,13 @@ ports:
       steady 40.11-40.22, 99.32-99.56% displayed, start-up 604-665 ms
       against v0.1's 926-1,004; the zip as shipped PASSES, RVDST). One
       8-bit reading (RV8B) logged 3 late OPL3 writes, unexplained and
-      not repeated. Open as before: GUS not right, D2 failed at 4.30
-      ms. dos_status stays PLAYABLE.
+      not repeated. A narrowed integer 2x present at 640x480 (lab
+      overlay DOSAGS_SCALE2_NARROW, not in a release) passed its
+      DOSBox-X screen-equality gate (third run) but is NOT MET on the
+      486 at every depth (dosags ROUNDRY-2026-11-20: B16 MET x1, B32
+      too slow on its own figures, B8 no valid pair) and is parked
+      (operator 2026-11-21). Open as before: GUS not right, D2 failed
+      at 4.30 ms. dos_status stays PLAYABLE.
 
   - name: vvvvvv
     upstream_url: https://github.com/TerryCavanagh/VVVVVV
